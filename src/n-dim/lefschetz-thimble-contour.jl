@@ -52,8 +52,8 @@ Calculates the eigenvectors of the Hessian matrix for a given saddle point.
 function calculate_eigenvectors!(
     saddle_point::Point{D},
     f::Function,
-    positive_eigenvectors::Vector{Point},
-    negative_eigenvectors::Vector{Point}) where {D}
+    positive_eigenvectors::Vector{Point{D}},
+    negative_eigenvectors::Vector{Point{D}})::Nothing where {D}
 
     # Calculate Hessian using finite difference method. Convert input to a real vector
     # where the real vector has entries for each real and imaginary component. Then,
@@ -108,11 +108,23 @@ Smolyak sparse grid.
 @return Nothing. It mutates the points vector in place.
 """
 function generate_boundary_mesh!(
-    points::Vector{Point},
+    points::Vector{Point{D}},
     saddle_point::Point{D},
     ϵ::Float64,
-    eigenvectors::Vector{Point}) where {D}
+    eigenvectors::Vector{Point{D}})::Nothing where {D}
 
+    
+
+end
+
+# Generating the boundary mesh, using Cross-Polytope algorithm. Only applicable if the complex
+# dimension of the space is less than 4.
+function generate_cross_polytope_mesh(
+    ::Val{true},
+    points::Vector{Point{D}},
+    saddle_point::Point{D},
+    ϵ::Float64,
+    eigenvectors::Vector{Point{D}})::Nothing where {D}
     # Generate vertices of a D - 1 simplex as unit vectors in the basis directions.
     vertices = Vector{SVector{D,Float64}}()
     for d in 1:D
@@ -139,5 +151,15 @@ function generate_boundary_mesh!(
         coordinate = saddle_point + ϵ * (sum(vertex[k] * eigenvectors[k] for k in 1:D))
         push!(points, Point{D}(coordinate, true))
     end
+end 
 
-end
+# Generating the boundary mesh, using Smolyak sparse grid. Only applicable if the complex
+# dimension of the space is greater than or equal to 4.
+function generate_smolyak_sparse_grid(
+    ::Val{false},
+    points::Vector{Point{D}},
+    saddle_point::Point{D},
+    ϵ::Float64,
+    eigenvectors::Vector{Point{D}})::Nothing where {D}
+    nothing
+end 
