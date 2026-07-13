@@ -18,7 +18,7 @@ mutable struct Point{D::Int}
     active::Bool
 end
 
-Point(coords::SVector{D,ComplexF64}) = Point{D}(coords, true);
+Point(coords::SVector{D,ComplexF64}) = Point{D}(coords, true)
 
 # Simplex
 export Simplex
@@ -34,7 +34,7 @@ mutable struct Simplex{D::Int}
     active::Bool
 end
 
-Simplex(vertices::SVector{D,Point}) = Simplex{D}(vertices, true);
+Simplex(vertices::SVector{D,Point}) = Simplex{D}(vertices, true)
 
 # Calculating Eigenvectors of Hessian for a given saddle point
 export calculate_eigenvectors!
@@ -113,13 +113,14 @@ function generate_boundary_mesh!(
     ϵ::Float64,
     eigenvectors::Vector{Point{D}})::Nothing where {D}
 
-    
+    condition = D < 4
+    return _generate_boundary_mesh!(Val(condition), points, saddle_point, ϵ, eigenvectors)
 
 end
 
 # Generating the boundary mesh, using Cross-Polytope algorithm. Only applicable if the complex
 # dimension of the space is less than 4.
-function generate_cross_polytope_mesh(
+function _generate_boundary_mesh!(
     ::Val{true},
     points::Vector{Point{D}},
     saddle_point::Point{D},
@@ -151,15 +152,92 @@ function generate_cross_polytope_mesh(
         coordinate = saddle_point + ϵ * (sum(vertex[k] * eigenvectors[k] for k in 1:D))
         push!(points, Point{D}(coordinate, true))
     end
-end 
+end
 
 # Generating the boundary mesh, using Smolyak sparse grid. Only applicable if the complex
 # dimension of the space is greater than or equal to 4.
-function generate_smolyak_sparse_grid(
+function _generate_boundary_mesh!(
     ::Val{false},
     points::Vector{Point{D}},
     saddle_point::Point{D},
     ϵ::Float64,
     eigenvectors::Vector{Point{D}})::Nothing where {D}
-    nothing
-end 
+
+    M = D - 1
+    L = 2
+    hypercube_grid = get_smolyak_grid_point_combinations(M, L)
+    sphere_vertices = [map_to_sphere(x) for x in hypercube_grid]
+    empty!(points)
+    for vertex in sphere_vertices
+        coordinate = saddle_point.coords + ϵ * sum(vertex[k] * eigenvectors[k].coords for k in 1:D)
+        push!(points, Point{D}(coordinate, true))
+    end
+
+    return nothing
+end
+
+# Generate Clenshaw-Curtis nodes.
+function generate_clenshaw_curtis_nodes(i::Int)::Vector{Float64}
+    if i == 1
+        return [0.0]
+    else
+        n = 2^(i - 1) + 1
+        return [-cos(π * k / (n - 1)) for k in 0:(n-1)]
+    end
+end
+
+# Collect the Smolyak grid point combinations in [-1, 1]^D.
+function get_smolyak_grid_point_combinations(M::Int, L::Int)::Vector{SVector{M,Float64}}
+    grid = Set{SVector{M,Float64}}()
+    iterate_product(arrays) = vec(collect(Base.product(arrays...)))
+    generate_indices!(Int[], L, grid, iterate_product)
+    return collect(grid)
+end
+
+# Generate the indices for the Smolyak sparse grid combinations.
+function generate_indices!(
+    current_index::Vector{Int},
+    L::Int,
+    grid::Set{SVector{M,Float64}},
+    iterate_product::Function)::Nothing where {M}
+
+    if length(current_index) == M
+        if sum(current_index) <= M + L - 1
+            nodes_1d = [generate_clenshaw_curtis_nodes(index) for index in current_index]
+
+            for element in iterate_product(nodes_1d)
+                push!(grid, SVector{M,Float64}(element))
+            end
+        end
+        return
+    end
+
+    for level in 1:(L+1)
+        push!(current_index, level)
+        if sum(current_index) <= M + L - 1 + (M - length(current_index))
+            generate_indices!(current_index, M, L, iterate_product)
+        end
+        pop!(current_index)
+    end
+end
+
+# Map a point in [-1, 1]^(D - 1) to angles, then to Cartesian coordinates on S^(D - 1) in R^D
+function map_to_sphere(x::SVector{M,Float64})::Vector{Float64} where {M}
+    angles = Vector{Float64}(undef, M)
+    for i in 1:(M-1)
+        angles[i] = π * (x[i] + 1) / 2
+    end
+    angles[M] = (x[M] + 1) * π
+
+    D = M + 1
+    u = zeros(D)
+    sin_accum = 1.0
+    for i in 1:(D-1)
+        u[i] = sin_accum * cos(angles[i])
+        sin_accum *= sin(angles[i])
+    end
+    u[D] = sin_accum
+    return SVector{D,Float64}(u)
+end
+
+end
