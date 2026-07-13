@@ -1,8 +1,11 @@
 using StaticArrays
 using FiniteDiff
 
+module LefschetzThimbleContour
+
 # Generic Flow Data Structures:
 # Point 
+export Point
 """
 A mutable struct representing a point in D-dimensional space.
 
@@ -18,6 +21,7 @@ end
 Point(coords::SVector{D,ComplexF64}) = Point{D}(coords, true);
 
 # Simplex
+export Simplex
 """
 A mutable struct representing a simplex in D-dimensional space.
 
@@ -33,6 +37,7 @@ end
 Simplex(vertices::SVector{D,Point}) = Simplex{D}(vertices, true);
 
 # Calculating Eigenvectors of Hessian for a given saddle point
+export calculate_eigenvectors!
 """
 Calculates the eigenvectors of the Hessian matrix for a given saddle point.
 
@@ -89,6 +94,7 @@ end
 # Generating the boundary mesh, depending on the complex dimension of the space.
 # For dims 1 - 3, it uses the Cross-Polytope algorithm. For dims 4 - 4+ it uses the
 # Smolyak sparse grid.
+export generate_boundary_mesh!
 """
 Generates a boundary mesh. If the complex dimension is less than 4, it uses the
 Cross-Polytope algorithm. For dimension greater than or equal to 4, it uses the 
@@ -135,4 +141,3 @@ function generate_boundary_mesh!(
     end
 
 end
-
