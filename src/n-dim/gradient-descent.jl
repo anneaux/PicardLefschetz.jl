@@ -6,13 +6,12 @@ module GradientDescent
 using ..Types: Point
 
 # Calculates the vector field along which the flow is evaluated. 
-function flow_vector_field(w::AbstractVector{T}, S_gradient::Function, direction::Symbol)::Vector{T} where {T<:Real}
+function flow_vector_field!(dw::AbstractVector{T}, w::AbstractVector{T}, S_gradient::Function, direction::Symbol)::Nothing where {T<:Real}
     D = length(w) ÷ 2
     x = @views w[1:D]
     y = @views w[D+1:end]
     z = SVector{D,Complex{T}}(x[j] + im * y[j] for j in 1:D)
     gradient = S_gradient(z)
-    dw = Vector{T}(undef, 2 * D)
     sign_val = (direction == :descent) ? -1.0 : 1.0
 
     for j in 1:D
@@ -20,20 +19,17 @@ function flow_vector_field(w::AbstractVector{T}, S_gradient::Function, direction
         dw[D+j] = -sign_val * imag(gradient[j])
     end
 
-    return dw
+    return nothing
 end
 
 # Calculates the analytical expression for the Jacobian in the vector field on the thimble.
-function flow_jacobian(w::AbstractVector{T}, S_hessian::Function, direction::Symbol)::Matrix{T} where {T<:Real}
+function flow_jacobian!(J::AbstractMatrix{T}, w::AbstractVector{T}, S_hessian::Function, direction::Symbol)::Nothing where {T<:Real}
     D = length(w) ÷ 2
     x = @views w[1:D]
     y = @views w[D+1:end]
     z = SVector{D,Complex{T}}(x[j] + im * y[j] for j in 1:D)
 
     H = S_hessian(z)
-
-    J = Matrix{T}(undef, 2 * D, 2 * D)
-
     sigma = (direction == :descent) ? -1.0 : 1.0
 
     for k in 1:D
@@ -47,7 +43,8 @@ function flow_jacobian(w::AbstractVector{T}, S_hessian::Function, direction::Sym
             J[D+j, D+k] = -sigma * A_jk
         end
     end
-    return J
+
+    return nothing
 end
 
 # Flows the points from the starting domain along the thimble.
@@ -86,14 +83,14 @@ end
 
 # Wrapper for the vector field calculation.
 function flow_ode_vector_field!(
-    dw::AbstractMatrix{T},
+    dw::AbstractVector{T},
     w::AbstractVector{T},
     p::Tuple{F1,Symbol,F2,F3,Real},
     t::Real)::Nothing where {T<:Real,F1,F2,F3}
 
     S_gradient = p[1]
     direction = p[2]
-    dw .= flow_vector_field(w, S_gradient, direction)
+    dw .= flow_vector_field!(dw, w, S_gradient, direction)
     return nothing
 end
 
@@ -106,7 +103,7 @@ function flow_ode_jacobian!(
 
     S_hessian = p[3]
     direction = p[2]
-    J .= flow_jacobian(w, S_hessian, direction)
+    flow_jacobian!(J, w, S_hessian, direction)
     return nothing
 end
 
