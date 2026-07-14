@@ -90,7 +90,7 @@ function flow_ode_vector_field!(
 
     S_gradient = p[1]
     direction = p[2]
-    dw .= flow_vector_field!(dw, w, S_gradient, direction)
+    flow_vector_field!(dw, w, S_gradient, direction)
     return nothing
 end
 
