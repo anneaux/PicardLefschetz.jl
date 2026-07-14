@@ -23,13 +23,17 @@ include("1D/critical-points.jl")
 include("1D/line-intersection.jl")
 include("1D/saddle-point-method.jl")
 
+include("n-dim/types.jl")
+include("n-dim/lefschetz-thimble-contour.jl")
+include("n-dim/gradient-descent.jl")
+
 
 
 export square
 
 # Write your package code here.
-function hello() 
-	println("hello, World")
+function hello()
+    println("hello, World")
 end
 
 """

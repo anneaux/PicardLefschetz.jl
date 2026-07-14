@@ -3,6 +3,8 @@ using OrdinaryDiffEq
 
 module GradientDescent
 
+using ..Types: Point
+
 # Calculates the vector field along which the flow is evaluated. 
 function flow_vector_field(w::AbstractVector{T}, S_gradient::Function, direction::Symbol)::Vector{T} where {T<:Real}
     D = length(w) ÷ 2
