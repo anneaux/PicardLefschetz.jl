@@ -27,7 +27,7 @@ include("n-dim/types.jl")
 include("n-dim/lefschetz-thimble-contour.jl")
 include("n-dim/gradient-descent.jl")
 
-
+export Types, LefschetzThimbleContour, GradientDescent
 
 export square
 
