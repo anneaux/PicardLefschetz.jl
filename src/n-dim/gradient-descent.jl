@@ -1,13 +1,12 @@
+module GradientDescent
+
 using StaticArrays
 using OrdinaryDiffEq
-
-module GradientDescent
 
 using ..Types: Point
 
 # Calculates the vector field along which the flow is evaluated. 
-function flow_vector_field!(dw::AbstractVector{T}, w::AbstractVector{T}, S_gradient::Function, direction::Symbol)::Nothing where {T<:Real}
-    D = length(w) ÷ 2
+function flow_vector_field!(dw::AbstractVector{T}, w::AbstractVector{T}, S_gradient::Function, direction::Symbol, ::Val{D})::Nothing where {T<:Real,D}
     x = @views w[1:D]
     y = @views w[D+1:end]
     z = SVector{D,Complex{T}}(x[j] + im * y[j] for j in 1:D)
@@ -23,8 +22,7 @@ function flow_vector_field!(dw::AbstractVector{T}, w::AbstractVector{T}, S_gradi
 end
 
 # Calculates the analytical expression for the Jacobian in the vector field on the thimble.
-function flow_jacobian!(J::AbstractMatrix{T}, w::AbstractVector{T}, S_hessian::Function, direction::Symbol)::Nothing where {T<:Real}
-    D = length(w) ÷ 2
+function flow_jacobian!(J::AbstractMatrix{T}, w::AbstractVector{T}, S_hessian::Function, direction::Symbol, ::Val{D})::Nothing where {T<:Real,D}
     x = @views w[1:D]
     y = @views w[D+1:end]
     z = SVector{D,Complex{T}}(x[j] + im * y[j] for j in 1:D)
@@ -75,8 +73,7 @@ function flow_points!(
 
     Threads.@threads for i in 1:length(points)
         if points[i].active
-            points[i].coords, active = flow_single_point(points[i].coords, S, S_gradient, S_hessian, direction, h_threshold, steps, δ_init)
-            points[i].active = active
+            points[i] = flow_single_point(points[i], S, S_gradient, S_hessian, direction, h_threshold, steps, δ_init)
         end
     end
 end
@@ -85,12 +82,10 @@ end
 function flow_ode_vector_field!(
     dw::AbstractVector{T},
     w::AbstractVector{T},
-    p::Tuple{F1,Symbol,F2,F3,Real},
-    t::Real)::Nothing where {T<:Real,F1,F2,F3}
+    p::Tuple{F1,Symbol,F2,F3,Real,Val{D}},
+    t::Real)::Nothing where {T<:Real,F1,F2,F3,D}
 
-    S_gradient = p[1]
-    direction = p[2]
-    flow_vector_field!(dw, w, S_gradient, direction)
+    flow_vector_field!(dw, w, p[1], p[2], p[6])
     return nothing
 end
 
@@ -98,12 +93,10 @@ end
 function flow_ode_jacobian!(
     J::AbstractMatrix{T},
     w::AbstractVector{T},
-    p::Tuple{F1,Symbol,F2,F3,Real},
-    t::Real)::Nothing where {T<:Real,F1,F2,F3}
+    p::Tuple{F1,Symbol,F2,F3,Real,Val{D}},
+    t::Real)::Nothing where {T<:Real,F1,F2,F3,D}
 
-    S_hessian = p[3]
-    direction = p[2]
-    flow_jacobian!(J, w, S_hessian, direction)
+    flow_jacobian!(J, w, p[3], p[2], p[6])
     return nothing
 end
 
@@ -142,7 +135,7 @@ function flow_single_point(
     direction::Symbol,
     h_threshold::Real,
     steps::Int,
-    δ_init::Real)::Tuple{Point{D},Bool} where D
+    δ_init::Real)::Point{D} where D
 
     # Converting the coordinates from a complex vector with dim = D, to a real vector with dim = 2D
     w0 = Vector{Float64}(undef, 2 * D)
@@ -173,7 +166,7 @@ function flow_single_point(
     coords_final = SVector{D,ComplexF64}(w_final[j] + im * w_final[D+j] for j in 1:D)
     active = real(S(coords_final)) > h_threshold
 
-    return coords_final, active
+    return Point{D}(coords_final, active)
 end
 
 end

@@ -1,4 +1,7 @@
 module Types
+
+using StaticArrays
+
 # Generic Flow Data Structures:
 # Point 
 export Point
@@ -14,7 +17,7 @@ mutable struct Point{D}
     active::Bool
 end
 
-Point(coords::SVector{D,ComplexF64}) = Point{D}(coords, true)
+Point(coords::SVector{D,ComplexF64}) where {D} = Point{D}(coords, true)
 
 # Simplex
 export Simplex
@@ -30,6 +33,6 @@ mutable struct Simplex{D}
     active::Bool
 end
 
-Simplex(vertices::SVector{D,Point}) = Simplex{D}(vertices, true)
+Simplex(vertices::SVector{D,Point}) where {D} = Simplex{D}(vertices, true)
 
 end

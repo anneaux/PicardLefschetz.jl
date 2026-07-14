@@ -8,8 +8,8 @@ using LinearAlgebra
     # S_gradient(z) = z
     # S_hessian(z) = [1.0;;]
     S(z) = 0.5 * z[1]^2
-    S_gradient(z) = SVector{1, ComplexF64}(z[1])
-    S_hessian(z) = SMatrix{1, 1, ComplexF64}(1.0)
+    S_gradient(z) = SVector{1,ComplexF64}(z[1])
+    S_hessian(z) = SMatrix{1,1,ComplexF64}(1.0)
 
     # 1. Test flow_vector_field!
     @testset "flow_vector_field!" begin
@@ -44,8 +44,8 @@ using LinearAlgebra
     # 3. Test flow_single_point
     @testset "flow_single_point" begin
         # Start at z = 2.0 + 0.1im (active point)
-        pt = Types.Point(SVector{1, ComplexF64}(2.0 + 0.1im))
-        
+        pt = Types.Point(SVector{1,ComplexF64}(2.0 + 0.1im))
+
         # Descent flow equations:
         # dx/dt = -x => x(t) = x0 * e^{-t}
         # dy/dt = y => y(t) = y0 * e^{t}
@@ -56,7 +56,7 @@ using LinearAlgebra
         coords_f, active = PicardLefschetz.GradientDescent.flow_single_point(
             pt, S, S_gradient, S_hessian, :descent, 0.0, 10, 0.05
         )
-        @test coords_f[1] ≈ 2.0 * exp(-0.5) + im * 0.1 * exp(0.5) rtol=1e-4
+        @test coords_f[1] ≈ 2.0 * exp(-0.5) + im * 0.1 * exp(0.5) rtol = 1e-4
         @test active == true
 
         # Test threshold cutoff: if h_threshold = 1.0
@@ -73,13 +73,13 @@ using LinearAlgebra
     # 4. Test flow_points!
     @testset "flow_points!" begin
         pts = [
-            Types.Point(SVector{1, ComplexF64}(2.0 + 0.1im), true),
-            Types.Point(SVector{1, ComplexF64}(2.0 + 0.1im), false) # inactive should not flow
+            Types.Point(SVector{1,ComplexF64}(2.0 + 0.1im), true),
+            Types.Point(SVector{1,ComplexF64}(2.0 + 0.1im), false) # inactive should not flow
         ]
         PicardLefschetz.GradientDescent.flow_points!(
             pts, S, S_gradient, S_hessian, :descent, 0.0, 10, 0.05
         )
-        @test pts[1].coords[1] ≈ 2.0 * exp(-0.5) + im * 0.1 * exp(0.5) rtol=1e-4
+        @test pts[1].coords[1] ≈ 2.0 * exp(-0.5) + im * 0.1 * exp(0.5) rtol = 1e-4
         @test pts[1].active == true
         # Inactive point should remain unchanged
         @test pts[2].coords[1] == 2.0 + 0.1im
@@ -90,9 +90,9 @@ using LinearAlgebra
     @testset "Zero heap allocations inside inner integration loop" begin
         dw = zeros(2)
         w = [2.0, 3.0]
-        allocs_vf = @allocated PicardLefschetz.GradientDescent.flow_vector_field!(dw, w, S_gradient, :descent)
-        allocs_jac = @allocated PicardLefschetz.GradientDescent.flow_jacobian!(zeros(2,2), w, S_hessian, :descent)
-        
+        allocs_vf = @allocated PicardLefschetz.GradientDescent.flow_vector_field!(dw, w, S_gradient, :descent, Val(1))
+        allocs_jac = @allocated PicardLefschetz.GradientDescent.flow_jacobian!(zeros(2, 2), w, S_hessian, :descent, Val(1))
+
         @test allocs_vf == 0
         @test allocs_jac == 0
     end

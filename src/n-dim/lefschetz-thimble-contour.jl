@@ -1,8 +1,8 @@
+module LefschetzThimbleContour
+
 using StaticArrays
 using FiniteDiff
 using LinearAlgebra
-
-module LefschetzThimbleContour
 
 using ..Types: Point
 using ..Types: Simplex
@@ -79,13 +79,12 @@ Smolyak sparse grid.
 @return Nothing. It mutates the points vector in place.
 """
 function generate_boundary_mesh!(
-    points::Vector{Point{D}},
     saddle_point::Point{D},
     ϵ::Float64,
-    eigenvectors::Vector{Point{D}})::Nothing where {D}
+    eigenvectors::Vector{Point{D}})::Tuple{Vector{Point{D}},Vector{Simplex{D}}} where {D}
 
     condition = D < 4
-    return _generate_boundary_mesh!(Val(condition), points, saddle_point, ϵ, eigenvectors)
+    return _generate_boundary_mesh!(Val(condition), saddle_point, ϵ, eigenvectors)
 
 end
 
@@ -93,10 +92,11 @@ end
 # dimension of the space is less than 4.
 function _generate_boundary_mesh!(
     ::Val{true},
-    points::Vector{Point{D}},
     saddle_point::Point{D},
     ϵ::Float64,
-    eigenvectors::Vector{Point{D}})::Nothing where {D}
+    eigenvectors::Vector{Point{D}})::Tuple{Vector{Point{D}},Vector{Simplex{D}}} where {D}
+
+    points = Vector{Point{D}}()
     # Generate vertices of a D - 1 simplex as unit vectors in the basis directions.
     vertices = Vector{SVector{D,Float64}}()
     for d in 1:D
@@ -104,6 +104,12 @@ function _generate_boundary_mesh!(
         position_vector[d] = 1.0
         push!(vertices, SVector{D,Float64}(position_vector))
         push!(vertices, SVector{D,Float64}(-position_vector))
+    end
+
+    # Generate boundary mesh by mapping generated simplices to the local coordinate chart about the saddle point.
+    for vertex in vertices
+        coordinate = saddle_point.coords + ϵ * (sum(vertex[k] * eigenvectors[k].coords for k in 1:D))
+        push!(points, Point{D}(coordinate, true))
     end
 
     # Generate simplices using the different coordinate axis.
@@ -117,34 +123,29 @@ function _generate_boundary_mesh!(
         push!(simplices, Simplex{D}(SVector{D,Point}(vertices[vertices_indices]), true))
     end
 
-    # Generate boundary mesh by mapping generated simplices to the local coordinate chart about the saddle point.
-    empty!(points)
-    for vertex in vertices
-        coordinate = saddle_point.coords + ϵ * (sum(vertex[k] * eigenvectors[k].coords for k in 1:D))
-        push!(points, Point{D}(coordinate, true))
-    end
+    return points, simplices
 end
 
 # Generating the boundary mesh, using Smolyak sparse grid. Only applicable if the complex
 # dimension of the space is greater than or equal to 4.
 function _generate_boundary_mesh!(
     ::Val{false},
-    points::Vector{Point{D}},
     saddle_point::Point{D},
     ϵ::Float64,
-    eigenvectors::Vector{Point{D}})::Nothing where {D}
+    eigenvectors::Vector{Point{D}})::Tuple{Vector{Point{D}},Vector{Simplex{D}}} where {D}
 
     M = D - 1
     L = 2
     hypercube_grid = get_smolyak_grid_point_combinations(M, L)
     sphere_vertices = [map_to_sphere(x) for x in hypercube_grid]
-    empty!(points)
+    points = Vector{Point{D}}()
     for vertex in sphere_vertices
         coordinate = saddle_point.coords + ϵ * sum(vertex[k] * eigenvectors[k].coords for k in 1:D)
         push!(points, Point{D}(coordinate, true))
     end
 
-    return nothing
+    simplices = Vector{Simplex{D}}()
+    return points, simplices
 end
 
 # Generate Clenshaw-Curtis nodes.
@@ -161,17 +162,16 @@ end
 function get_smolyak_grid_point_combinations(M::Int, L::Int)::Vector{SVector{M,Float64}}
     grid = Set{SVector{M,Float64}}()
     iterate_product(arrays) = vec(collect(Base.product(arrays...)))
-    generate_indices!(Int[], M, L, grid, iterate_product)
+    generate_indices!(Int[], L, grid, iterate_product)
     return collect(grid)
 end
 
 # Generate the indices for the Smolyak sparse grid combinations.
 function generate_indices!(
     current_index::Vector{Int},
-    M::Int,
     L::Int,
     grid::Set{SVector{M,Float64}},
-    iterate_product::Function)::Nothing
+    iterate_product::Function)::Nothing where {M}
 
     if length(current_index) == M
         if sum(current_index) <= M + L - 1
@@ -187,7 +187,7 @@ function generate_indices!(
     for level in 1:(L+1)
         push!(current_index, level)
         if sum(current_index) <= M + L - 1 + (M - length(current_index))
-            generate_indices!(current_index, M, L, grid, iterate_product)
+            generate_indices!(current_index, L, grid, iterate_product)
         end
         pop!(current_index)
     end
