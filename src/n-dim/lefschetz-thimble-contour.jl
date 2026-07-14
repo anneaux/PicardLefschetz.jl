@@ -1,5 +1,6 @@
 using StaticArrays
 using FiniteDiff
+using LinearAlgebra
 
 module LefschetzThimbleContour
 
@@ -117,9 +118,9 @@ function _generate_boundary_mesh!(
     end
 
     # Generate boundary mesh by mapping generated simplices to the local coordinate chart about the saddle point.
-    points = Vector{Point{D}}()
+    empty!(points)
     for vertex in vertices
-        coordinate = saddle_point + ϵ * (sum(vertex[k] * eigenvectors[k] for k in 1:D))
+        coordinate = saddle_point.coords + ϵ * (sum(vertex[k] * eigenvectors[k].coords for k in 1:D))
         push!(points, Point{D}(coordinate, true))
     end
 end
@@ -160,16 +161,17 @@ end
 function get_smolyak_grid_point_combinations(M::Int, L::Int)::Vector{SVector{M,Float64}}
     grid = Set{SVector{M,Float64}}()
     iterate_product(arrays) = vec(collect(Base.product(arrays...)))
-    generate_indices!(Int[], L, grid, iterate_product)
+    generate_indices!(Int[], M, L, grid, iterate_product)
     return collect(grid)
 end
 
 # Generate the indices for the Smolyak sparse grid combinations.
 function generate_indices!(
     current_index::Vector{Int},
+    M::Int,
     L::Int,
     grid::Set{SVector{M,Float64}},
-    iterate_product::Function)::Nothing where {M}
+    iterate_product::Function)::Nothing
 
     if length(current_index) == M
         if sum(current_index) <= M + L - 1
@@ -185,7 +187,7 @@ function generate_indices!(
     for level in 1:(L+1)
         push!(current_index, level)
         if sum(current_index) <= M + L - 1 + (M - length(current_index))
-            generate_indices!(current_index, M, L, iterate_product)
+            generate_indices!(current_index, M, L, grid, iterate_product)
         end
         pop!(current_index)
     end
