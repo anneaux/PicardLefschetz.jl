@@ -1,6 +1,7 @@
 # module PLIntegration1D
 
-# using LinearAlgebra, FastGaussQuadrature
+using LinearAlgebra, FastGaussQuadrature
+using FiniteDiff
 
 # export get_thimble, integrate_thimble
 
@@ -17,9 +18,9 @@ mutable struct Index
 end
 
 function subdivide(points::Vector{MyPoint},
-        simplices::Vector{Index},
-        Δ::Float64)
-    
+    simplices::Vector{Index},
+    Δ::Float64)
+
     for i in eachindex(simplices)
         sim = simplices[i]
         if sim.active
@@ -28,18 +29,18 @@ function subdivide(points::Vector{MyPoint},
             L = points[l].coord
             R = points[r].coord
             if abs(R - L) > Δ
-                push!(points, MyPoint((L + R)/ 2.))
+                push!(points, MyPoint((L + R) / 2.))
                 simplices[i].active = false
                 append!(simplices, [Index([l, length(points)]), Index([length(points), r])])
-            end 
+            end
         end
     end
 end
 
 
 function subdivide_rep(points::Vector{MyPoint},
-        simplices::Vector{Index},
-        δ::Float64)
+    simplices::Vector{Index},
+    δ::Float64)
     n_old = length(simplices)
     n_new = n_old + 1
 
@@ -49,50 +50,50 @@ function subdivide_rep(points::Vector{MyPoint},
         n_new = length(simplices)
     end
 
-    filter!(sim->sim.active, simplices)
+    filter!(sim -> sim.active, simplices)
 end
 
 function initialise(tmin::Float64, tmax::Float64,
-        Δ::Float64, endpoints=[true, true])
-    
+    Δ::Float64, endpoints=[true, true])
+
     points = [MyPoint(tmin), MyPoint(tmax)]
     points[1].active = endpoints[1]
     points[2].active = endpoints[2]
     simplices = [Index([1, 2])]
 
     subdivide_rep(points, simplices, Δ)
-    filter!(sim->sim.active, simplices)
+    filter!(sim -> sim.active, simplices)
 
     return (points, simplices)
 end
 
 function grad(drv::Function, t::ComplexF64)
     g = drv(t)
-    return conj(complex(1im*g))
+    return conj(complex(1im * g))
 end
 
-function gradN(drv::Function,t::ComplexF64, thresh::Float64=1.)
+function gradN(drv::Function, t::ComplexF64, thresh::Float64=1.)
     g = grad(drv, t)
     if norm(g) > thresh # bit lower than the gradient at the saddle point
         return LinearAlgebra.normalize(g)
-    else 
+    else
         return g
     end
 end;
 
 function flow_down!(fun::Tuple,
-        points::Vector{MyPoint}, simplices::Vector{Index};
-        δ::Float64=0.5, # flowstepfactor
-        threshold::Float64=0.5, # for normalisation of thr gradient
-        h_threshold::Float64=-20.
-        )
+    points::Vector{MyPoint}, simplices::Vector{Index};
+    δ::Float64=0.5, # flowstepfactor
+    threshold::Float64=0.5, # for normalisation of thr gradient
+    h_threshold::Float64=-20.
+)
 
     S = fun[1]
     drv = fun[2]
-      
+
     for i1 in 1:length(points)
         if points[i1].active # for the active points
-            step = - δ .* gradN(drv, points[i1].coord, threshold) 
+            step = -δ .* gradN(drv, points[i1].coord, threshold)
             points[i1].coord += step
         end
     end
@@ -101,7 +102,7 @@ function flow_down!(fun::Tuple,
         if simplices[i2].active
             for v1 in simplices[i2].coord
                 if real(im * S(points[v1].coord)) < h_threshold
-                    simplices[i2].active = false 
+                    simplices[i2].active = false
                     points[v1].active = false
                 end
             end
@@ -109,31 +110,136 @@ function flow_down!(fun::Tuple,
     end
 end
 
+function flow_up(S::Function, S_prime::Function, saddle_point::MyPoint, δ::Float64, h_threshold::Float64, zero_tolerance::Float64, flow_steps::Int)::Tuple{Vector{Vector{MyPoint}},Bool}
+    contributing = true
+    thimbles = Vector{Vector{MyPoint}}()
+    max_height = abs(h_threshold)
+
+    # Step 1: Find the eigenvectors of the Hessian matrix evaluated at the saddle point.
+    X = [real(saddle_point.coord), imag(saddle_point.coord)]
+    hessian = FiniteDiff.finite_difference_hessian(tvec -> imag(S(complex(tvec[1], tvec[2]))), X)
+    eigen_decomposition = eigen(hessian)
+    eigenvalues = eigen_decomposition.values
+    eigenvectors = eigen_decomposition.vectors
+
+    # Select negative eigenvalue for the dual thimble (steepest ascent of -Im(S)).
+    directions = []
+    for i in eachindex(eigenvalues)
+        if eigenvalues[i] < 0
+            v = complex(eigenvectors[:, i][1], eigenvectors[:, i][2])
+            push!(directions, v)
+            push!(directions, -v)
+        end
+    end
+
+    on_real_line = abs(imag(saddle_point.coord)) <= zero_tolerance
+
+    if on_real_line
+        # Both directions move away from the real line.
+        if imag(directions[1]) > 0
+            dir_up = directions[1]
+            dir_down = directions[2]
+        else
+            dir_up = directions[2]
+            dir_down = directions[1]
+        end
+        pass_up = saddle_point.coord + δ * dir_up
+        pass_down = saddle_point.coord + δ * dir_down
+        points_up = Vector{MyPoint}()
+        points_down = Vector{MyPoint}()
+        push!(points_up, MyPoint(pass_up))
+        push!(points_down, MyPoint(pass_down))
+
+        # Flow up to infinity (where -Im(S) exceeds max_height)
+        flow_count = 0
+        while -imag(S(pass_up)) < max_height && flow_count < flow_steps
+            g_up = gradN(S_prime, pass_up)
+            pass_up = pass_up + δ * g_up
+            push!(points_up, MyPoint(pass_up))
+            flow_count += 1
+        end
+        flow_count = 0
+        while -imag(S(pass_down)) < max_height && flow_count < flow_steps
+            g_down = gradN(S_prime, pass_down)
+            pass_down = pass_down + δ * g_down
+            push!(points_down, MyPoint(pass_down))
+            flow_count += 1
+        end
+        push!(thimbles, points_up)
+        push!(thimbles, points_down)
+        contributing = true
+    else
+        # Determine forward (towards real line) and backward (away from real line) passes
+        pass_1 = saddle_point.coord + δ * directions[1]
+        pass_2 = saddle_point.coord + δ * directions[2]
+
+        if abs(imag(pass_1)) < abs(imag(saddle_point.coord))
+            forward_pass = pass_1
+            backward_pass = pass_2
+        else
+            forward_pass = pass_2
+            backward_pass = pass_1
+        end
+        points_forward = Vector{MyPoint}()
+        points_backward = Vector{MyPoint}()
+        push!(points_forward, MyPoint(forward_pass))
+        push!(points_backward, MyPoint(backward_pass))
+
+        # Flow forward pass
+        contributing = false
+        flow_count = 0
+        while imag(forward_pass) * imag(saddle_point.coord) > 0 && -imag(S(forward_pass)) < max_height && flow_count < flow_steps
+            g_fwd = gradN(S_prime, forward_pass)
+            forward_pass = forward_pass + δ * g_fwd
+            push!(points_forward, MyPoint(forward_pass))
+            flow_count += 1
+        end
+
+        # If it crossed the real line, it contributes.
+        if imag(forward_pass) * imag(saddle_point.coord) <= 0
+            contributing = true
+        end
+
+        # Flow backward pass to infinity
+        flow_count = 0
+        while -imag(S(backward_pass)) < max_height && flow_count < flow_steps
+            g_bwd = gradN(S_prime, backward_pass)
+            backward_pass = backward_pass + δ * g_bwd
+            push!(points_backward, MyPoint(backward_pass))
+            flow_count += 1
+        end
+        push!(thimbles, points_forward)
+        push!(thimbles, points_backward)
+    end
+
+    return thimbles, contributing
+end
+
 function get_thimble(S::Function, drv::Function, tmin::Float64, tmax::Float64;
-    Nflow::Int64 = 60,
-    Δinit::Float64 = 10.,
-    flowstepfactor::Float64 = 2.,
-    h_threshold::Float64 = -300.,
-    gradnthreshold::Float64 = 1.,
-    subdividethreshold::Float64 = 4.
-    )
-    
+    Nflow::Int64=60,
+    Δinit::Float64=10.,
+    flowstepfactor::Float64=2.,
+    h_threshold::Float64=-300.,
+    gradnthreshold::Float64=1.,
+    subdividethreshold::Float64=4.
+)
+
     (points, simplices) = initialise(real(tmin), real(tmax), Δinit)
-   
+
     for i_flow in 1:Nflow
-        flow_down!(( S, drv), points, simplices,
-            threshold = gradnthreshold, δ = flowstepfactor, h_threshold = h_threshold)
+        flow_down!((S, drv), points, simplices,
+            threshold=gradnthreshold, δ=flowstepfactor, h_threshold=h_threshold)
         subdivide_rep(points, simplices, subdividethreshold)
     end
-    
-    filter!(sim->sim.active, simplices)
+
+    filter!(sim -> sim.active, simplices)
 
     return points, simplices
 end
 
 
 function dissect_thimbles(points, simplices)
-    active_linesegs = filter(sim->sim.active, simplices)
+    active_linesegs = filter(sim -> sim.active, simplices)
 
     thimbles = Vector()
     visited = falses(length(active_linesegs))
@@ -149,14 +255,14 @@ function dissect_thimbles(points, simplices)
                 visited[v] = true
                 push!(trace, v)
                 ### find the index of the next linesegment
-                next = findall(ls->ls.coord[1]==active_linesegs[v].coord[2], active_linesegs)
+                next = findall(ls -> ls.coord[1] == active_linesegs[v].coord[2], active_linesegs)
                 append!(stack, next)
-                prev = findall(ls->ls.coord[2]==active_linesegs[v].coord[1], active_linesegs)
+                prev = findall(ls -> ls.coord[2] == active_linesegs[v].coord[1], active_linesegs)
                 append!(stack, prev)
             end
         end
         return trace
-    end 
+    end
 
     for i in 1:length(active_linesegs)
         if !visited[i]
@@ -176,13 +282,14 @@ end
 function mapping(p, p1, p2)
     return (p1 * (1. - p[1]) + p2 * (1. + p[1])) / 2.
 end
+
 function jacobian(p, p1, p2)
     return (p2 - p1) / 2.
 end
 
 function integrate_line(integrand::Function, line, n, lattice, weights)
     sum = 0
-    for i=1:n
+    for i = 1:n
         sum = sum + weights[i] * integrand(lattice[i], line[1], line[2])
     end
     return sum
@@ -195,81 +302,78 @@ end
 
 function integrate_thimble(S::Function,
     points::Vector, simplices::Vector;
-    prefactor::Function= t->1.)
-    points_r = map(pp->pp.coord, points)
-    simplices_r = map(sim->sim.coord, simplices) 
-    
+    prefactor::Function=t -> 1.)
+    points_r = map(pp -> pp.coord, points)
+    simplices_r = map(sim -> sim.coord, simplices)
+
     n = 7
     lattice, weights = gausslegendre(n)
 
     function integrand(pp, p1, p2)
-        return prefactor(mapping(pp, p1, p2)) * jacobian(pp, p1, p2) * exp(im * S(mapping(pp, p1, p2))) 
+        return prefactor(mapping(pp, p1, p2)) * jacobian(pp, p1, p2) * exp(im * S(mapping(pp, p1, p2)))
     end
 
     sum = 0.
     for i in eachindex(simplices_r)
         sum = sum + integrate_line(integrand, points_r[simplices_r[i]], n, lattice, weights)
     end
-    return sum 
-    
-end 
+    return sum
+end
 
 
 ### fast direct integration of a flowed domain
-function integrate_thimble(S::Function, drv::Function, tmin::Number, tmax::Number ; 
-    prefactor::Function=t->1.,
+function integrate_thimble(S::Function, drv::Function, tmin::Number, tmax::Number;
+    prefactor::Function=t -> 1.,
     ### flow kwargs
-    Δinit::Float64 = 10.,
-    flowstepfactor::Float64 = 2.,
-    h_threshold::Float64 = -300.,
-    gradnthreshold::Float64 = 1.,
-    subdividethreshold::Float64 = 4.,
+    Δinit::Float64=10.,
+    flowstepfactor::Float64=2.,
+    h_threshold::Float64=-300.,
+    gradnthreshold::Float64=1.,
+    subdividethreshold::Float64=4.,
     ### convergence kwargs
     Nmax::Int64=50,
     integral_accuracy::Float64=1e-7,
     integral_rel_error::Float64=1e-3,
     print_message::Bool=true
-    )
+)
 
     (points, simplices) = initialise(real(tmin), real(tmax), Δinit)
     prev_integral = complex(1.)
     int = complex(0.)
-    
+
     for i_flow in 1:Nmax
-        flow_down!(( S, drv), points, simplices,
-            threshold = gradnthreshold, δ = flowstepfactor, h_threshold = h_threshold)
+        flow_down!((S, drv), points, simplices,
+            threshold=gradnthreshold, δ=flowstepfactor, h_threshold=h_threshold)
         subdivide_rep(points, simplices, subdividethreshold)
-        
+
         int = integrate_thimble(S, points, simplices, prefactor=prefactor)
-    
-        abs_diff = norm(int .- prev_integral) 
+
+        abs_diff = norm(int .- prev_integral)
         if 0 < abs_diff < integral_accuracy # if I don't want to stop here I can just set the goal incredibly low
             if print_message
-            println("I broke after $i_flow iterations because the accuracy goal of $integral_accuracy was met, using $(length(simplices)) simplices.")
+                println("I broke after $i_flow iterations because the accuracy goal of $integral_accuracy was met, using $(length(simplices)) simplices.")
             end
             break
-        end    
-        
-        rel_diff = !isnan((int .- prev_integral) ./ prev_integral ) ? norm((int .- prev_integral) ./ prev_integral)  : -1.
+        end
+
+        rel_diff = !isnan((int .- prev_integral) ./ prev_integral) ? norm((int .- prev_integral) ./ prev_integral) : -1.
         if 0 < rel_diff < integral_rel_error
             if print_message
                 println("I broke after $i_flow iterations because the accuracy goal of $integral_rel_error relative error of the integral was met, using $(length(simplices)) simplices.")
             end
             break
-        end        
+        end
 
-        prev_integral = int    
+        prev_integral = int
 
         if i_flow == Nmax && print_message
-            println("I stopped because I reached the maximum flow steps, i.e. $Nmax, with $(length(simplices)) simplices.")            
+            println("I stopped because I reached the maximum flow steps, i.e. $Nmax, with $(length(simplices)) simplices.")
         end
-    
-#     filter!(sim->sim.active, simplices)
+
+        #filter!(sim->sim.active, simplices)
     end
 
     return int, points, simplices
 end
-
-
-# end # module
+# module
 
