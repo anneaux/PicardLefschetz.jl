@@ -127,11 +127,7 @@ function flow_down!(fun::Tuple,
     end
 end
 
-function flow_up(S::Function, S_prime::Function, saddle_point::MyPoint, δ::Float64, h_threshold::Float64, zero_tolerance::Float64, flow_steps::Int)::Tuple{Vector{Vector{MyPoint}},Bool}
-    contributing = true
-    thimbles = Vector{Vector{MyPoint}}()
-    max_height = abs(h_threshold)
-
+function get_hessian_eigenvectors!(directions::Vector{Complex64}, saddle_point::MyPoint, S::Function, sign::Symbol)::Nothing
     # Step 1: Find the eigenvectors of the Hessian matrix evaluated at the saddle point.
     X = [real(saddle_point.coord), imag(saddle_point.coord)]
     hessian = FiniteDiff.finite_difference_hessian(tvec -> imag(S(complex(tvec[1], tvec[2]))), X)
@@ -139,17 +135,40 @@ function flow_up(S::Function, S_prime::Function, saddle_point::MyPoint, δ::Floa
     eigenvalues = eigen_decomposition.values
     eigenvectors = eigen_decomposition.vectors
 
-    # Select negative eigenvalue for the dual thimble (steepest ascent of -Im(S)).
-    directions = []
     for i in eachindex(eigenvalues)
-        if eigenvalues[i] < 0
-            v = complex(eigenvectors[:, i][1], eigenvectors[:, i][2])
-            push!(directions, v)
-            push!(directions, -v)
+        if sign == :descent
+            if eigenvalues[i] > 0
+                v = complex(eigenvectors[:, i][1], eigenvectors[:, i][2])
+                push!(directions, v)
+                push!(directions, -v)
+            end
+        else
+            if eigenvalues[i] < 0
+                v = complex(eigenvectors[:, i][1], eigenvectors[:, i][2])
+                push!(directions, v)
+                push!(directions, -v)
+            end
         end
     end
+end
 
-    on_real_line = abs(imag(saddle_point.coord)) <= zero_tolerance
+function find_intersection_point(thimble::Vector{MyPoint})::MyPoint
+    prev_coord = thimble[end-1].coord
+    last_coord = thimble[end].coord
+    m = (imag(last_coord.coord) - imag(prev_coord.coord)) / (real(last_coord.coord) - real(prev_coord.coord))
+    c = imag(last_coord.coord) - m * real(last_coord.coord)
+
+    return MyPoint(complex(-c / m, 0.0))
+end
+
+function flow_up(S::Function, S_prime::Function, saddle_point::MyPoint, δ::Float64, h_threshold::Float64, flow_steps::Int)::Tuple{Vector{Vector{MyPoint}},Bool}
+    contributing = true
+    thimbles = Vector{Vector{MyPoint}}()
+    max_height = abs(h_threshold)
+    directions = Vector{ComplexF64}()
+    get_hessian_eigenvectors!(directions, saddle_point, S, :ascent)
+
+    on_real_line = imag(saddle_point.coord) == 0
 
     if on_real_line
         # Both directions move away from the real line.
@@ -198,6 +217,12 @@ function flow_up(S::Function, S_prime::Function, saddle_point::MyPoint, δ::Floa
 
         push!(thimbles, points_forward)
         push!(thimbles, points_backward)
+    end
+
+    if contributing && !on_real_line
+        for i in length(thimbles[1]):1
+            return thimbles, contributing, find_intersection_point(thimbles[1])
+        end
     end
 
     return thimbles, contributing
