@@ -79,7 +79,25 @@ function gradN(drv::Function, t::ComplexF64, thresh::Float64=1.)
     else
         return g
     end
-end;
+end
+
+function flow_step(drv::Function, coord::Complex, δ::Float64, direction::Float64, threshold::Float64=1.0)
+    return coord + direction * δ * gradN(drv, coord, threshold)
+end
+
+function flow_line(S::Function, S_prime::Function, start_coord::Complex, δ::Float64, sign::Float64, should_stop::Function, flow_steps::Int)::Vector{MyPoint}
+    points = Vector{MyPoint}()
+    coord = start_coord
+    push!(points, MyPoint(coord))
+
+    flow_count = 0
+    while !should_stop(coord) && flow_count < flow_steps
+        coord = flow_step(S_prime, coord, δ, sign, 1.0)
+        push!(points, MyPoint(coord))
+        flow_count += 1
+    end
+    return points
+end
 
 function flow_down!(fun::Tuple,
     points::Vector{MyPoint}, simplices::Vector{Index};
@@ -93,8 +111,7 @@ function flow_down!(fun::Tuple,
 
     for i1 in 1:length(points)
         if points[i1].active # for the active points
-            step = -δ .* gradN(drv, points[i1].coord, threshold)
-            points[i1].coord += step
+            points[i1].coord = flow_step(drv, points[i1].coord, δ, -1.0, threshold)
         end
     end
 
@@ -145,26 +162,12 @@ function flow_up(S::Function, S_prime::Function, saddle_point::MyPoint, δ::Floa
         end
         pass_up = saddle_point.coord + δ * dir_up
         pass_down = saddle_point.coord + δ * dir_down
-        points_up = Vector{MyPoint}()
-        points_down = Vector{MyPoint}()
-        push!(points_up, MyPoint(pass_up))
-        push!(points_down, MyPoint(pass_down))
 
         # Flow up to infinity (where -Im(S) exceeds max_height)
-        flow_count = 0
-        while -imag(S(pass_up)) < max_height && flow_count < flow_steps
-            g_up = gradN(S_prime, pass_up)
-            pass_up = pass_up + δ * g_up
-            push!(points_up, MyPoint(pass_up))
-            flow_count += 1
-        end
-        flow_count = 0
-        while -imag(S(pass_down)) < max_height && flow_count < flow_steps
-            g_down = gradN(S_prime, pass_down)
-            pass_down = pass_down + δ * g_down
-            push!(points_down, MyPoint(pass_down))
-            flow_count += 1
-        end
+        should_stop_infinity(coord) = -imag(S(coord)) >= max_height
+        points_up = flow_line(S, S_prime, pass_up, δ, 1.0, should_stop_infinity, flow_steps)
+        points_down = flow_line(S, S_prime, pass_down, δ, 1.0, should_stop_infinity, flow_steps)
+
         push!(thimbles, points_up)
         push!(thimbles, points_down)
         contributing = true
@@ -180,40 +183,27 @@ function flow_up(S::Function, S_prime::Function, saddle_point::MyPoint, δ::Floa
             forward_pass = pass_2
             backward_pass = pass_1
         end
-        points_forward = Vector{MyPoint}()
-        points_backward = Vector{MyPoint}()
-        push!(points_forward, MyPoint(forward_pass))
-        push!(points_backward, MyPoint(backward_pass))
 
         # Flow forward pass
-        contributing = false
-        flow_count = 0
-        while imag(forward_pass) * imag(saddle_point.coord) > 0 && -imag(S(forward_pass)) < max_height && flow_count < flow_steps
-            g_fwd = gradN(S_prime, forward_pass)
-            forward_pass = forward_pass + δ * g_fwd
-            push!(points_forward, MyPoint(forward_pass))
-            flow_count += 1
-        end
+        should_stop_forward(coord) = (imag(coord) * imag(saddle_point.coord) <= 0) || (-imag(S(coord)) >= max_height)
+        points_forward = flow_line(S, S_prime, forward_pass, δ, 1.0, should_stop_forward, flow_steps)
 
         # If it crossed the real line, it contributes.
-        if imag(forward_pass) * imag(saddle_point.coord) <= 0
-            contributing = true
-        end
+        last_coord = points_forward[end].coord
+        contributing = imag(last_coord) * imag(saddle_point.coord) <= 0
 
         # Flow backward pass to infinity
-        flow_count = 0
-        while -imag(S(backward_pass)) < max_height && flow_count < flow_steps
-            g_bwd = gradN(S_prime, backward_pass)
-            backward_pass = backward_pass + δ * g_bwd
-            push!(points_backward, MyPoint(backward_pass))
-            flow_count += 1
-        end
+        should_stop_infinity(coord) = -imag(S(coord)) >= max_height
+        points_backward = flow_line(S, S_prime, backward_pass, δ, 1.0, should_stop_infinity, flow_steps)
+
         push!(thimbles, points_forward)
         push!(thimbles, points_backward)
     end
 
     return thimbles, contributing
 end
+
+
 
 function get_thimble(S::Function, drv::Function, tmin::Float64, tmax::Float64;
     Nflow::Int64=60,
