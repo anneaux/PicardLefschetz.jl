@@ -1,6 +1,6 @@
 module Integration
 
-using ..PathFlow1D: flow_up
+using ..PathFlow: flow_up
 
 function mapping(p, p1, p2)
     return (p1 * (1. - p[1]) + p2 * (1. + p[1])) / 2.
