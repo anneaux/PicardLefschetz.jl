@@ -31,15 +31,18 @@ struct TriangleC ### a triangle with coordinates
     points::Vector{PointA} # length = 3
 end
 
+const PointAType = PointA{T} where T<:Union{<:Number,Vector{<:Number}}
+const LineSegFieldType = Union{UndefInitializer,PointAType}
+
 mutable struct LineSeg
-    s::Union{UndefInitializer,PointA{T}} where T<:Union{<:Number,Vector{<:Number}}
-    e::Union{UndefInitializer,PointA{T}} where T<:Union{<:Number,Vector{<:Number}}
+    s_pt::LineSegFieldType
+    e_pt::LineSegFieldType
     active::Bool
     startindex::Union{UndefInitializer,Int}
     endindex::Union{UndefInitializer,Int}
 
-    LineSeg(s::PointA, e::PointA) = new(s, e, s.active && e.active, undef, undef)
-    LineSeg(s::PointA, e::PointA, active::Bool) = new(s, e, active, undef, undef)
+    LineSeg(s_pt::PointA, e_pt::PointA) = new(s_pt, e_pt, s_pt.active && e_pt.active, undef, undef)
+    LineSeg(s_pt::PointA, e_pt::PointA, active::Bool) = new(s_pt, e_pt, active, undef, undef)
     LineSeg(sindex::Int, eindex::Int, active::Bool) = new(undef, undef, active, sindex, eindex)
     LineSeg(sindex::Int, eindex::Int) = new(undef, undef, false, sindex, eindex)
 end

@@ -7,23 +7,23 @@ import Base.imag, Base.real
 imag(p::PointA) = PointA(imag.(p.x), imag.(p.y), p.active)
 real(p::PointA) = PointA(real.(p.x), real.(p.y), p.active)
 
-imag(ls::LineSeg) = LineSeg(imag(ls.s), imag(ls.e), ls.active)
-real(ls::LineSeg) = LineSeg(real(ls.s), real(ls.e), ls.active)
+imag(ls::LineSeg) = LineSeg(imag(ls.s_pt), imag(ls.e_pt), ls.active)
+real(ls::LineSeg) = LineSeg(real(ls.s_pt), real(ls.e_pt), ls.active)
 
 import LinearAlgebra.norm
 function norm(ls::LineSeg)
-    norm([ls.e.x, ls.e.y] .- [ls.s.x, ls.s.y])
+    norm([ls.e_pt.x, ls.e_pt.y] .- [ls.s_pt.x, ls.s_pt.y])
 end
 dist(p1::PointA, p2::PointA) = norm(@SVector[p2.x - p1.x, p2.y - p1.y])
 import Base.length
-length(ls::LineSeg) = dist(ls.e, ls.s)
+length(ls::LineSeg) = dist(ls.e_pt, ls.s_pt)
 
 
 function get_point(ls::LineSeg, which::Symbol=:s)
     if which == :s
-        return PointA(ls.s.x, ls.s.y)
+        return PointA(ls.s_pt.x, ls.s_pt.y)
     elseif which == :e
-        return PointA(ls.e.x, ls.e.y)
+        return PointA(ls.e_pt.x, ls.e_pt.y)
     else
         return println("You've got a problem!")
     end
@@ -59,10 +59,10 @@ function enclosed_area(linesegs::Vector{LineSeg}, f::Function=x -> real(x))
     # Iterate over each line segment
     for i in 1:length(linesegs)
         # Get the coordinates of the endpoints of the line segment
-        x1 = f(linesegs[i].s.x)
-        y1 = f(linesegs[i].s.y)
-        x2 = f(linesegs[i].e.x)
-        y2 = f(linesegs[i].e.y)
+        x1 = f(linesegs[i].s_pt.x)
+        y1 = f(linesegs[i].s_pt.y)
+        x2 = f(linesegs[i].e_pt.x)
+        y2 = f(linesegs[i].e_pt.y)
 
         # Update the area accumulator
         area += x1 * y2 - x2 * y1

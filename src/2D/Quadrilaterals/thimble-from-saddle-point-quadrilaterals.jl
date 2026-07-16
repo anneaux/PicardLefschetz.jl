@@ -217,10 +217,10 @@ end
 
 function make_quad(ls1::LineSeg, ls2::LineSeg)
 
-    p1 = ls1.s
-    p2 = ls2.s
-    p3 = ls2.e
-    p4 = ls1.e
+    p1 = ls1.s_pt
+    p2 = ls2.s_pt
+    p3 = ls2.e_pt
+    p4 = ls1.e_pt
 
     return QuadC([p1, p2, p3, p4])
 end

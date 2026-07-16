@@ -10,7 +10,7 @@ function distance_point_to_line(p::AbstractVector, s::AbstractVector, t::Abstrac
 end
 
 function distance_point_to_line(p::PointA, l::LineSeg)
-    return distance_point_to_line([p.x, p.y], [l.s.x, l.s.y], [l.e.x, l.e.y])
+    return distance_point_to_line([p.x, p.y], [l.s_pt.x, l.s_pt.y], [l.e_pt.x, l.e_pt.y])
 end
 
 # function find_crossing(line::Vector{LineSeg}, point::PointA{T}, tolerance::Float64=0.8) where T<:Real
@@ -124,7 +124,7 @@ function check_contribution(necklace::Vector{LineSeg},
         active = false
     else
         ### get the point where it hits & check if it's in the integration domain
-        hitting_point = real(necklace[idx].s.y) > real(necklace[idx].s.x) ?
+        hitting_point = real(necklace[idx].s_pt.y) > real(necklace[idx].s_pt.x) ?
                         get_point(real(necklace[idx])) : nothing
         # mustn't use the starting point here, could use the centre point!
 
@@ -132,7 +132,7 @@ function check_contribution(necklace::Vector{LineSeg},
             println("it doesn't contribute! (2)") # because this shouldn't happen!
             active = false
         else
-            H_at_hp = imag(f(necklace[idx].s.x, necklace[idx].s.y))
+            H_at_hp = imag(f(necklace[idx].s_pt.x, necklace[idx].s_pt.y))
             H_at_sp = imag(f(ti, tr))
             if abs(H_at_hp - H_at_sp) < 1.
                 active = true
