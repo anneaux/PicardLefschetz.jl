@@ -4,6 +4,7 @@ function splat_complex(v::Vector{ComplexF64})
     return vec(collect(Iterators.flatten(reim.(v))))
 end;
 
+export solve_first_drv
 function solve_first_drv(drv::Function, t0::Vector{T};
     digits::Int64=5) where T<:Real
 
@@ -34,11 +35,13 @@ function solve_first_drv(drv::Function, t0::Vector{T};
     end
 end
 
+export solve_first_drv
 function solve_first_drv(drv::Function, t0::Vector{T};
     digits::Int64=5) where T<:Complex
     return solve_first_drv(drv, splat_complex(t0), digits=digits)
 end
 
+export find_saddles_sobol
 function find_saddles_sobol(drv::Function,
     t1_cd::ComplexDomain, t2_cd::ComplexDomain;
     N::Int64=200, # number of seeds generated per domain

@@ -228,6 +228,7 @@ function find_new_necklace_indices(points_all::Vector, second_brim::Vector, new_
     return new_necklace_indices_global
 end
 
+export get_SD_thimble_triangles
 function get_SD_thimble_triangles(
     f::Function,
     f_grad::Function,

@@ -22,6 +22,7 @@ function hessian_root(h::AbstractArray)
 
 end
 
+export saddles_gaussian_contribution
 function saddles_gaussian_contribution(f::Function,
     f_hessian::Function,
     ti::ComplexF64, tr::ComplexF64;

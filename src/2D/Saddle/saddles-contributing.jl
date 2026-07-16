@@ -162,7 +162,7 @@ function check_contribution(necklace::Nothing,
     return false
 end
 
-
+export check_contribution
 function check_contribution(
     f::Function,
     f_grad::Function,

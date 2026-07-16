@@ -21,6 +21,7 @@ function jacobian(p::Vector{Float64}, p1::PointA, p2::PointA, p3::PointA, p4::Po
     return (A + B * p[1] + C * p[2]) / 8.
 end
 
+export integrate_quadrilateral
 function integrate_quadrilateral(
     f::Function,
     quad::QuadC, n::Int64=7;

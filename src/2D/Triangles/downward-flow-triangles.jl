@@ -330,6 +330,7 @@ end
 
 ### get_flowed_triangles()
 # to flow from the original real-valued domain, and return TriangleC
+export get_flowed_triangles
 function get_flowed_triangles(
     f::Function,
     f_grad::Function,

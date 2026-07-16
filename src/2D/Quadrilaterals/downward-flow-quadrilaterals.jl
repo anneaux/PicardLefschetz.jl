@@ -206,6 +206,7 @@ end
 
 
 ### get simplices
+export get_flowed_quads
 function get_flowed_quads(
     f::Function,
     f_grad::Function,
@@ -266,7 +267,7 @@ function get_flowed_quads(
     return quads, points, simplices
 end
 
-
+export integrate_flowed_quads
 function integrate_flowed_quads(
     f::Function,
     f_grad::Function,
@@ -350,7 +351,7 @@ function integrate_flowed_quads(
     return int, length(simplices)
 end
 
-
+export integrate_flowed_quads_fixed_Nflow
 function integrate_flowed_quads_fixed_Nflow(
     f::Function,
     f_grad::Function,

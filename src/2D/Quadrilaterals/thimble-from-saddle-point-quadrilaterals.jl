@@ -236,6 +236,7 @@ function make_quads(necklace::Vector{LineSeg},
     return quads
 end
 
+export get_SD_thimble_quads
 function get_SD_thimble_quads(
     f::Function,
     f_grad::Function,

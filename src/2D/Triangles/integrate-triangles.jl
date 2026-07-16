@@ -63,6 +63,7 @@ function jacobian(tri::TriangleC)
         p2.y-p1.y p3.y-p1.y]
 end
 
+export integrate_triangle
 function integrate_triangle(f::Function, triangle::TriangleC; prefactor=(ti, tr) -> ones(2), order=1, dim=2)
     p1, p2, p3 = triangle.points
 
@@ -74,7 +75,7 @@ function integrate_triangle(f::Function, triangle::TriangleC; prefactor=(ti, tr)
     int = zeros(ComplexF64, dim)
 
     X, W = simplexquad(Float64, order, 2) # the 2 means it's a triangle 
-    for i in 1:length(W)
+    for i in eachindex(W)
         int += W[i] * prefactor(g1(X[i, :]...), g2(X[i, :]...)) * exp(f(g1(X[i, :]...), g2(X[i, :]...))) * det(jac)
     end
     return -int
