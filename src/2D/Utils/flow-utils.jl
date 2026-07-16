@@ -1,5 +1,7 @@
 ### normalised gradient
 
+using ..Types: PointA, QuadC, TriangleC
+
 function gradN(
     f_grad::Function,
     ti::ComplexF64, tr::ComplexF64,
@@ -12,14 +14,6 @@ function gradN(
         return g
     end
 end;
-
-### POINT
-mutable struct PointA{T}
-    x::T
-    y::T
-    active::Bool
-end
-PointA(x, y) = PointA(x, y, true);
 
 import Base.isequal
 isequal(p1::PointA, p2::PointA) = isequal(p1.x, p2.x) && isequal(p1.y, p2.y)
@@ -50,15 +44,6 @@ midpoint(p1::PointA, p2::PointA) = PointA(midx(p1, p2), midy(p1, p2))
 # function point2vec(p::PointA2)
 #     return [reim(p.x)...,reim(p.y)...]
 # end;
-
-
-struct QuadC ### a quadrilateral with coordinates
-    points::Vector{PointA} # length = 4
-end
-
-struct TriangleC ### a triangle with coordinates
-    points::Vector{PointA} # length = 3
-end
 
 ## initialising the original integration domain
 

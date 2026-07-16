@@ -3,6 +3,8 @@ module Thimble
 #### making SD thimbles
 using Graphs, SimpleWeightedGraphs
 
+using ...Types: PointA, TriangleC, TriangleA
+
 function initialise_triangulated_necklace(ti::ComplexF64, tr::ComplexF64, f_hessian::Function;
     Ninit::Int64=20,
     ϵ::Float64=0.1)

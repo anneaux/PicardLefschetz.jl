@@ -1,5 +1,7 @@
 using NLsolve
 
+using ..Types: ComplexDomain
+
 function splat_complex(v::Vector{ComplexF64})
     return vec(collect(Iterators.flatten(reim.(v))))
 end;

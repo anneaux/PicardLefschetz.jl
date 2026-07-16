@@ -1,5 +1,7 @@
 module Thimble
 
+using ...Types: PointA, QuadC, LineSeg
+
 ### I think this needs some functions from the necklace file
 
 function initialise_SD!(necklace::Vector{LineSeg}, points::Vector{<:PointA},

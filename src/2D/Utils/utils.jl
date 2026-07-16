@@ -7,17 +7,7 @@ include("flow-utils.jl")
 
 import Base.+, Base.*, Base.in
 
-struct ComplexDomain
-    min::ComplexF64
-    max::ComplexF64 #Union{ComplexF64,Nothing}
-
-    ComplexDomain(rmin::Real, rmax::Real, imin::Real, imax::Real) = new(rmin + imin * im, rmax + imax * im)
-
-    ComplexDomain(min::ComplexF64, max::ComplexF64) = new(min, max)
-
-    ComplexDomain() = new(zero(ComplexF64), zero(ComplexF64))
-
-end
+using ..Types: ComplexDomain
 
 function +(cd1::ComplexDomain, cd2::ComplexDomain)
     rmin = minimum([real(cd1.min), real(cd2.min)])

@@ -1,6 +1,6 @@
 ### everything to decide whether or not a given saddle point contributes.
 ### this could be implemented in various methods again. Also maybe it should give a warning if there're multiple saddle points nearby and if a Gaussian approximation is a bad idea?
-
+using ...Types: PointA, LineSeg
 
 
 ### utils for deciding whether a line crosses a given point

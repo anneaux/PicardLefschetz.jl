@@ -1,5 +1,7 @@
 module Integration
 
+using ...Types: PointA, QuadC, TriangleC
+
 # TRIANGLES
 
 # function integrate_triangle(points, triangle, integrand; order=1,dim=2)

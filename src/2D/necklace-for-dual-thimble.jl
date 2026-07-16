@@ -1,18 +1,7 @@
 module DualThimble
 
-### point and lineseg
-### point is now in the downward flow file. And is updated to PointA. Index => Quad
-mutable struct LineSeg
-    s::Union{UndefInitializer,PointA{T}} where T<:Union{<:Number,Vector{<:Number}}
-    e::Union{UndefInitializer,PointA{T}} where T<:Union{<:Number,Vector{<:Number}}
-    active::Bool
-    sindex::Union{UndefInitializer,Int}
-    eindex::Union{UndefInitializer,Int}
-end
-LineSeg(s::PointA, e::PointA) = LineSeg(s, e, s.active && e.active, undef, undef)
-LineSeg(s::PointA, e::PointA, active::Bool) = LineSeg(s, e, active, undef, undef)
-LineSeg(sindex::Int, eindex::Int, active::Bool) = LineSeg(undef, undef, active, sindex, eindex)
-LineSeg(sindex::Int, eindex::Int) = LineSeg(undef, undef, false, sindex, eindex)
+using ..Types: PointA, LineSeg
+
 
 import Base.imag, Base.real
 imag(p::PointA) = PointA(imag.(p.x), imag.(p.y), p.active)

@@ -1,12 +1,6 @@
 module DownwardsFlow
 
-### QUAD (stores indices only)
-mutable struct QuadA
-    indices::Vector{Int} ### this could be an MVector
-    active::Bool
-    QuadA(indices::Vector{Int64}) = new(indices, true)
-end
-
+using ...Types: PointA, QuadC, QuadA
 
 function maxdist(simplex::Vector{PointA{T}}) where T<:Number
     p1, p2, p3, p4 = simplex

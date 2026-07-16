@@ -1,22 +1,12 @@
 module DownwardsFlow
 
+using ...Types: PointA, TriangleC, TriangleA
+
 #### OTHER UTILS
 Base.getindex(z::Iterators.Zip, i) = (it -> getindex(it, i)).(z.is)
 toR4(z1::ComplexF64, z2::ComplexF64) = [real(z1), imag(z1), real(z2), imag(z2)]
 toR4(z1::Number, z2::Number) = [real(z1), imag(z1), real(z2), imag(z2)]
 
-
-#### POINTS
-### in flow-utils
-
-#### TRIANGLES
-mutable struct TriangleA
-    indices::MVector{3,Int}
-    active::Bool
-    TriangleA(indices::AbstractVector{T}) where T<:Integer = new(indices, true)
-    TriangleA(indices::AbstractVector{T}, a::Bool) where T<:Integer = new(indices, a)
-
-end
 
 function project_onto_triangle(base::AbstractVector, points::AbstractVector) # what are these types?
     @assert length(base) == 3 "Need exactly 3 vertices"

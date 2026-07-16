@@ -1,5 +1,7 @@
 module Integration
 
+using ...Types: PointA, QuadC
+
 # QUADRILATERALS
 
 #### integrate the quads
