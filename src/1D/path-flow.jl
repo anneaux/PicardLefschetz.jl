@@ -3,17 +3,7 @@ module PathFlow
 using LinearAlgebra, FastGaussQuadrature
 using FiniteDiff
 
-mutable struct MyPoint
-    coord::Complex
-    active::Bool
-    MyPoint(coord) = new(coord, true)
-end
-
-mutable struct Index
-    coord::Vector{Int}
-    active::Bool
-    Index(coord) = new(coord, true)
-end
+using ..Types: MyPoint, Index
 
 function subdivide(points::Vector{MyPoint},
     simplices::Vector{Index},

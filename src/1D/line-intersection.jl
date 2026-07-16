@@ -5,14 +5,6 @@ using StaticArrays
 using GeometryBasics
 using LinearAlgebra
 
-struct Line2
-    s::StaticArrays.SVector{2,Float64}
-    e::StaticArrays.SVector{2,Float64}
-
-    Line2(t1::Tuple{Float64,Float64}, t2::Tuple{Float64,Float64}) =
-        new(SA[t1...], SA[t2...])
-end
-
 function crosses_point(line::Line2, point::Point, tolerance::Float64=0.25)
     if line.s.x <= line.e.x
         sx = line.s.x
