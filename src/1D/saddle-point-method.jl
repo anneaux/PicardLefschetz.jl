@@ -1,5 +1,6 @@
-# using Contour, GeometryBasics
-# export is_contributing, integrate_around_saddle_point, integrate_SPM
+module SaddlePoint
+
+using Contour, GeometryBasics
 
 function is_contributing(ts::ComplexF64, S::Function, tmin::ComplexF64, tmax::ComplexF64;
     Ntimes::Int64=100)
@@ -46,9 +47,6 @@ function is_contributing(ts::ComplexF64, S::Function, tmin::ComplexF64, tmax::Co
 
 end
 
-
-
-
 function integrate_around_saddle_point(ts::ComplexF64,
     S::Function, drv::Function, drv2::Function
     ; prefactor::Function=t -> 1.,
@@ -58,7 +56,6 @@ function integrate_around_saddle_point(ts::ComplexF64,
 
     int = prefactor(ts) * sqrt(-im * 2π / drv2(ts)) * exp(im * S_ts)
 end
-
 
 function integrate_SPM(S::Function, drv::Function, drv2::Function,
     tmin::ComplexF64, tmax::ComplexF64
@@ -76,6 +73,4 @@ function integrate_SPM(S::Function, drv::Function, drv2::Function,
     return int_SPM
 end
 
-
-
-nothing
+end

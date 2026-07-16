@@ -1,12 +1,9 @@
-# module ContourIntersection
+module LineIntersection
 
 using Contour
 using StaticArrays
 using GeometryBasics
 using LinearAlgebra
-
-
-# export crosses_point, intersection, closest_intersection
 
 struct Line2
     s::StaticArrays.SVector{2,Float64}
@@ -15,8 +12,6 @@ struct Line2
     Line2(t1::Tuple{Float64,Float64}, t2::Tuple{Float64,Float64}) =
         new(SA[t1...], SA[t2...])
 end
-
-
 
 function crosses_point(line::Line2, point::Point, tolerance::Float64=0.25)
     if line.s.x <= line.e.x
@@ -136,7 +131,7 @@ function intersection(c1::Curve2, c2::Curve2)
         l1 = Line2(c1.vertices[i], c1.vertices[i+1])
         l2 = Line2(c2.vertices[i2], c2.vertices[i2+1])
         p = intersection(l1, l2)
-        if p != nothing
+        if !isnothing(p)
             push!(intersection_points, p)
         end
 
@@ -154,8 +149,4 @@ function intersection(con1_curves::ContourLevel, con2_curves::ContourLevel)
     return intersection_points
 end
 
-
-# end
-
-
-nothing
+end
