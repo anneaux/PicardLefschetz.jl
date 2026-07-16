@@ -159,6 +159,7 @@ function find_intersection_point(thimble::Vector{MyPoint})::MyPoint
     return MyPoint(complex(-c / m, 0.0))
 end
 
+export flow_up
 function flow_up(S::Function, S_prime::Function, saddle_point::MyPoint, δ::Float64, h_threshold::Float64, flow_steps::Int)::Tuple{Vector{Vector{MyPoint}},Bool}
     contributing = true
     thimbles = Vector{Vector{MyPoint}}()
@@ -227,7 +228,7 @@ function flow_up(S::Function, S_prime::Function, saddle_point::MyPoint, δ::Floa
 end
 
 
-
+export get_thimble
 function get_thimble(S::Function, drv::Function, tmin::Float64, tmax::Float64;
     Nflow::Int64=60,
     Δinit::Float64=10.,

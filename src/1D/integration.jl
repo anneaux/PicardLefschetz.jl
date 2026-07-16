@@ -23,6 +23,7 @@ function integrate_line(integrand::Function, line, n::Int64=7)
     return integrate_line(integrand, line, n, lattice, weights)
 end
 
+export integrate_thimble
 function integrate_thimble(S::Function,
     points::Vector, simplices::Vector;
     prefactor::Function=t -> 1.)
@@ -45,6 +46,7 @@ end
 
 
 ### fast direct integration of a flowed domain
+export integrate_thimble
 function integrate_thimble(S::Function, drv::Function, tmin::Number, tmax::Number;
     prefactor::Function=t -> 1.,
     ### flow kwargs

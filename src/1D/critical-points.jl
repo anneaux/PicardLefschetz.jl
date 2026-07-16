@@ -3,6 +3,7 @@ module CriticalPoints
 using NLsolve
 using Sobol
 
+export solve_first_derivative
 function solve_first_derivative(drv::Function, t0::Vector{Float64},
     roundDigits::Int64=5)
 
@@ -28,6 +29,7 @@ function solve_first_derivative(drv::Function, t0::Vector{Float64},
     end
 end
 
+export find_saddles_sobol
 function find_saddles_sobol(drv::Function,
     tmin::ComplexF64, tmax::ComplexF64,
     N::Int64=200 # number of seeds generated per domain
