@@ -164,7 +164,7 @@ function get_necklace_solver(f::Function,
     Ninit::Int64=20, Ncounter::Int64=600,
     eigvecfactorinit::Float64=0.04, # I should come up with sophisticated guesses here.
     flowstepfactor::Float64=0.4,
-    subdividethreshold::Float64=1.8)
+    subdividethreshold::Float64=1.8, kwargs...)
 
     necklace = Vector{LineSeg}()
     points = Vector{PointA}()
