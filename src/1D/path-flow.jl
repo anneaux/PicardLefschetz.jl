@@ -241,6 +241,48 @@ function get_thimble(S::Function, drv::Function, tmin::Float64, tmax::Float64;
     return points, simplices
 end
 
+export get_thimble
+function get_thimble(S::Function, S_grad::Function, S_hessian::Function,
+    saddle_point::ComplexF64; init_perturbation_radius::Float64,
+    max_iterations::Int64, flow_step_factor::Float64,
+    gradient_normalisation_threshold::Float64, subdivision_threshold::Float64,
+    height_threshold::Float64
+)
+
+    saddle_mypt = Types1D.MyPoint(saddle_point[1])
+    saddle_mypt.active = false
+
+    directions = Vector{ComplexF64}()
+    Methods1D.PathFlow.get_hessian_eigenvectors!(directions, saddle_mypt, S, :descent)
+
+    dir1 = directions[1]
+    dir2 = directions[2]
+
+    pt_left = Types1D.MyPoint(saddle_mypt.coord + init_perturbation_radius * dir1)
+    pt_right = Types1D.MyPoint(saddle_mypt.coord + init_perturbation_radius * dir2)
+
+    points = [saddle_mypt, pt_left, pt_right]
+
+    simplices = [Types1D.Index([2, 1]), Types1D.Index([1, 3])]
+
+    for i_flow in 1:max_iterations
+        Methods1D.PathFlow.flow_down!(
+            (S, S_grad),
+            points,
+            simplices,
+            δ=flow_step_factor,
+            threshold=gradient_normalisation_threshold,
+            h_threshold=height_threshold
+        )
+
+        Methods1D.PathFlow.subdivide_rep(points, simplices, subdivision_threshold)
+    end
+
+    filter!(sim -> sim.active, simplices)
+
+    return points, simplices
+end
+
 
 function dissect_thimbles(points, simplices)
     active_linesegs = filter(sim -> sim.active, simplices)
