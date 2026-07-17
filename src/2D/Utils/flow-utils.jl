@@ -47,6 +47,7 @@ midpoint(p1::PointA, p2::PointA) = PointA(midx(p1, p2), midy(p1, p2))
 
 ## initialising the original integration domain
 
+export make_init_points_rectangle
 function make_init_points_rectangle(t1min::Real, t1max::Real,
     t2min::Real, t2max::Real,
     flow_bounds=[true, true, true, true],
@@ -57,6 +58,7 @@ function make_init_points_rectangle(t1min::Real, t1max::Real,
         point_type(complex(t1max), complex(t2min), flow_bounds[4])]
 end
 
+export make_init_points_parallelogram
 function make_init_points_parallelogram(timin::Real, timax::Real,
     ttmin::Real, ttmax::Real,
     flow_bounds=[true, true, true, true],
