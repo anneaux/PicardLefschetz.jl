@@ -7,6 +7,6 @@ include("integration.jl")
 include("critical-points.jl")
 include("saddle-point-method.jl")
 
-export Types, PathFlow, LineIntersection, CriticalPoints, SaddlePoint, Integration
+export PathFlow, LineIntersection, CriticalPoints, SaddlePoint, Integration
 
 end

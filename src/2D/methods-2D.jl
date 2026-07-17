@@ -12,6 +12,6 @@ include("Triangles/triangles.jl")
 include("necklace-for-dual-thimble.jl")
 include("Saddle/saddle-point-method.jl")
 
-export Types, Utils, Quadrilateral, Triangles, SaddlePoint, DualThimble
+export Utils, Quadrilateral, Triangles, SaddlePoint, DualThimble
 
 end
