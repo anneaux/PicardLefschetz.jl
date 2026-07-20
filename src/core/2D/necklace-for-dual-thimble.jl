@@ -1,6 +1,7 @@
 module DualThimble
 
-using ..Types: PointA, LineSeg
+using ..Types: PointA, LineSeg, QuadC
+using LinearAlgebra
 
 
 import Base.imag, Base.real
@@ -10,10 +11,10 @@ real(p::PointA) = PointA(real.(p.x), real.(p.y), p.active)
 imag(ls::LineSeg) = LineSeg(imag(ls.s_pt), imag(ls.e_pt), ls.active)
 real(ls::LineSeg) = LineSeg(real(ls.s_pt), real(ls.e_pt), ls.active)
 
-import LinearAlgebra.norm
 function norm(ls::LineSeg)
     norm([ls.e_pt.x, ls.e_pt.y] .- [ls.s_pt.x, ls.s_pt.y])
 end
+
 dist(p1::PointA, p2::PointA) = norm(@SVector[p2.x - p1.x, p2.y - p1.y])
 import Base.length
 length(ls::LineSeg) = dist(ls.e_pt, ls.s_pt)
@@ -49,7 +50,33 @@ function sort_linesegs(linesegs::Vector{LineSeg})
     return sorted_linesegs
 end
 
+function adorn_necklace(necklace::Vector{LineSeg}, points::Vector{<:PointA})
+    new_necklace = deepcopy(necklace)
+    for i in eachindex(new_necklace)
+        new_necklace[i] = LineSeg(points[new_necklace[i].sindex], points[new_necklace[i].eindex])
+    end
 
+    return new_necklace
+end
+
+function make_quad(ls1::LineSeg, ls2::LineSeg)
+    p1 = ls1.s_pt
+    p2 = ls2.s_pt
+    p3 = ls1.e_pt
+    p4 = ls2.e_pt
+    return QuadC([p1, p2, p3, p4])
+end
+
+function make_quads(necklace::Vector{LineSeg}, points::Vector{<:PointA}, prev_necklace::Vector{LineSeg})
+    quads = Vector{QuadC}()
+    new_necklace = adorn_necklace(sort_linesegs(deepcopy(necklace)), points)
+    for index in eachindex(prev_necklace)
+        quad = make_quad(prev_necklace[index], new_necklace[index])
+        push!(quads, quad)
+    end
+
+    return quads
+end
 
 ### simple Gauss area formula to find the area enclosed by the necklace (to double-check if it's not got folded into itself)
 function enclosed_area(linesegs::Vector{LineSeg}, f::Function=x -> real(x))
@@ -171,11 +198,15 @@ function get_necklace_solver(f::Function,
 
     initialise!(necklace, points, ti, tr, f, Ninit=Ninit, ϵ=eigvecfactorinit)
 
+    necklaces = Vector{Vector{LineSeg}}()
+    push!(necklaces, adorn_necklace(sort_linesegs(deepcopy(necklace)), points))
+
     ### find a suitable threshold for the normalisation of the gradient
     gradient0 = [norm(conj.(f_grad(p.x, p.y))) for p in points]
     threshold = round(minimum(gradient0), RoundDown, sigdigits=2)
 
     counter = 0
+    quadrangles = Vector{QuadC}()
 
     while counter < Ncounter
         counter += 1
@@ -188,6 +219,12 @@ function get_necklace_solver(f::Function,
             # println("I broke because the flow stopped after $counter iterations")
             break
         end
+
+        prev_necklace = necklaces[end]
+        new_quads = make_quads(deepcopy(necklace), points, prev_necklace)
+        push!(quadrangles, new_quads...)
+        push!(necklaces, adorn_necklace(sort_linesegs(deepcopy(necklace)), points))
+
         for i in 1:length(necklace)
             subdivide!(necklace[i], necklace, points, Δ=subdividethreshold)
         end
@@ -201,7 +238,7 @@ function get_necklace_solver(f::Function,
     necklace = sort_linesegs(necklace)
     adorn_necklace!(necklace, points)
 
-    return necklace
+    return necklace, quadrangles
 end
 
 
@@ -213,21 +250,21 @@ function get_necklace(f::Function,
     kwargs... # this passes on all th ekeyword arguments
 )
 
-    necklace = get_necklace_solver(f, f_grad, f_hessian, ti, tr; kwargs...)
+    necklace, quadrangles = get_necklace_solver(f, f_grad, f_hessian, ti, tr; kwargs...)
 
-    necklace_init = get_necklace_solver(f, f_grad, f_hessian, ti, tr; kwargs..., Ncounter=1)
+    necklace_init, quadrangles_init = get_necklace_solver(f, f_grad, f_hessian, ti, tr; kwargs..., Ncounter=1)
     enclosed_area_init = enclosed_area(necklace_init, imag) + enclosed_area(necklace_init, real)
 
     if (enclosed_area(necklace, imag) + enclosed_area(necklace, real)) > enclosed_area_init
-        return necklace
+        return necklace, quadrangles
     else
         if (real(f(ti, tr))) > -0.2
-            return necklace
+            return necklace, quadrangles
         else
             @warn ("Warning (3)! The necklace is smaller than its initialisation, real(f) = $(real(f(ti, tr)))")
             # println("Warning (3)! The necklace is smaller than its initialisation for beam $b at q $q with ti $ti and tr $tr, where h was $(real(-im * S(b, Ip, ti, tr, q)))!")
             # logerrors ? log_error("necklace-errors.txt", "Warning (3) for beam $b at q $q with ti $ti and tr $tr.") : nothing
-            return nothing
+            return nothing, nothing
         end
 
     end
