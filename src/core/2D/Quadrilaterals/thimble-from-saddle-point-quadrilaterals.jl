@@ -298,7 +298,7 @@ function get_SD_thimble_quads(
     necklace = sort_linesegs(necklace)
     adorn_necklace!(necklace, points)
 
-    return quads
+    return necklace, quads
     #     return necklace, necklaces, points_traces
 end
 

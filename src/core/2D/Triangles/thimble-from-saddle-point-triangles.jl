@@ -289,8 +289,9 @@ function get_SD_thimble_triangles(
         push!(triangles, deepcopy(new_triangles)...)
     end
     trianglesC = [TriangleC(points_all[tri.indices]) for tri in triangles]
+    necklace = [LineSeg(points_all[indices_necklace[i]], points_all[indices_necklace[mod1(i + 1, length(indices_necklace))]]) for i in eachindex(indices_necklace)]
 
-    return trianglesC, points_all, triangles
+    return necklace, trianglesC, points_all, triangles
 
 end
 
