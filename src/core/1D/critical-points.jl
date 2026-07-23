@@ -2,6 +2,7 @@ module CriticalPoints
 
 using NLsolve
 using Sobol
+using ..Types: Saddle, FlowPoint
 
 export solve_first_derivative
 function solve_first_derivative(drv::Function, t0::Vector{Float64},
@@ -19,9 +20,9 @@ function solve_first_derivative(drv::Function, t0::Vector{Float64},
         if converged(result)
             tiSP = result.zero[1] + im * result.zero[2]
             tiSP = round(tiSP, digits=roundDigits)
-            return tiSP
+            return [Saddle{Nothing, Nothing}(saddle=[FlowPoint(tiSP)])]
         else
-            return nothing
+            return Saddle[]
         end
     catch e
         println("Error in solve_SPEqs(): $e")
@@ -37,7 +38,7 @@ function find_saddles_sobol(drv::Function,
 
     roundDigits = 2 # I should certainly change this, it seems a bit excessive
 
-    saddles = Vector{ComplexF64}()
+    saddles = Vector{Saddle}()
 
     t_seq = SobolSeq(reim(tmin), reim(tmax))
 
@@ -47,29 +48,29 @@ function find_saddles_sobol(drv::Function,
 
         ts = solve_first_derivative(drv, t0, roundDigits)
         #         ### check conditons and deposit in array
-        if !isnothing(ts)
-            ts_r = round(ts, digits=roundDigits)
+        if length(ts) > 0
+            ts_val = ts[1].saddle[1].coords[1]
+            ts_r = round(ts_val, digits=roundDigits)
 
-            push!(saddles, complex(
+            ts_c = complex(
                 real(ts_r) == 0 ? 0. : real(ts_r),
                 imag(ts_r) == 0 ? 0. : imag(ts_r)
-            ))
-
+            )
+            push!(saddles, Saddle{Nothing, Nothing}(saddle=[FlowPoint(ts_c)]))
         end
     end
 
-    unique!(ts -> round(ts, digits=roundDigits), saddles)
-    sort!(saddles, by=x -> real(x))
+    unique!(s -> round(s.saddle[1].coords[1], digits=roundDigits), saddles)
+    sort!(saddles, by=s -> real(s.saddle[1].coords[1]))
     return saddles
 end
 
-function find_saddle_similar_seed(drv::Function, ts::ComplexF64; roundDigits=2)
+function find_saddle_similar_seed(drv::Function, ts::Saddle; roundDigits=2)
 
-    ts = solve_first_derivative(drv, [reim(ts)...], roundDigits)
+    saddles = solve_first_derivative(drv, [reim(ts.saddle[1].coords[1])...], roundDigits)
 
-    if !isnothing(ts)
-        ts_r = round(ts, digits=roundDigits)
-        return ts_r
+    if length(saddles) > 0
+        return saddles[1]
     else
         return nothing
     end

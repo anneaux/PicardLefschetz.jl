@@ -27,7 +27,7 @@ export integrate_thimble
 function integrate_thimble(S::Function,
     points::Vector, simplices::Vector;
     prefactor::Function=t -> 1.)
-    points_r = map(pp -> pp.coord, points)
+    points_r = map(pp -> pp.coords[1], points)
     simplices_r = map(sim -> sim.coord, simplices)
 
     n = 7

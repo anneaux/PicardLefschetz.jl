@@ -1,6 +1,5 @@
 module Methods1D
 
-include("types.jl")
 include("line-intersection.jl")
 include("path-flow.jl")
 include("integration.jl")
