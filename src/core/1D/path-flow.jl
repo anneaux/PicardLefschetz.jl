@@ -116,7 +116,7 @@ function flow_down!(fun::Tuple,
     end
 end
 
-function get_hessian_eigenvectors!(directions::Vector{Complex64}, saddle_point::FlowPoint, S::Function, sign::Symbol)::Nothing
+function get_hessian_eigenvectors!(directions::Vector{ComplexF64}, saddle_point::FlowPoint, S::Function, sign::Symbol)::Nothing
     # Step 1: Find the eigenvectors of the Hessian matrix evaluated at the saddle point.
     X = [real(saddle_point.coords[1]), imag(saddle_point.coords[1])]
     hessian = FiniteDiff.finite_difference_hessian(tvec -> imag(S(complex(tvec[1], tvec[2]))), X)
