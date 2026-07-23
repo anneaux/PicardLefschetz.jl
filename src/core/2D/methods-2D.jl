@@ -4,6 +4,7 @@ using LinearAlgebra
 using FiniteDiff
 using StaticArrays
 using Contour
+using ..Types
 
 include("Utils/utils.jl")
 include("Quadrilaterals/quadrilaterals.jl")
