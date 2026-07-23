@@ -1,10 +1,10 @@
 module Thimble
 
-using ..Types: PointA, Simplex, Saddle
+using ..Types: FlowPoint, Simplex, Saddle
 
 ### I think this needs some functions from the necklace file
 
-function initialise_SD!(necklace::Vector{Simplex{2,Int}}, points::Vector{<:PointA},
+function initialise_SD!(necklace::Vector{Simplex{2,Int}}, points::Vector{<:FlowPoint},
     saddle_point::Saddle;
     f_hessian::Function,
     Ninit::Int64=20,
@@ -19,19 +19,19 @@ function initialise_SD!(necklace::Vector{Simplex{2,Int}}, points::Vector{<:Point
 
     pointsini = ([[ti, tr] .+ ϵ * (cos(θ) * eigenvectors[1] + sin(θ) * eigenvectors[2]) for θ in range(0, stop=2π, length=Ninit + 1)])[1:end-1]
 
-    push!(points, [PointA(p[1], p[2]) for p in pointsini]...)
+    push!(points, [FlowPoint(p[1], p[2]) for p in pointsini]...)
     push!(necklace, [Simplex{2,Int}(i, i + 1, true) for i in 1:(length(points)-1)]...)
     push!(necklace, Simplex{2,Int}(length(points), 1, true)) # closing the necklace
 end
 
-function adorn_necklace(necklace::Vector{Simplex{2,Int}}, points::Vector{<:PointA})
+function adorn_necklace(necklace::Vector{Simplex{2,Int}}, points::Vector{<:FlowPoint})
     for i in 1:length(necklace)
         necklace[i] = Simplex{2,Int}(points[necklace[i].vertices[1]], points[necklace[i].vertices[2]])
     end
     return necklace
 end
 
-function flow_down!(necklace::Vector{Simplex{2,Int}}, points::Vector{<:PointA},
+function flow_down!(necklace::Vector{Simplex{2,Int}}, points::Vector{<:FlowPoint},
     f::Function,
     f_grad::Function;
     δ::Float64=0.1,
@@ -43,14 +43,14 @@ function flow_down!(necklace::Vector{Simplex{2,Int}}, points::Vector{<:PointA},
         # TODO check both real and imaginary part?
         if points[i].active # for the active points
             # set them to be active (= still flowing) if they are above threshold
-            points[i].active = real(f(points[i].x, points[i].y)) > h_threshold #(in Job's code that's h-function > thresh, I should clearly state which sign I'm using where etc.) 
+            points[i].active = real(f([points[i][1], points[i][2]])) > h_threshold #(in Job's code that's h-function > thresh, I should clearly state which sign I'm using where etc.) 
             if points[i].active
-                # step = -δ .* gradN(b, Ip, q, points[i].x, points[i].y, threshold)
-                step = -δ .* gradN((ti, tr) -> conj.(complex.(f_grad(ti, tr))),
-                    points[i].x, points[i].y, threshold)
+                # step = -δ .* gradN(b, Ip, q, points[i][1], points[i][2], threshold)
+                step = -δ .* gradN((ti, tr) -> conj.(complex.(f_grad([ti, tr]))),
+                    points[i][1], points[i][2], threshold)
 
-                points[i].x += step[1]
-                points[i].y += step[2]
+                points[i].coords[1] += step[1]
+                points[i].coords[2] += step[2]
             end
         end
     end
@@ -68,26 +68,26 @@ function get_necklace_SD_solver_with_traces(
 
     ti = saddle_point.saddle[1].coords[1]
     tr = saddle_point.saddle[2].coords[1]
-    
+
     eigvecfactorinit = get(kwargs, :eigvecfactorinit, 0.02)
     flowstepfactor = get(kwargs, :flowstepfactor, 0.1)
     subdividethreshold = get(kwargs, :subdividethreshold, 0.5)
 
     necklace = Vector{Simplex{2,Int}}()
-    points = Vector{<:PointA}()
+    points = Vector{<:FlowPoint}()
 
-    initialise_SD!(necklace, points, ti, tr, f_hessian=f_hessian, Ninit=Ninit, ϵ=eigvecfactorinit)
+    initialise_SD!(necklace, points, saddle_point, f_hessian=f_hessian, Ninit=Ninit, ϵ=eigvecfactorinit)
 
-    points_traces = Vector{Vector{<:PointA}}()
+    points_traces = Vector{Vector{<:FlowPoint}}()
     for i in 1:length(points)
-        push!(points_traces, Vector{<:PointA}())
+        push!(points_traces, Vector{<:FlowPoint}())
     end
 
     necklaces = Vector{Vector{Simplex{2,Int}}}()
     push!(necklaces, adorn_necklace(sort_linesegs(necklace), points))
 
     ### find a suitable threshold for the normalisation of the gradient
-    gradient0 = [norm(conj.(f_grad(p.x, p.y))) for p in points]
+    gradient0 = [norm(conj.(f_grad([p[1], p[2]]))) for p in points]
     threshold = round(minimum(gradient0), RoundDown, sigdigits=2)
     counter = 0
 
@@ -130,7 +130,7 @@ end
 
 ### l121 - 213 could be deleted once I finished this refurbishing experiment
 # function make_quads(necklace::Vector{Simplex{2, Int}},
-#         points::Vector{<:PointA}, prev_necklace::Vector{Simplex{2, Int}} )
+#         points::Vector{<:FlowPoint}, prev_necklace::Vector{Simplex{2, Int}} )
 
 #     quads = Vector{Tuple}()
 #     new_necklace = adorn_necklace(sort_linesegs(necklace), points)  
@@ -156,20 +156,20 @@ end
 
 #     ### check that Ninit ganzzahlig
 #     necklace = Vector{Simplex{2, Int}}()
-#     points = Vector{<:PointA}()
+#     points = Vector{<:FlowPoint}()
 
-#     initialise_SD!(necklace, points, ti, tr, f_hessian=f_hessian, Ninit = Ninit, ϵ = eigvecfactorinit)
+#     initialise_SD!(necklace, points, saddle_point, f_hessian=f_hessian, Ninit = Ninit, ϵ = eigvecfactorinit)
 
-#         #     points_traces = Vector{Vector{<:PointA}}()
+#         #     points_traces = Vector{Vector{<:FlowPoint}}()
 #         #     for i in 1:length(points)
-#         #         push!(points_traces, Vector{<:PointA}())
+#         #         push!(points_traces, Vector{<:FlowPoint}())
 #         #     end
 
 #     necklaces = Vector{Vector{Simplex{2, Int}}}()
 #     push!(necklaces, adorn_necklace(sort_linesegs(necklace), points))
 
 #     ### find a suitable threshold for the normalisation of the gradient
-#     gradient0 = [norm(conj.(f_grad(p.x, p.y))) for p in points]
+#     gradient0 = [norm(conj.(f_grad([p[1], p[2]]))) for p in points]
 #     threshold = round(minimum(gradient0), RoundDown, sigdigits=2)
 
 #     counter = 0
@@ -233,7 +233,7 @@ function make_quad(ls1::Simplex{2,Int}, ls2::Simplex{2,Int})
 end
 
 function make_quads(necklace::Vector{Simplex{2,Int}},
-    points::Vector{<:PointA}, prev_necklace::Vector{Simplex{2,Int}})
+    points::Vector{<:FlowPoint}, prev_necklace::Vector{Simplex{2,Int}})
 
     quads = Vector{Simplex{4,FlowPoint}}()
     new_necklace = adorn_necklace(sort_linesegs(necklace), points)
@@ -256,7 +256,7 @@ function get_SD_thimble_quads(f::Function,
 
     ti = saddle_point.saddle[1].coords[1]
     tr = saddle_point.saddle[2].coords[1]
-    
+
     Ninit = get(kwargs, :Ninit, 20)
     Ncounter = get(kwargs, :Ncounter, 500)
     accuracy = get(kwargs, :accuracy, 1e-4)
@@ -266,20 +266,20 @@ function get_SD_thimble_quads(f::Function,
 
     ### check that Ninit ganzzahlig
     necklace = Vector{Simplex{2,Int}}()
-    points = Vector{PointA}()
+    points = Vector{FlowPoint}()
 
-    initialise_SD!(necklace, points, ti, tr, f_hessian=f_hessian, Ninit=Ninit, ϵ=eigvecfactorinit)
+    initialise_SD!(necklace, points, saddle_point, f_hessian=f_hessian, Ninit=Ninit, ϵ=eigvecfactorinit)
 
-    #     points_traces = Vector{Vector{<:PointA}}()
+    #     points_traces = Vector{Vector{<:FlowPoint}}()
     #     for i in 1:length(points)
-    #         push!(points_traces, Vector{<:PointA}())
+    #         push!(points_traces, Vector{<:FlowPoint}())
     #     end
 
     necklaces = Vector{Vector{Simplex{2,Int}}}()
     push!(necklaces, adorn_necklace(sort_linesegs(necklace), points))
 
     ### find a suitable threshold for the normalisation of the gradient
-    gradient0 = [norm(conj.(f_grad(p.x, p.y))) for p in points]
+    gradient0 = [norm(conj.(f_grad([p[1], p[2]]))) for p in points]
     threshold = round(minimum(gradient0), RoundDown, sigdigits=2)
 
     counter = 0
@@ -332,7 +332,7 @@ end
 #     subdividethreshold::Float64 = 1.)
 #     println("careful, this function is probably outdated. Most likely the intersection numebr sign is incorrect here.")
 #     function integrate_annulus(necklace::Vector{Simplex{2, Int}},
-#             points::Vector{<:PointA}, prev_necklace::Vector{Simplex{2, Int}})
+#             points::Vector{<:FlowPoint}, prev_necklace::Vector{Simplex{2, Int}})
 
 #         new_necklace = adorn_necklace(sort_linesegs(necklace), points)  
 #         int = zeros(ComplexF64, 2)
@@ -348,12 +348,12 @@ end
 
 #     ### TODO: check that Ninit is even
 #     necklace = Vector{Simplex{2, Int}}()
-#     points = Vector{<:PointA}()
+#     points = Vector{<:FlowPoint}()
 
-#     initialise_SD!(necklace, points, ti, tr, f_hessian = f_hessian, Ninit = Ninit, ϵ = eigvecfactorinit)
+#     initialise_SD!(necklace, points, saddle_point, f_hessian = f_hessian, Ninit = Ninit, ϵ = eigvecfactorinit)
 
 #     ### TODO find a suitable threshold for the normalisation of the gradient
-#     gradient0 = [norm(conj.(f_grad(p.x, p.y))) for p in points]
+#     gradient0 = [norm(conj.(f_grad([p[1], p[2]]))) for p in points]
 #     threshold = round(minimum(gradient0), RoundDown, sigdigits=2)
 
 #     total_integral = zeros(ComplexF64,2)

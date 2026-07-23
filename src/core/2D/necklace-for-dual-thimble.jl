@@ -1,8 +1,8 @@
 module DualThimble
 
-using ..Types: FlowPoint, Simplex
+using ..Types: FlowPoint, Simplex, Saddle
 using LinearAlgebra
-
+using StaticArrays
 
 import Base.imag, Base.real
 imag(p::FlowPoint) = FlowPoint(imag.(p.coords[1]), imag.(p.coords[2]), p.active)
@@ -70,8 +70,8 @@ end
 function make_quads(necklace::Vector{Simplex{2,Int}}, points::Vector{<:FlowPoint}, prev_necklace::Vector{Simplex{2,Int}})
     quads = Vector{Simplex{4,FlowPoint}}()
     new_necklace = adorn_necklace(sort_linesegs(deepcopy(necklace)), points)
-    for Simplex{2,Int} in eachindex(prev_necklace)
-        quad = make_quad(prev_necklace[Simplex{2,Int}], new_necklace[Simplex{2,Int}])
+    for simplex in eachindex(prev_necklace)
+        quad = make_quad(prev_necklace[simplex], new_necklace[simplex])
         push!(quads, quad)
     end
 
@@ -127,12 +127,12 @@ function initialise!(necklace::Vector{Simplex{2,Int}}, points::Vector{FlowPoint}
 end
 
 ### TODO this Δ could definitely get a more sophisticated default value
-function subdivide!(Simplex{2,Int}::Simplex{2,Int},
+function subdivide!(simplex::Simplex{2,Int},
     necklace::Vector{Simplex{2,Int}}, points::Vector{FlowPoint};
     Δ::Float64=1.)
 
-    p1 = points[Simplex{2,Int}.vertices[1]]
-    p2 = points[Simplex{2,Int}.vertices[2]]
+    p1 = points[simplex.vertices[1]]
+    p2 = points[simplex.vertices[2]]
 
     active = p1.active && p2.active
 
@@ -142,12 +142,12 @@ function subdivide!(Simplex{2,Int}::Simplex{2,Int},
     midy(p1::FlowPoint, p2::FlowPoint) = (p2.coords[2] + p1.coords[2]) ./ 2
 
     if active && (max(Δx(p1, p2), Δy(p1, p2)) > Δ)
-        Simplex{2,Int}.active = false # Simplex{2, Int} gets turned inactive when being divided.       
+        simplex.active = false # simplex gets turned inactive when being divided.       
         midpoint = FlowPoint(midx(p1, p2), midy(p1, p2))
         push!(points, midpoint)
 
-        lineseg1mid = Simplex{2,Int}(Simplex{2,Int}.vertices[1], length(points), true)
-        linesegmid2 = Simplex{2,Int}(length(points), Simplex{2,Int}.vertices[2], true)
+        lineseg1mid = Simplex{2,Int}(simplex.vertices[1], length(points), true)
+        linesegmid2 = Simplex{2,Int}(length(points), simplex.vertices[2], true)
         push!(necklace, lineseg1mid)
         push!(necklace, linesegmid2)
     end

@@ -1,6 +1,6 @@
 ### everything to decide whether or not a given saddle point contributes.
 ### this could be implemented in various methods again. Also maybe it should give a warning if there're multiple saddle points nearby and if a Gaussian approximation is a bad idea?
-using ..Types: PointA, Simplex, FlowPoint, Saddle
+using ..Types: Simplex, FlowPoint, Saddle
 
 
 ### utils for deciding whether a line crosses a given point
@@ -9,11 +9,11 @@ function distance_point_to_line(p::AbstractVector, s::AbstractVector, t::Abstrac
     return norm(p .- midpoint)
 end
 
-function distance_point_to_line(p::PointA, l::Simplex{2,Int})
-    return distance_point_to_line([p.x, p.y], [l.s_pt.x, l.s_pt.y], [l.e_pt.x, l.e_pt.y])
+function distance_point_to_line(p::FlowPoint, l::Simplex{2,Int})
+    return distance_point_to_line([p[1], p[2]], [l.s_pt[1], l.s_pt[2]], [l.e_pt[1], l.e_pt[2]])
 end
 
-# function find_crossing(line::Vector{Simplex{2, Int}}, point::PointA{T}, tolerance::Float64=0.8) where T<:Real
+# function find_crossing(line::Vector{Simplex{2, Int}}, point::FlowPoint, tolerance::Float64=0.8)
 #     mindist, Simplex{2, Int} = findmin([distance_point_to_line(point, seg) for seg in line])
 
 #     if mindist < tolerance
@@ -44,8 +44,8 @@ function average_distance(line::Vector{Simplex{2,Int}}, pidx::Int64, threshold::
     return av_dist
 end
 
-function find_crossing(line::Vector{Simplex{2,Int}}, point::PointA{T}, tolerance::Float64=1.; threshold::Float64=0.5,
-    loginfo=[]) where T<:Real
+function find_crossing(line::Vector{Simplex{2,Int}}, point::FlowPoint, tolerance::Float64=1.; threshold::Float64=0.5,
+    loginfo=[])
 
     distances = [distance_point_to_line(point, seg) for seg in line]
 
@@ -70,12 +70,12 @@ function find_crossing(line::Vector{Simplex{2,Int}}, point::PointA{T}, tolerance
 end
 
 
-function find_crossing(curve::Curve2{Tuple{T,T}}, point::PointA{T}, tolerance::Float64=0.8; threshold::Float64=0.5) where T<:Real
-    line = [Simplex{2,Int}(PointA(curve.vertices[i]...), PointA(curve.vertices[i+1]...)) for i in 1:(length(curve.vertices)-1)]
+function find_crossing(curve::Contour.Curve2{Tuple{T,T}}, point::FlowPoint, tolerance::Float64=0.8; threshold::Float64=0.5) where T<:Real
+    line = [Simplex{2,Int}(FlowPoint(curve.vertices[i]...), FlowPoint(curve.vertices[i+1]...)) for i in 1:(length(curve.vertices)-1)]
     return find_crossing(line, point, tolerance, threshold=threshold)
 end
 
-function find_crossing(nocurve::Missing, point::PointA{T}, tolerance::Float64=0.8; threshold::Float64=0.5) where T<:Real
+function find_crossing(nocurve::Missing, point::FlowPoint, tolerance::Float64=0.8; threshold::Float64=0.5)
     return nothing
 end
 
@@ -108,7 +108,7 @@ function check_contribution(necklace::Vector{Simplex{2,FlowPoint}},
     f::Function,
     saddle_point::Saddle
     ; Ntimes=100, kwargs...)
-    
+
     ti = saddle_point.saddle[1].coords[1]
     tr = saddle_point.saddle[2].coords[1]
 
@@ -119,7 +119,7 @@ function check_contribution(necklace::Vector{Simplex{2,FlowPoint}},
     end
 
     ### check if necklace hits real plane
-    p = PointA(0., 0.)
+    p = FlowPoint(0., 0.)
     idx = find_crossing(imag.(necklace), p, threshold=2 * flowstepfactor) # can add loginfo here
 
     if isnothing(idx)
@@ -135,8 +135,8 @@ function check_contribution(necklace::Vector{Simplex{2,FlowPoint}},
             println("it doesn't contribute! (2)") # because this shouldn't happen!
             active = false
         else
-            H_at_hp = imag(f(necklace[idx].vertices[1].coords[1], necklace[idx].vertices[1].coords[2]))
-            H_at_sp = imag(f(ti, tr))
+            H_at_hp = imag(f([necklace[idx].vertices[1].coords[1], necklace[idx].vertices[1].coords[2]]))
+            H_at_sp = imag(f([ti, tr]))
             if abs(H_at_hp - H_at_sp) < 1.
                 active = true
             else
@@ -177,7 +177,7 @@ function check_contribution(
     ti = saddle_point.saddle[1].coords[1]
     tr = saddle_point.saddle[2].coords[1]
 
-    if real(f(ti, tr)) < 0
+    if real(f([ti, tr])) < 0
         necklace = get_necklace(f, f_grad, f_hessian, saddle_point; logerrors=logerrors, kwargs...)
         check_contribution(necklace, f, saddle_point, Ntimes=Ntimes)
     else

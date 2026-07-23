@@ -3,6 +3,7 @@ module DualThimble
 using ..Methods1D
 using ..Methods2D
 using ..Types
+using ..Saddle: find_numerical_saddles
 
 # Gets the dual thimble for a given saddle point.
 export get_dual_thimble!

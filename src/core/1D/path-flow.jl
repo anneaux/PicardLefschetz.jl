@@ -5,7 +5,7 @@ using FiniteDiff
 
 using ..Types: FlowPoint, Simplex, Saddle
 
-function subdivide(points::Vector{FlowPoint},
+function subdivide(points::Vector{<:FlowPoint},
     simplices::Vector{Simplex{2,Int}},
     Δ::Float64)
 
@@ -27,7 +27,7 @@ function subdivide(points::Vector{FlowPoint},
 end
 
 
-function subdivide_rep(points::Vector{FlowPoint},
+function subdivide_rep(points::Vector{<:FlowPoint},
     simplices::Vector{Simplex{2,Int}},
     δ::Float64)
     n_old = length(simplices)
@@ -43,14 +43,14 @@ function subdivide_rep(points::Vector{FlowPoint},
 end
 
 function initialise(tmin::Float64, tmax::Float64,
-    Δ::Float64, endpoints=[true, true])
+    Δ::Real, endpoints=[true, true])
 
-    points = [FlowPoint(tmin), FlowPoint(tmax)]
+    points = [FlowPoint(complex(tmin)), FlowPoint(complex(tmax))]
     points[1].active = endpoints[1]
     points[2].active = endpoints[2]
     simplices = [Simplex{2,Int}([1, 2])]
 
-    subdivide_rep(points, simplices, Δ)
+    subdivide_rep(points, simplices, Float64(Δ))
     filter!(sim -> sim.active, simplices)
 
     return (points, simplices)
@@ -89,7 +89,7 @@ function flow_line(S::Function, S_prime::Function, start_coord::Complex, δ::Flo
 end
 
 function flow_down!(fun::Tuple,
-    points::Vector{FlowPoint}, simplices::Vector{Simplex{2,Int}};
+    points::Vector{<:FlowPoint}, simplices::Vector{Simplex{2,Int}};
     δ::Float64=0.5, # flowstepfactor
     threshold::Float64=0.5, # for normalisation of thr gradient
     h_threshold::Float64=-20.
@@ -202,8 +202,8 @@ function flow_up(S::Function, S_prime::Function, saddle_point::FlowPoint, δ::Fl
         contributing = imag(last_coord) * imag(saddle_point.coords[1]) <= 0
 
         # Flow backward pass to infinity
-        should_stop_infinity(vertices) = -imag(S(vertices)) >= max_height
-        points_backward = flow_line(S, S_prime, backward_pass, δ, 1.0, should_stop_infinity, flow_steps)
+        should_stop_infinity_backwards(vertices) = -imag(S(vertices)) >= max_height
+        points_backward = flow_line(S, S_prime, backward_pass, δ, 1.0, should_stop_infinity_backwards, flow_steps)
 
         push!(thimbles, points_forward)
         push!(thimbles, points_backward)
@@ -222,11 +222,11 @@ end
 export get_thimble
 function get_thimble(S::Function, drv::Function, tmin::Float64, tmax::Float64;
     Nflow::Int64=60,
-    Δinit::Float64=10.,
-    flowstepfactor::Float64=2.,
-    h_threshold::Float64=-300.,
-    gradnthreshold::Float64=1.,
-    subdividethreshold::Float64=4.
+    Δinit::Real=10.,
+    flowstepfactor::Real=2.,
+    h_threshold::Real=-300.,
+    gradnthreshold::Real=1.,
+    subdividethreshold::Real=4.
 )
 
     (points, simplices) = initialise(real(tmin), real(tmax), Δinit)
@@ -254,7 +254,7 @@ function get_thimble(S::Function, S_grad::Function, S_hessian::Function,
     saddle_mypt.active = false
 
     directions = Vector{ComplexF64}()
-    Methods1D.PathFlow.get_hessian_eigenvectors!(directions, saddle_mypt, S, :descent)
+    get_hessian_eigenvectors!(directions, saddle_mypt, S, :descent)
 
     dir1 = directions[1]
     dir2 = directions[2]
@@ -267,7 +267,7 @@ function get_thimble(S::Function, S_grad::Function, S_hessian::Function,
     simplices = [Simplex{2,Int}([2, 1]), Simplex{2,Int}([1, 3])]
 
     for i_flow in 1:max_iterations
-        Methods1D.PathFlow.flow_down!(
+        flow_down!(
             (S, S_grad),
             points,
             simplices,
@@ -276,7 +276,7 @@ function get_thimble(S::Function, S_grad::Function, S_hessian::Function,
             h_threshold=height_threshold
         )
 
-        Methods1D.PathFlow.subdivide_rep(points, simplices, subdivision_threshold)
+        subdivide_rep(points, simplices, subdivision_threshold)
     end
 
     filter!(sim -> sim.active, simplices)

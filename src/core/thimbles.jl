@@ -3,6 +3,7 @@ module Thimble
 using ..Methods1D
 using ..Methods2D
 using ..Types
+using ..Saddle: find_numerical_saddles
 
 # Gets the thimble for a given saddle point.
 export get_thimble!
@@ -55,7 +56,7 @@ function get_thimble!(
         gradient_normalisation_threshold = params["gradient_normalisation_threshold"]
         height_threshold = params["height_threshold"]
         Methods1D.PathFlow.get_thimble(
-            S, S_grad, S_hessian, saddle_point.saddle[1],
+            S, S_grad, S_hessian, saddle_point,
             init_perturbation_radius=init_perturbation_radius,
             max_iterations=max_iterations,
             flow_step_factor=flow_step_factor,
@@ -66,6 +67,7 @@ function get_thimble!(
     end
 
     saddle_point.thimble = thimble
+    return nothing
 end
 
 # Gets the thimbles for all saddle points.
@@ -96,11 +98,12 @@ function get_thimbles(
         height_threshold = params["height_threshold"]
         max_simplices = params["max_simplices"]
         simplex_tolerance = params["simplex_tolerance"]
+        flow_step_factor = params["flow_step_factor"]
 
         init_points = Methods2D.Utils.make_init_points_rectangle(domain[1].min, domain[1].max, domain[2].min, domain[2].max)
 
         if mesh_type == "quad"
-            return Methods2D.Quadrilaterals.DownwardsFlow.get_flowed_quads(
+            return Methods2D.Quadrilateral.DownwardsFlow.get_flowed_quads(
                 S, S_grad, init_points,
                 Nflow=flow_steps,
                 Δinit=grid_resolution,
@@ -147,7 +150,7 @@ function get_thimble_boundary!(
 
     boundary = if length(saddle_point.saddle) == 1
         points, simplices = Methods1D.PathFlow.get_thimble(S, S_grad, S_hessian,
-            saddle_point[1],
+            saddle_point,
             init_perturbation_radius=init_perturbation_radius,
             max_iterations=max_iterations,
             flow_step_factor=flow_step_factor,
@@ -158,12 +161,12 @@ function get_thimble_boundary!(
 
         counts = Dict{Int,Int}()
         for simplex in simplices
-            for index in simplex.coord
+            for index in simplex.vertices
                 counts[index] = get(counts, index, 0) + 1
             end
         end
         boundary_indices = [index for (index, count) in counts if count == 1]
-        [points[index].coord for index in boundary_indices]
+        [points[index].coords for index in boundary_indices]
     elseif length(saddle_point.saddle) == 2
         init_point_count = params["init_point_count"]
         accuracy = params["accuracy"]
@@ -198,6 +201,7 @@ function get_thimble_boundary!(
     end
 
     saddle_point.thimble_boundary = boundary
+    return nothing
 end
 
 # Gets the thimble boundary for all saddle points.

@@ -1,6 +1,7 @@
 module Types
 
 using StaticArrays
+import Base: isequal, hash, getindex
 
 export FlowPoint, Line, Simplex, ComplexDomain, RealDomain, Saddle
 
@@ -12,6 +13,10 @@ mutable struct FlowPoint{N,T<:Number}
     FlowPoint(z1::Complex, z2::Complex) = new{2,typeof(z1)}(@MVector([z1, z2]), true)
 
 end
+
+Base.isequal(p1::FlowPoint, p2::FlowPoint) = isequal(p1.coords, p2.coords)
+Base.hash(p::FlowPoint, h::UInt) = hash(p.coords, h)
+Base.getindex(p::FlowPoint, i::Int) = p.coords[i]
 
 mutable struct Simplex{N,T}
     vertices::MVector{N,T}

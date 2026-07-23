@@ -6,7 +6,7 @@ include("flow-utils.jl")
 # Complex domain
 
 import Base.+, Base.*, Base.in
-
+using LinearAlgebra
 using ..Types: ComplexDomain
 
 function +(cd1::ComplexDomain, cd2::ComplexDomain)

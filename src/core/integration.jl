@@ -3,6 +3,7 @@ module Integration
 using ..Methods1D
 using ..Methods2D
 using ..Types
+using ..Saddle
 
 # Integrate using a given boundary around one thimble, i.e. boundary can be precomputed in this case.
 export integrate_thimble
@@ -30,10 +31,10 @@ end
 
 # Integrate without a given boundary around one thimble, essentially steepest descent until integral converges to the required precision, or the number of flow steps is exceeded.
 export integrate_thimble!
-function integrate_thimble!(S::Function, S_grad::Function, S_hessian::Function, saddle_point::Saddle, prefactor::Function)
+function integrate_thimble!(S::Function, S_grad::Function, S_hessian::Function, saddle_point::Types.Saddle, prefactor::Function)
     if length(saddle_point.saddle) == 1
         # 1D case
-        integral = Methods1D.SaddlePoint.integrate_around_saddle_point(saddle_point.saddle, S, S_grad, S_hessian, prefactor=prefactor)
+        integral = Methods1D.SaddlePoint.integrate_around_saddle_point(saddle_point, S, S_grad, S_hessian, prefactor=prefactor)
     elseif length(saddle_point.saddle) == 2
         # 2D case
         integral = Methods2D.SaddlePoint.saddles_gaussian_contribution(S, S_hessian, saddle_point, prefactor=prefactor)
@@ -45,12 +46,12 @@ end
 
 # Integrate without a given boundary around all contributing thimbles, essentially using steepest descent until integral converges to the required precision, or the number of flow steps is exceeded.
 export integrate_thimbles
-function integrate_thimbles(S::Function, S_grad::Function, domain::Vector{RealDomain}, deformation_parameters::Vector{Number}, prefactor::Function, params::Dict, mode::String)
+function integrate_thimbles(S::Function, S_grad::Function, domain::Vector{RealDomain}, deformation_parameters::Vector{<:Number}, prefactor::Function, params::Dict, mode::String)
     if length(domain) == 2
         # 2D fixed case
         if mode == "fixed"
             init_points = Methods2D.Utils.make_init_points_rectangle(domain[1].min, domain[1].max, domain[2].min, domain[2].max)
-            return Methods2D.Quadrilaterals.DownwardsFlow.integrate_flowed_quads_fixed_Nflow(S, S_grad,
+            return Methods2D.Quadrilateral.DownwardsFlow.integrate_flowed_quads_fixed_Nflow(S, S_grad,
                 init_points, prefactor=prefactor,
                 Nflow=params["flow_steps"], Δinit=params["grid_spacing"],
                 gradnthreshold=params["gradient_normalisation_factor"],
@@ -61,7 +62,7 @@ function integrate_thimbles(S::Function, S_grad::Function, domain::Vector{RealDo
                 print_message=params["verbose"]
             )
         else
-            return Methods2D.Quadrilaterals.DownwardsFlow.integrate_flowed_quads(S, S_grad,
+            return Methods2D.Quadrilateral.DownwardsFlow.integrate_flowed_quads(S, S_grad,
                 domain[1].min, domain[1].max,
                 deformation_parameters[1],
                 deformation_parameters[2],
@@ -125,7 +126,7 @@ function _integrate_SPM(
     saddles = find_numerical_saddles(S_grad, domain, params)
     total_integral = zeros(ComplexF64, output_dim)
     for saddle in saddles
-        if check_contribution(S, S_grad, S_hessian, saddle, domain[1], params)
+        if check_contribution!(S, S_grad, S_hessian, saddle, domain[1], params)
             total_integral += Methods2D.SaddlePoint.saddles_gaussian_contribution(S, S_hessian, saddle, prefactor=prefactor)
         end
     end

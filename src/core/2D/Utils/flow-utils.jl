@@ -1,6 +1,6 @@
 ### normalised gradient
 
-using ..Types: PointA, Simplex
+using ..Types: FlowPoint, Simplex
 
 function gradN(
     f_grad::Function,
@@ -15,58 +15,69 @@ function gradN(
     end
 end;
 
-import Base.isequal
-isequal(p1::PointA, p2::PointA) = isequal(p1.x, p2.x) && isequal(p1.y, p2.y)
-Base.hash(p::PointA, h::UInt) = hash([p.x, p.y], h)
+xy(p::FlowPoint) = (p.coords[1], p.coords[2])
 
-xy(p::PointA) = (p.x, p.y);
-Base.getindex(pa::PointA, i) = xy(pa)[i]
+dist(p1::FlowPoint, p2::FlowPoint) = norm(p1.coords .- p2.coords)
 
-dist(p1::PointA, p2::PointA) = norm([p1.x - p2.x, p1.y - p2.y])
-
-
-function float2complex(p::PointA)
-    return PointA(complex(p.x), complex(p.y), p.active)
+function float2complex(p::FlowPoint)
+    res = FlowPoint(complex(p.coords[1]), complex(p.coords[2]))
+    res.active = p.active
+    return res
 end
-toR4(p::PointA) = toR4(p.x, p.y)
+toR4(p::FlowPoint) = toR4(p.coords[1], p.coords[2])
 
-midx(p1::PointA, p2::PointA) = (p2.x + p1.x) ./ 2
-# midx(ps::Vector{PointA{T}}) where T<:Number = sum([p.x for p in ps])/length(ps)
-midy(p1::PointA, p2::PointA) = (p2.y + p1.y) ./ 2
-# midy(ps::Vector{PointA{T}}) where T<:Number = sum([p.y for p in ps])/length(ps)
+midx(p1::FlowPoint, p2::FlowPoint) = (p2.coords[1] + p1.coords[1]) / 2
+# midx(ps::Vector{FlowPoint{T}}) where T<:Number = sum([p.coords[1] for p in ps])/length(ps)
 
-midpoint(p1::PointA, p2::PointA) = PointA(midx(p1, p2), midy(p1, p2))
-# midpoint(Ps::Vector{PointA{T}}) where T<:Number = PointA(midx(Ps), midy(Ps));
+midy(p1::FlowPoint, p2::FlowPoint) = (p2.coords[2] + p1.coords[2]) / 2
+# midy(ps::Vector{FlowPoint{T}}) where T<:Number = sum([p.coords[2] for p in ps])/length(ps)
 
-
+midpoint(p1::FlowPoint, p2::FlowPoint) = FlowPoint(midx(p1, p2), midy(p1, p2))
+# midpoint(Ps::Vector{FlowPoint{T}}) where T<:Number = FlowPoint(midx(Ps), midy(Ps));
 
 ### doesn't seem to be needed
-# function point2vec(p::PointA2)
+# function point2vec(p::FlowPoint2)
 #     return [reim(p.x)...,reim(p.y)...]
 # end;
 
 ## initialising the original integration domain
 
 export make_init_points_rectangle
-function make_init_points_rectangle(t1min::Real, t1max::Real,
+function make_init_points_rectangle(
+    t1min::Real, t1max::Real,
     t2min::Real, t2max::Real,
     flow_bounds=[true, true, true, true],
-    point_type=PointA)
-    [point_type(complex(t1min), complex(t2min), flow_bounds[1]),
-        point_type(complex(t1min), complex(t2max), flow_bounds[2]),
-        point_type(complex(t1max), complex(t2max), flow_bounds[3]),
-        point_type(complex(t1max), complex(t2min), flow_bounds[4])]
+    point_type=FlowPoint
+)
+    p1 = point_type(complex(t1min), complex(t2min))
+    p1.active = flow_bounds[1]
+    p2 = point_type(complex(t1min), complex(t2max))
+    p2.active = flow_bounds[2]
+    p3 = point_type(complex(t1max), complex(t2max))
+    p3.active = flow_bounds[3]
+    p4 = point_type(complex(t1max), complex(t2min))
+    p4.active = flow_bounds[4]
+
+    return [p1, p2, p3, p4]
 end
 
 export make_init_points_parallelogram
-function make_init_points_parallelogram(timin::Real, timax::Real,
+function make_init_points_parallelogram(
+    timin::Real, timax::Real,
     ttmin::Real, ttmax::Real,
     flow_bounds=[true, true, true, true],
-    point_type=PointA)
-    [point_type(complex(timin), complex(timin + ttmin), flow_bounds[1]),
-        point_type(complex(timin), complex(timin + ttmax), flow_bounds[2]),
-        point_type(complex(timax), complex(timax + ttmax), flow_bounds[3]),
-        point_type(complex(timax), complex(timax + ttmin), flow_bounds[4])]
+    point_type=FlowPoint
+)
+    p1 = point_type(complex(timin), complex(timin + ttmin))
+    p1.active = flow_bounds[1]
+    p2 = point_type(complex(timin), complex(timin + ttmax))
+    p2.active = flow_bounds[2]
+    p3 = point_type(complex(timax), complex(timax + ttmax))
+    p3.active = flow_bounds[3]
+    p4 = point_type(complex(timax), complex(timax + ttmin))
+    p4.active = flow_bounds[4]
+
+    return [p1, p2, p3, p4]
 end
 
 

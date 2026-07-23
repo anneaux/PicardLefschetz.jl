@@ -1,6 +1,7 @@
 module DownwardsFlow
 
-using ...Types: PointA, Simplex
+using ...Types: FlowPoint, Simplex
+using StaticArrays
 
 #### OTHER UTILS
 Base.getindex(z::Iterators.Zip, i) = (it -> getindex(it, i)).(z.is)
@@ -28,7 +29,8 @@ function project_onto_triangle(base::AbstractVector, points::AbstractVector) # w
     proj(v) = [(u1 ⋅ (v - v1)), (u2 ⋅ (v - v1))]
 
     # Project all points
-    ps = [proj(toR4(p.x, p.y)) for p in points]
+    ps = [proj(toR4(p[1], p[2])) for p in points]
+    gradient0 = [norm(conj.(f_grad(p[1], p[2]))) for p in points]
 
     return ps
 end
@@ -41,8 +43,8 @@ prod(points::AbstractVector) = (points[2][1] - points[1][1]) * (points[3][2] - p
 
 function triangle_normal(p1, p2, p3)
     return cross(
-        [p2.x, p2.y, 0.] - [p1.x, p1.y, 0.],
-        [p3.x, p3.y, 0.] - [p1.x, p1.y, 0.]
+        [p2[1], p2[2], 0.] - [p1[1], p1[2], 0.],
+        [p3[1], p3[2], 0.] - [p1[1], p1[2], 0.]
     )
 end
 
@@ -66,9 +68,9 @@ function subdivide_triangle_new!(points, t_vertices::Simplex{3,Int};
             ### how many points to insert in between?
             ### wanna make sure that the new distance is not larger than Δ
             n = floor(Int64, d / Δ)
-            xvals = range(p1.x, stop=p2.x, length=n + 2)
-            yvals = range(p1.y, stop=p2.y, length=n + 2)
-            new_points = [PointA(c...) for c in zip(xvals[2:end-1], yvals[2:end-1])] # I don't want to include the actual points themselves
+            xvals = range(p1[1], stop=p2[1], length=n + 2)
+            yvals = range(p1[2], stop=p2[2], length=n + 2)
+            new_points = [FlowPoint(c...) for c in zip(xvals[2:end-1], yvals[2:end-1])] # I don't want to include the actual points themselves
 
             for np in new_points
                 already_created = findall(p -> isequal(round.(xy(p), digits=8), round.(xy(np), digits=8)), points)
@@ -162,7 +164,7 @@ function triangle_area_new(points::AbstractVector)
     @assert length(points) == 3
     abs((points[2][1] - points[1][1]) * (points[3][2] - points[1][2]) - (points[2][2] - points[1][2]) * (points[3][1] - points[1][1])) / 2
 end
-# triangle_area(points::AbstractVector{<:PointA}) = triangle_area([xy(p) for p in points])
+# triangle_area(points::AbstractVector{<:FlowPoint}) = triangle_area([xy(p) for p in points])
 
 
 #### DOWNWARDS FLOW
@@ -176,9 +178,9 @@ function orient_triangle(verts::AbstractArray, points::Vector{SVector{2,Float64}
 end
 
 
-function initialise_grid_triangles(points::Vector{<:PointA}, Δ::Float64)
+function initialise_grid_triangles(points::Vector{<:FlowPoint}, Δ::Float64)
 
-    pts = [SVector(real(p.x), real(p.y)) for p in points]
+    pts = [SVector(real(p[1]), real(p[2])) for p in points]
     connections = delaunay(pts) #, "qhull d Qbb Qc QJ Pp")
     #     "qhull d Qbb Qc QJ Pp"
     #         display(connections)
@@ -226,10 +228,10 @@ end
 #     xrange = range(real(xmin), stop = real(xmax), length = Int(ceil(real(xmax-xmin)/Δx)))
 #     yrange = range(real(ymin), stop = real(ymax), length = Int(ceil(real(ymax-ymin)/Δy)))
 
-#     points_ini = Vector{<:PointA}()
+#     points_ini = Vector{<:FlowPoint}()
 #     for xr in collect(xrange)
 #         for yr in collect(yrange)
-#             push!(points_ini, PointA(xr, yr,true))
+#             push!(points_ini, FlowPoint(xr, yr,true))
 #         end
 #     end
 
@@ -246,7 +248,7 @@ end
 # end
 
 ### this flows the whole surface
-function flow_down!(triangles::Vector{Simplex{3,Int}}, points::Vector{<:PointA},
+function flow_down!(triangles::Vector{Simplex{3,Int}}, points::Vector{<:FlowPoint},
     f::Function,
     f_grad::Function;
     threshold::Real=0.5, # for normalisation of the gradient
@@ -256,9 +258,9 @@ function flow_down!(triangles::Vector{Simplex{3,Int}}, points::Vector{<:PointA},
 
     for i1 in 1:length(points)
         if points[i1].active # for the active points
-            step = -δ .* gradN((ti, tr) -> conj.(complex.(f_grad(ti, tr))), points[i1].x + 0im, points[i1].y + 0im, threshold)
-            points[i1].x += step[1]
-            points[i1].y += step[2]
+            step = -δ .* gradN((ti, tr) -> conj.(complex.(f_grad(ti, tr))), points[i1][1] + 0im, points[i1][2] + 0im, threshold)
+            points[i1].coords[1] += step[1]
+            points[i1].coords[2] += step[2]
 
             ### turning them inactive when they are below the threshold. Doing this here prevents lonely relict points from flowing if their triangle has turned inactive already.
             if real(f(xy(points[i1])...)) < h_threshold
@@ -281,7 +283,7 @@ function flow_down!(triangles::Vector{Simplex{3,Int}}, points::Vector{<:PointA},
 end
 
 
-function subdivide_triangles!(points::Vector{<:PointA}, triangles::Vector{Simplex{3,Int}}, subdividethreshold::Real)
+function subdivide_triangles!(points::Vector{<:FlowPoint}, triangles::Vector{Simplex{3,Int}}, subdividethreshold::Real)
     n_old = length(triangles)
     n_new = n_old + 1
 
@@ -324,7 +326,7 @@ export get_flowed_triangles
 function get_flowed_triangles(
     f::Function,
     f_grad::Function,
-    init_points::Vector{<:PointA};
+    init_points::Vector{<:FlowPoint};
     Nflow::Int64=50,
     Δinit::Float64=10.,
     gradnthreshold::Float64=0.05, # grad normalisation threshold

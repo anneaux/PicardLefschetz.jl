@@ -6,20 +6,20 @@ using GeometryBasics
 using LinearAlgebra
 
 function crosses_point(line::Line, point::Point, tolerance::Float64=0.25)
-    if line.s.x <= line.e.x
-        sx = line.s.x
-        ex = line.e.x
+    if line[1][1] <= line[2][1]
+        sx = line[1][1]
+        ex = line[2][1]
     else
-        ex = line.s.x
-        sx = line.e.x
+        ex = line[1][1]
+        sx = line[2][1]
     end
 
-    if line.s.y <= line.e.y
-        sy = line.s.y
-        ey = line.e.y
+    if line[1][2] <= line[2][2]
+        sy = line[1][2]
+        ey = line[2][2]
     else
-        ey = line.s.y
-        sy = line.e.y
+        ey = line[1][2]
+        sy = line[2][2]
     end
 
     sx -= tolerance * abs(sx - ex)
@@ -33,7 +33,7 @@ function crosses_point(line::Line, point::Point, tolerance::Float64=0.25)
 end
 
 dist(tup1::Tuple, tup2::Tuple) = norm(tup2 .- tup1)
-function crosses_point(c::Curve2, p::Point, tolerance::Float64=0.25)
+function crosses_point(c::Contour.Curve2, p::Point, tolerance::Float64=0.25)
     minidist, miniidx = findmin([dist(vert, p.data) for vert in c.vertices])
 
     if minidist < tolerance
@@ -44,7 +44,7 @@ function crosses_point(c::Curve2, p::Point, tolerance::Float64=0.25)
 end
 
 
-function closest_intersection(ip::Int64, c::Curve2, p::Point, Δinit::Float64)
+function closest_intersection(ip::Int64, c::Contour.Curve2, p::Point, Δinit::Float64)
     ip_new = deepcopy(ip)
     n = 1
     Δ = Δinit
@@ -59,15 +59,15 @@ function closest_intersection(ip::Int64, c::Curve2, p::Point, Δinit::Float64)
     ip
 end
 
-function dissect_curve(zs::ComplexF64, curve::Curve2, ip_guess::Int64, crossthresh::Float64)
+function dissect_curve(zs::ComplexF64, curve::Contour.Curve2, ip_guess::Int64, crossthresh::Float64)
     saddle_ip = closest_intersection(ip_guess, curve, Point(reim(zs)...), crossthresh)
 
     if curve.vertices[saddle_ip] == reim(zs)
-        c1 = Curve2(curve.vertices[1:saddle_ip])
-        c2 = Curve2(curve.vertices[saddle_ip:end])
+        c1 = Contour.Curve2(curve.vertices[1:saddle_ip])
+        c2 = Contour.Curve2(curve.vertices[saddle_ip:end])
     else
-        c1 = Curve2(vcat(curve.vertices[1:saddle_ip-1], reim(zs)))
-        c2 = Curve2(vcat(reim(zs), curve.vertices[saddle_ip+1:end]))
+        c1 = Contour.Curve2(vcat(curve.vertices[1:saddle_ip-1], reim(zs)))
+        c2 = Contour.Curve2(vcat(reim(zs), curve.vertices[saddle_ip+1:end]))
     end
 
     return [c1, c2]
@@ -75,10 +75,10 @@ end
 
 
 function intersection(l1::Line, l2::Line)
-    x1, y1 = l1.s
-    x2, y2 = l1.e
-    x3, y3 = l2.s
-    x4, y4 = l2.e
+    x1, y1 = l1[1][1], l1[1][1]
+    x2, y2 = l1[2][1], l1[2][2]
+    x3, y3 = l2[1][1], l2[1][2]
+    x4, y4 = l2[2][1], l2[2][2]
 
     denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1)
 
@@ -117,11 +117,11 @@ function intersection(l1::Line, l2::Line)
     # end 
 end
 
-function intersection(c1::Curve2, c2::Curve2)
+function intersection(c1::Contour.Curve2, c2::Contour.Curve2)
     intersection_points = Vector{Point}()
     for i in 1:(length(c1.vertices)-1), i2 in 1:(length(c2.vertices)-1)
-        l1 = Line(c1.vertices[i], c1.vertices[i+1])
-        l2 = Line(c2.vertices[i2], c2.vertices[i2+1])
+        l1 = Line(Point(c1.vertices[i]...), Point(c1.vertices[i+1]...))
+        l2 = Line(Point(c2.vertices[i2]...), Point(c2.vertices[i2+1]...))
         p = intersection(l1, l2)
         if !isnothing(p)
             push!(intersection_points, p)

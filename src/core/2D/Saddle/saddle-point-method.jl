@@ -1,6 +1,7 @@
 module SaddlePoint
 
 using ..Types: Saddle
+import Contour
 
 include("saddles-contributing.jl")
 include("saddles-generic.jl")
@@ -28,16 +29,16 @@ export saddles_gaussian_contribution
 function saddles_gaussian_contribution(f::Function,
     f_hessian::Function,
     saddle_point::Saddle;
-    prefactor::Function=(ti, tr) -> ones(2)
+    prefactor::Function=t -> ones(2)
 )
 
     ti = saddle_point.saddle[1].coords[1]
     tr = saddle_point.saddle[2].coords[1]
 
     ### prefactor for the saddle-point method
-    prefactor_spm = hessian_root(f_hessian(ti, tr))
+    prefactor_spm = hessian_root(f_hessian([ti, tr]))
 
-    return prefactor(ti, tr) .* prefactor_spm .* exp(f(ti, tr))
+    return prefactor([ti, tr]) .* prefactor_spm .* exp(f([ti, tr]))
 
 end
 
@@ -46,7 +47,7 @@ function intersection_number_sign_cheat(int::AbstractArray{<:Complex},
     f::Function,
     f_hessian::Function,
     saddle_point::Saddle;
-    prefactor::Function=(ti, tr) -> ones(2)
+    prefactor::Function=t -> ones(2)
 )
 
     spm = saddles_gaussian_contribution(f, f_hessian, saddle_point, prefactor=prefactor)

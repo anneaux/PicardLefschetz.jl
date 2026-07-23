@@ -1,20 +1,23 @@
 module DownwardsFlow
 
-using ..Types: PointA, Simplex
+using LinearAlgebra
+using ..Types: FlowPoint, Simplex
+using ...Utils: midpoint, gradN, dist
+using ..Integration: integrate_quadrilateral
 
-function maxdist(simplex::Vector{PointA{T}}) where T<:Number
+function maxdist(simplex::Vector{<:FlowPoint})
     p1, p2, p3, p4 = simplex
-    d12 = dist(p1, p2)
-    d23 = dist(p2, p3)
-    d34 = dist(p3, p4)
-    d41 = dist(p4, p1)
+    d12 = norm(p1.coords - p2.coords)
+    d23 = norm(p2.coords - p3.coords)
+    d34 = norm(p3.coords - p4.coords)
+    d41 = norm(p4.coords - p1.coords)
 
     arr = [d12, d23, d34, d41]
     return maximum(arr)
 end
 
 
-function maxdist(idx::Int64, simplices::Vector{Simplex{4,Int}}, points::Vector{<:PointA})
+function maxdist(idx::Int64, simplices::Vector{Simplex{4,Int}}, points::Vector{<:FlowPoint})
     sim = simplices[idx]
 
     v1, v2, v3, v4 = sim.vertices
@@ -22,7 +25,7 @@ function maxdist(idx::Int64, simplices::Vector{Simplex{4,Int}}, points::Vector{<
     return maxdist([p1, p2, p3, p4])
 end
 
-function subdivide_quads!(points::Vector{<:PointA}, simplices::Vector{Simplex{4,Int}}, Δ::Float64, init::Bool=false)
+function subdivide_quads!(points::Vector{<:FlowPoint}, simplices::Vector{Simplex{4,Int}}, Δ::Real, init::Bool=false)
 
     for i3 in eachindex(simplices)
         sim = simplices[i3]
@@ -33,10 +36,10 @@ function subdivide_quads!(points::Vector{<:PointA}, simplices::Vector{Simplex{4,
             if (p1.active && p2.active && p3.active && p4.active) || init # == allpointsactive
                 l = length(points)
 
-                d12 = norm([p1.x - p2.x, p1.y - p2.y])
-                d23 = norm([p2.x - p3.x, p2.y - p3.y])
-                d34 = norm([p3.x - p4.x, p3.y - p4.y])
-                d41 = norm([p4.x - p1.x, p4.y - p1.y])
+                d12 = norm(p1.coords - p2.coords)
+                d23 = norm(p2.coords - p3.coords)
+                d34 = norm(p3.coords - p4.coords)
+                d41 = norm(p4.coords - p1.coords)
 
                 arr = [d12, d23, d34, d41]
 
@@ -125,7 +128,7 @@ end
 
 
 
-function subdivide(points::Vector{<:PointA}, simplices::Vector{Simplex{4,Int}}, Δ::Float64)
+function subdivide(points::Vector{<:FlowPoint}, simplices::Vector{Simplex{4,Int}}, Δ::Real)
     n_old = length(simplices)
     n_new = n_old + 1
     while (n_old != n_new)
@@ -137,7 +140,7 @@ function subdivide(points::Vector{<:PointA}, simplices::Vector{Simplex{4,Int}}, 
 end
 
 
-function initialise_grid_quads(points::Vector{<:PointA}, Δ::Float64)
+function initialise_grid_quads(points::Vector{<:FlowPoint}, Δ::Real)
     simplices = [Simplex{4,Int}([1, 2, 3, 4])]
 
     ### subdivide_2(points, simplices, Δ) # instead of calling this I'll do it here directly
@@ -155,7 +158,7 @@ end
 
 
 ### flowing a whole meshed surface
-function flow_down!(simplices::Vector{Simplex{4,Int}}, points::Vector{<:PointA},
+function flow_down!(simplices::Vector{Simplex{4,Int}}, points::Vector{<:FlowPoint},
     f::Function,
     f_grad::Function;
     threshold::Float64=0.5, # for normalisation of the gradient
@@ -165,16 +168,16 @@ function flow_down!(simplices::Vector{Simplex{4,Int}}, points::Vector{<:PointA},
 
     for i1 in 1:length(points)
         if points[i1].active # for the active points
-            step = -δ .* gradN((ti, tr) -> conj.(complex.(f_grad(ti, tr))), points[i1].x + 0im, points[i1].y + 0im, threshold)
-            points[i1].x += step[1]
-            points[i1].y += step[2]
+            step = -δ .* gradN((ti, tr) -> conj.(complex.(f_grad([ti, tr]))), points[i1].coords[1] + 0im, points[i1].coords[2] + 0im, threshold)
+            points[i1].coords[1] += step[1]
+            points[i1].coords[2] += step[2]
         end
     end
 
     for i2 in eachindex(simplices)
         if simplices[i2].active
             for v in simplices[i2].vertices
-                if real(f(points[v].x, points[v].y)) < h_threshold
+                if real(f([points[v].coords[1], points[v].coords[2]])) < h_threshold
                     simplices[i2].active = false # am I sure that I want to turn the whole simplex inactive?
                     points[v].active = false
                 end
@@ -184,7 +187,7 @@ function flow_down!(simplices::Vector{Simplex{4,Int}}, points::Vector{<:PointA},
 end
 
 ### convergence of number of simplices
-function has_converged(history::Vector{T}; tol::Float64=1., window_size::Int=10) where T<:Number
+function has_converged(history::Vector{T}; tol::Real=1., window_size::Int=10) where T<:Number
     # Calculate the average of the last `window_size` vectors
     if length(history) < window_size
         return false  # Not enough data points
@@ -204,15 +207,15 @@ export get_flowed_quads
 function get_flowed_quads(
     f::Function,
     f_grad::Function,
-    init_points::Vector{<:PointA};
+    init_points::Vector{<:FlowPoint};
     Nflow::Int64=50,
-    Δinit::Float64=10.,
+    Δinit::Real=10.,
     gradnthreshold::Float64=0.5, # grad normalisation threshold
     flowstepfactor::Float64=2., # flowstepfactor
     subdividethreshold::Float64=8., # subdivide threshold, wants to be 4 * δ
     h_threshold::Float64=-150.,
     maxNsimplices::Int64=5000,
-    tolNsimplices::Float64=0.05,
+    tolNsimplices::Real=0.05,
     flow_bounds::Vector{Bool}=[true, true, true, true]
 )
 
@@ -283,9 +286,9 @@ function integrate_flowed_quads(
     netsimplices = Vector{Int64}()
     (points, simplices) = initialise_grid_parallelogram(complex(timin), complex(timax), complex(ttmin), complex(ttmax), Δinit)
     overboard = false
-    prev_integral = complex(ones(2))
-    int = complex(zeros(2))
-
+    p0 = [complex(timin), complex(ttmin)]
+    prev_integral = zero(prefactor(p0)) .+ (1.0 + 1.0im)
+    int = zero(prefactor(p0)) .+ 0im
 
     for i_flow in 1:Nflow
         nsimplices = length(simplices)
@@ -297,7 +300,7 @@ function integrate_flowed_quads(
         subdivide(points, simplices, subdividethreshold)
         # @show simplices
         quads = [Simplex{4,FlowPoint}(points[sim.vertices]) for sim in simplices]
-        int = complex(zeros(2))
+        int = zero(prefactor(p0)) .+ 0im
         for quad in quads
             int += integrate_quadrilateral(f, quad, prefactor=prefactor)
         end
@@ -349,10 +352,10 @@ export integrate_flowed_quads_fixed_Nflow
 function integrate_flowed_quads_fixed_Nflow(
     f::Function,
     f_grad::Function,
-    init_points::Vector{<:PointA};
+    init_points::Vector{<:FlowPoint};
     prefactor::Function=(ti, tr) -> ones(2),
     Nflow::Int64=50,
-    Δinit::Float64=10.,
+    Δinit::Real=10.,
     gradnthreshold::Float64=0.05, # grad normalisation threshold
     flowstepfactor::Float64=2., # flowstepfactor
     subdividethreshold::Float64=8., # subdivide threshold, wants to be 4 * δ
@@ -362,8 +365,9 @@ function integrate_flowed_quads_fixed_Nflow(
 )
 
     netsimplices = Vector{Int64}()
-    (points, simplices) = initialise_grid(init_points, Δinit)
-    int = complex(zeros(2))
+    (points, simplices) = initialise_grid_quads(init_points, Δinit)
+    p0 = [init_points[1].coords[1], init_points[1].coords[2]]
+    int = zero(prefactor(p0)) .+ 0im
 
     for i_flow in 1:Nflow
         nsimplices = length(simplices)
@@ -372,7 +376,7 @@ function integrate_flowed_quads_fixed_Nflow(
             threshold=gradnthreshold, δ=flowstepfactor, h_threshold=h_threshold)
         subdivide(points, simplices, subdividethreshold)
         quads = [Simplex{4,FlowPoint}(points[sim.vertices]) for sim in simplices]
-        int = complex(zeros(2))
+        int = zero(prefactor(p0)) .+ 0im
         for quad in quads
             int += integrate_quadrilateral(f, quad, prefactor=prefactor)
         end

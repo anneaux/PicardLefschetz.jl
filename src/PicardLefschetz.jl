@@ -19,14 +19,10 @@ include("core/1D/methods-1D.jl")
 # 2D code
 include("core/2D/methods-2D.jl")
 
-using Types
-using Methods1D
-using Methods2D
-
-include("core/dual-thimbles.jl")
-include("core/integration.jl")
 include("core/saddles.jl")
+include("core/integration.jl")
 include("core/thimbles.jl")
+include("core/dual-thimbles.jl")
 
 using .DualThimble, .Integration, .Saddle, .Thimble
 

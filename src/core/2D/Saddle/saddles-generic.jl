@@ -1,4 +1,5 @@
 using NLsolve
+using Sobol
 
 using ..Types: ComplexDomain, Saddle, FlowPoint
 
@@ -14,8 +15,8 @@ function solve_first_drv(drv::Function, t0::Vector{T};
 
         function speqs!(F, x)
             F .= vec(collect(Iterators.flatten(
-                reim.(drv(complex(x[1], x[2]),
-                    complex(x[3], x[4])))
+                reim.(drv([complex(x[1], x[2]),
+                    complex(x[3], x[4])]))
             )))
         end
 
@@ -51,7 +52,7 @@ function find_saddles_sobol(drv::Function,
     check::Function=(t1, t2) -> !isequal(t1, t2)
 )
 
-    solutions = Vector{Saddle}()
+    solutions = Vector{Saddle{Any}}()
 
     t1_seq = SobolSeq(reim(t1_cd.min), reim(t1_cd.max))
     t2_seq = SobolSeq(reim(t2_cd.min), reim(t2_cd.max))
@@ -67,7 +68,7 @@ function find_saddles_sobol(drv::Function,
 
         ### check conditions and deposit in array
         if !isnothing(t1s) && check(t1s, t2s)
-            push!(solutions, Saddle(saddle=[FlowPoint(t1s), FlowPoint(t2s)]))
+            push!(solutions, Saddle{Any}(saddle=[FlowPoint(t1s), FlowPoint(t2s)]))
         end
     end
 

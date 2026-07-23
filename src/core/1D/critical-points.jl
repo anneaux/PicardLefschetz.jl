@@ -20,13 +20,13 @@ function solve_first_derivative(drv::Function, t0::Vector{Float64},
         if converged(result)
             tiSP = result.zero[1] + im * result.zero[2]
             tiSP = round(tiSP, digits=roundDigits)
-            return [Saddle(saddle=[FlowPoint(tiSP)])]
+            return [Saddle{Any}(saddle=[FlowPoint(tiSP)])]
         else
             return Saddle[]
         end
     catch e
         println("Error in solve_SPEqs(): $e")
-        return nothing
+        return Saddle{Any}[]
     end
 end
 
@@ -38,7 +38,7 @@ function find_saddles_sobol(drv::Function,
 
     roundDigits = 2 # I should certainly change this, it seems a bit excessive
 
-    saddles = Vector{Saddle}()
+    saddles = Vector{Saddle{Any}}()
 
     t_seq = SobolSeq(reim(tmin), reim(tmax))
 
@@ -56,7 +56,7 @@ function find_saddles_sobol(drv::Function,
                 real(ts_r) == 0 ? 0. : real(ts_r),
                 imag(ts_r) == 0 ? 0. : imag(ts_r)
             )
-            push!(saddles, Saddle{Nothing, Nothing}(saddle=[FlowPoint(ts_c)]))
+            push!(saddles, Saddle{Any}(saddle=[FlowPoint(ts_c)]))
         end
     end
 

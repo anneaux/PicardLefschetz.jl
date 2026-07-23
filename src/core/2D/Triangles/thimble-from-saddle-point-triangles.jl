@@ -3,13 +3,13 @@ module Thimble
 #### making SD thimbles
 using Graphs, SimpleWeightedGraphs
 
-using ...Types: PointA, Simplex, Saddle
+using ...Types: FlowPoint, Simplex, Saddle
 
 function initialise_triangulated_necklace(saddle_point::Saddle, f_hessian::Function;
     Ninit::Int64=20,
     ϵ::Float64=0.1)
 
-    points_all = Vector{PointA}()
+    points_all = Vector{FlowPoint}()
 
     ti = saddle_point.saddle[1].coords[1]
     tr = saddle_point.saddle[2].coords[1]
@@ -21,8 +21,8 @@ function initialise_triangulated_necklace(saddle_point::Saddle, f_hessian::Funct
 
     pointsini = ([[ti, tr] .+ ϵ * (cos(θ) * eigenvectors[1] + sin(θ) * eigenvectors[2]) for θ in range(0, stop=2π, length=Ninit + 1)])[1:end-1]
 
-    push!(points_all, PointA(ti, tr)) ### add saddle point
-    push!(points_all, [PointA(p[1], p[2]) for p in pointsini]...) ### add necklace points
+    push!(points_all, FlowPoint(ti, tr)) ### add saddle point
+    push!(points_all, [FlowPoint(p[1], p[2]) for p in pointsini]...) ### add necklace points
 
     ### triangulating the initial necklace around the saddle point
     ### project the initial necklace onto its eigenvectors
@@ -60,7 +60,7 @@ function initialise_triangulated_necklace(saddle_point::Saddle, f_hessian::Funct
 end
 
 ### this flows a list of points
-function flow_down!(points::Vector{<:PointA},
+function flow_down!(points::Vector{<:FlowPoint},
     f::Function,
     f_grad::Function;
     threshold::Real=0.5, # for normalisation of the gradient
@@ -70,9 +70,9 @@ function flow_down!(points::Vector{<:PointA},
 
     for i1 in 1:length(points)
         if points[i1].active # for the active points
-            step = -δ .* gradN((ti, tr) -> conj.(complex.(f_grad(ti, tr))), points[i1].x + 0im, points[i1].y + 0im, threshold)
-            points[i1].x += step[1]
-            points[i1].y += step[2]
+            step = -δ .* gradN((ti, tr) -> conj.(complex.(f_grad(ti, tr))), points[i1][1] + 0im, points[i1][2] + 0im, threshold)
+            points[i1].coords[1] += step[1]
+            points[i1].coords[2] += step[2]
 
             ### turning them inactive when they are below the threshold. Doing this here prevents lonely relict points from flowing if their triangle has turned inactive already.
             if real(f(xy(points[i1])...)) < h_threshold
@@ -251,7 +251,7 @@ function get_SD_thimble_triangles(
     points_all, triangles, indices_necklace = initialise_triangulated_necklace(saddle_point, f_hessian; Ninit=Ninit, ϵ=eigvecfactorinit)
 
     ### find a suitable threshold for the normalisation of the gradient
-    gradient0 = [norm(conj.(f_grad(p.x, p.y))) for p in points_all]
+    gradient0 = [norm(conj.(f_grad(p[1], p[2]))) for p in points_all]
     threshold = round(minimum(gradient0), RoundDown, sigdigits=2)
     @show threshold
 

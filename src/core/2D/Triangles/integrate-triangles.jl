@@ -1,6 +1,6 @@
 module Integration
 
-using ...Types: PointA, Simplex
+using ...Types: FlowPoint, Simplex
 
 # TRIANGLES
 
@@ -22,9 +22,9 @@ using ...Types: PointA, Simplex
 
 ### VERSION ONE
 
-midx(p1::PointA, p2::PointA) = (p2.x + p1.x) ./ 2
-midy(p1::PointA, p2::PointA) = (p2.y + p1.y) ./ 2
-midpoint(p1::PointA, p2::PointA) = PointA(midx(p1, p2), midy(p1, p2))
+midx(p1::FlowPoint, p2::FlowPoint) = (p2[1] + p1[1]) ./ 2
+midy(p1::FlowPoint, p2::FlowPoint) = (p2[2] + p1[2]) ./ 2
+midpoint(p1::FlowPoint, p2::FlowPoint) = FlowPoint(midx(p1, p2), midy(p1, p2))
 
 
 function triangle_to_fake_quadrilateral(tri::Simplex{3,FlowPoint})
@@ -36,7 +36,7 @@ function triangle_to_fake_quadrilateral(tri::Simplex{3,FlowPoint})
     extra_point = midpoint(tri.vertices[longest_edge[1]], tri.vertices[longest_edge[2]])
     a, b, opp = longest_edge..., only(setdiff([1, 2, 3], [longest_edge...]))
     fake_quad_points = [tri.vertices[a], extra_point, tri.vertices[b], tri.vertices[opp]]
-    return Simplex{4,FlowPoint}([PointA(p.x, p.y) for p in fake_quad_points])
+    return Simplex{4,FlowPoint}([FlowPoint(p[1], p[2]) for p in fake_quad_points])
 end
 
 function number_of_arguments(f::Function)
@@ -61,8 +61,8 @@ using SimplexQuad
 
 function jacobian(tri::Simplex{3,FlowPoint})
     p1, p2, p3 = tri.vertices
-    [p2.x-p1.x p3.x-p1.x;
-        p2.y-p1.y p3.y-p1.y]
+    [p2[1]-p1[1] p3[1]-p1[1];
+        p2[2]-p1[2] p3[2]-p1[2]]
 end
 
 export integrate_triangle
@@ -71,8 +71,8 @@ function integrate_triangle(f::Function, triangle::Simplex{3,FlowPoint}; prefact
 
     jac = jacobian(triangle)
 
-    g1(s, t) = p1.x - (p2.x - p1.x) * s + (p3.x - p1.x) * t
-    g2(s, t) = p1.y - (p2.y - p1.y) * s + (p3.y - p1.y) * t
+    g1(s, t) = p1[1] - (p2[1] - p1[1]) * s + (p3[1] - p1[1]) * t
+    g2(s, t) = p1[2] - (p2[2] - p1[2]) * s + (p3[2] - p1[2]) * t
 
     int = zeros(ComplexF64, dim)
 
