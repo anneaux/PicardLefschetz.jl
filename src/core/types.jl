@@ -46,13 +46,13 @@ struct RealDomain
     RealDomain() = new(zero(Float64), zero(Float64))
 end
 
-Base.@kwdef mutable struct Saddle{T,B}
+Base.@kwdef mutable struct Saddle{T}
     saddle::Vector{FlowPoint}
     contributing::Union{Nothing,Bool} = nothing
     thimble::Union{Nothing,T} = nothing
-    thimble_boundary::Union{Nothing,B} = nothing
-    dual_thimble::Union{Nothing,D} = nothing
-    dual_thimble_boundary::Union{Nothing,DB} = nothing
+    thimble_boundary::Union{Nothing,T} = nothing
+    dual_thimble::Union{Nothing,T} = nothing
+    dual_thimble_boundary::Union{Nothing,T} = nothing
     integral::Union{Nothing,ComplexF64} = nothing
 end
 

@@ -20,7 +20,7 @@ function solve_first_derivative(drv::Function, t0::Vector{Float64},
         if converged(result)
             tiSP = result.zero[1] + im * result.zero[2]
             tiSP = round(tiSP, digits=roundDigits)
-            return [Saddle{Nothing, Nothing}(saddle=[FlowPoint(tiSP)])]
+            return [Saddle(saddle=[FlowPoint(tiSP)])]
         else
             return Saddle[]
         end

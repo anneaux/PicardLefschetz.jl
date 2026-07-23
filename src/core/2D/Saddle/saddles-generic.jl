@@ -67,7 +67,7 @@ function find_saddles_sobol(drv::Function,
 
         ### check conditions and deposit in array
         if !isnothing(t1s) && check(t1s, t2s)
-            push!(solutions, Saddle{Nothing, Nothing}(saddle=[FlowPoint(t1s), FlowPoint(t2s)]))
+            push!(solutions, Saddle(saddle=[FlowPoint(t1s), FlowPoint(t2s)]))
         end
     end
 

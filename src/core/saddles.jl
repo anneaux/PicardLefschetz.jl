@@ -45,7 +45,7 @@ function check_contribution!(
     S::Function,
     S_grad::Function,
     S_hessian::Function,
-    saddle_point::Saddle{T,B},
+    saddle_point::Saddle,
     domain::ComplexDomain,
     params::Dict;
     log_errors::Bool=false
