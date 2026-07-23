@@ -1,6 +1,6 @@
 module Integration
 
-using ...Types: PointA, QuadC
+using ..Types: PointA, Simplex
 
 # QUADRILATERALS
 
@@ -26,11 +26,11 @@ end
 export integrate_quadrilateral
 function integrate_quadrilateral(
     f::Function,
-    quad::QuadC, n::Int64=7;
+    quad::Simplex{4,FlowPoint}, n::Int64=7;
     prefactor::Function=(ti, tr) -> ones(2)
 )
 
-    p1, p2, p3, p4 = quad.points
+    p1, p2, p3, p4 = quad.vertices
 
     x, w = gausslegendre(n)
     y = x

@@ -1,6 +1,6 @@
 ### everything to decide whether or not a given saddle point contributes.
 ### this could be implemented in various methods again. Also maybe it should give a warning if there're multiple saddle points nearby and if a Gaussian approximation is a bad idea?
-using ...Types: PointA, LineSeg
+using ..Types: PointA, Simplex, FlowPoint, Saddle
 
 
 ### utils for deciding whether a line crosses a given point
@@ -9,21 +9,21 @@ function distance_point_to_line(p::AbstractVector, s::AbstractVector, t::Abstrac
     return norm(p .- midpoint)
 end
 
-function distance_point_to_line(p::PointA, l::LineSeg)
+function distance_point_to_line(p::PointA, l::Simplex{2,Int})
     return distance_point_to_line([p.x, p.y], [l.s_pt.x, l.s_pt.y], [l.e_pt.x, l.e_pt.y])
 end
 
-# function find_crossing(line::Vector{LineSeg}, point::PointA{T}, tolerance::Float64=0.8) where T<:Real
-#     mindist, index = findmin([distance_point_to_line(point, seg) for seg in line])
+# function find_crossing(line::Vector{Simplex{2, Int}}, point::PointA{T}, tolerance::Float64=0.8) where T<:Real
+#     mindist, Simplex{2, Int} = findmin([distance_point_to_line(point, seg) for seg in line])
 
 #     if mindist < tolerance
-#         return index
+#         return Simplex{2, Int}
 #     else 
 #         return nothing
 #     end
 # end
 
-function average_distance(line::Vector{LineSeg}, pidx::Int64, threshold::Float64=0.5) # flowstepfactor
+function average_distance(line::Vector{Simplex{2,Int}}, pidx::Int64, threshold::Float64=0.5) # flowstepfactor
     line_region = [line[pidx]]
 
     for r in 1:min(10, length(line) - pidx - 1)
@@ -44,7 +44,7 @@ function average_distance(line::Vector{LineSeg}, pidx::Int64, threshold::Float64
     return av_dist
 end
 
-function find_crossing(line::Vector{LineSeg}, point::PointA{T}, tolerance::Float64=1.; threshold::Float64=0.5,
+function find_crossing(line::Vector{Simplex{2,Int}}, point::PointA{T}, tolerance::Float64=1.; threshold::Float64=0.5,
     loginfo=[]) where T<:Real
 
     distances = [distance_point_to_line(point, seg) for seg in line]
@@ -52,7 +52,7 @@ function find_crossing(line::Vector{LineSeg}, point::PointA{T}, tolerance::Float
     # finds local minima of the distances, filters for those where the height is <tolerance, and returns the respective indices
     # https://docs.juliahub.com/Peaks/3TWUM/0.5.2/
     intersections = findminima(vcat(distances, distances[1:min(20, length(distances))])) |> peakheights(; max=tolerance) |> peakproms(; min=0.5)
-    peakindices = unique(mod1.(intersections.indices, length(distances)))
+    peakindices = unique(mod1.(intersections.vertices, length(distances)))
 
     ### double-check that peaks are smaller than norm, think: adaptive tolerance for peak height. averaging over norms in that region because otherwise sometimes I'm unlucky
 
@@ -71,7 +71,7 @@ end
 
 
 function find_crossing(curve::Curve2{Tuple{T,T}}, point::PointA{T}, tolerance::Float64=0.8; threshold::Float64=0.5) where T<:Real
-    line = [LineSeg(PointA(curve.vertices[i]...), PointA(curve.vertices[i+1]...)) for i in 1:(length(curve.vertices)-1)]
+    line = [Simplex{2,Int}(PointA(curve.vertices[i]...), PointA(curve.vertices[i+1]...)) for i in 1:(length(curve.vertices)-1)]
     return find_crossing(line, point, tolerance, threshold=threshold)
 end
 
@@ -104,10 +104,13 @@ end
 
 
 ### checking if conditions are fulfilled
-function check_contribution(necklace::Vector{LineSeg},
+function check_contribution(necklace::Vector{Simplex{2,FlowPoint}},
     f::Function,
-    ti::ComplexF64, tr::ComplexF64
+    saddle_point::Saddle
     ; Ntimes=100, kwargs...)
+    
+    ti = saddle_point.saddle[1].coords[1]
+    tr = saddle_point.saddle[2].coords[1]
 
     flowstepfactor = try
         kwargs[:flowstepfactor]
@@ -124,7 +127,7 @@ function check_contribution(necklace::Vector{LineSeg},
         active = false
     else
         ### get the point where it hits & check if it's in the integration domain
-        hitting_point = real(necklace[idx].s_pt.y) > real(necklace[idx].s_pt.x) ?
+        hitting_point = real(necklace[idx].vertices[1].coords[2]) > real(necklace[idx].vertices[1].coords[1]) ?
                         get_point(real(necklace[idx])) : nothing
         # mustn't use the starting point here, could use the centre point!
 
@@ -132,7 +135,7 @@ function check_contribution(necklace::Vector{LineSeg},
             println("it doesn't contribute! (2)") # because this shouldn't happen!
             active = false
         else
-            H_at_hp = imag(f(necklace[idx].s_pt.x, necklace[idx].s_pt.y))
+            H_at_hp = imag(f(necklace[idx].vertices[1].coords[1], necklace[idx].vertices[1].coords[2]))
             H_at_sp = imag(f(ti, tr))
             if abs(H_at_hp - H_at_sp) < 1.
                 active = true
@@ -150,14 +153,14 @@ function check_contribution(necklace::Nothing,
     f::Function,
     f_grad::Function,
     f_hessian::Function,
-    ti::ComplexF64, tr::ComplexF64
+    saddle_point::Saddle
     ; Ntimes=100, kwargs...)
     return false
 end
 
 function check_contribution(necklace::Nothing,
     f::Function,
-    ti::ComplexF64, tr::ComplexF64
+    saddle_point::Saddle
     ; Ntimes=100, kwargs...)
     return false
 end
@@ -167,13 +170,16 @@ function check_contribution(
     f::Function,
     f_grad::Function,
     f_hessian::Function,
-    ti::ComplexF64, tr::ComplexF64
+    saddle_point::Saddle
     ; Ntimes::Int64=100, logerrors::Bool=false, kwargs...)
     # Ncounter = 600, logerrors::Bool=false)
 
+    ti = saddle_point.saddle[1].coords[1]
+    tr = saddle_point.saddle[2].coords[1]
+
     if real(f(ti, tr)) < 0
-        necklace = get_necklace(f, f_grad, f_hessian, ti, tr; logerrors=logerrors, kwargs...)
-        check_contribution(necklace, f, ti, tr, Ntimes=Ntimes)
+        necklace = get_necklace(f, f_grad, f_hessian, saddle_point; logerrors=logerrors, kwargs...)
+        check_contribution(necklace, f, saddle_point, Ntimes=Ntimes)
     else
         @debug "it doesn't contribute! (0)"
         return false

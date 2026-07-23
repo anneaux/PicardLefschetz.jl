@@ -1,6 +1,6 @@
 module DownwardsFlow
 
-using ...Types: PointA, TriangleC, TriangleA
+using ...Types: PointA, Simplex
 
 #### OTHER UTILS
 Base.getindex(z::Iterators.Zip, i) = (it -> getindex(it, i)).(z.is)
@@ -49,14 +49,14 @@ end
 
 
 
-function subdivide_triangle_new!(points, t_vertices::TriangleA;
+function subdivide_triangle_new!(points, t_vertices::Simplex{3,Int};
     Δ::Real=0.5, delaunay_flags=flags_original)
-    # og_angle = my_angle(prod(points[t_vertices.indices]))
-    n_ref = triangle_normal(points[t_vertices.indices]...)
+    # og_angle = my_angle(prod(points[t_vertices.vertices]))
+    n_ref = triangle_normal(points[t_vertices.vertices]...)
 
     vertices_here = Vector{Int}()
-    push!(vertices_here, t_vertices.indices...)
-    v1, v2, v3 = t_vertices.indices
+    push!(vertices_here, t_vertices.vertices...)
+    v1, v2, v3 = t_vertices.vertices
     t_edges = [(v1, v2), (v2, v3), (v3, v1)] ### indices of the specific one I'm looking at
     for k in t_edges
         p1, p2 = points[[k...]]
@@ -75,7 +75,7 @@ function subdivide_triangle_new!(points, t_vertices::TriangleA;
                 if isempty(already_created)
                     push!(points, np)
                     push!(vertices_here, length(points))
-                    #         println("point is new. new index: $(length(points)),  length points: $(length(points))")
+                    #         println("point is new. new Simplex{2, Int}: $(length(points)),  length points: $(length(points))")
                 else
                     #             println("point is already created. length points: $(length(points))")
                     np_vertex = already_created[1]
@@ -88,28 +88,28 @@ function subdivide_triangle_new!(points, t_vertices::TriangleA;
     end
 
     if length(vertices_here) == 3
-        return points, Vector{TriangleA}[]
+        return points, Vector{Simplex{3,Int}}[]
     else
         ### project only the points that are relevant for this new triangle
-        projected_points = project_onto_triangle(points[t_vertices.indices], points[vertices_here])
-        connections_here = delaunay(projected_points, flags_original) ### they are in the index system of this triangle!
+        projected_points = project_onto_triangle(points[t_vertices.vertices], points[vertices_here])
+        connections_here = delaunay(projected_points, flags_original) ### they are in the Simplex{2, Int} system of this triangle!
 
         ### check that they are not degenerate!         
         connections_here_vectors = [collect(col) for col in eachcol(connections_here)]
         filter!(ind -> triangle_area_new(projected_points[ind]) > 1e-5,
             connections_here_vectors)
 
-        # new_triangles = [TriangleA(vertices_here[inds]) for inds in connections_here_vectors]
-        new_triangles = TriangleA[]
+        # new_triangles = [Simplex{3, Int}(vertices_here[inds]) for inds in connections_here_vectors]
+        new_triangles = Simplex{3,Int}[]
         ### the following is just to ensure that the newly created triangles have the same orientation
         for inds in connections_here_vectors
             verts = vertices_here[inds]
             n = triangle_normal(points[verts]...)
 
             if real(dot(n, n_ref)) > 0
-                push!(new_triangles, TriangleA(verts))
+                push!(new_triangles, Simplex{3,Int}(verts))
             else
-                push!(new_triangles, TriangleA(reverse(verts)))
+                push!(new_triangles, Simplex{3,Int}(reverse(verts)))
             end
         end
         return points, new_triangles
@@ -136,7 +136,7 @@ function dissect_thimbles(triangles)
                 ### find the neighbouring quads to the vertices
                 for vertex in 1:3
                     # find all quads that corner to you
-                    nexts = findall(sim -> in(active_triangles[v].indices[vertex], sim.indices), active_triangles)
+                    nexts = findall(sim -> in(active_triangles[v].vertices[vertex], sim.vertices), active_triangles)
                     #                     @show nexts
                     append!(stack, filter(!isequal(v), nexts)) # obviously ignore the quad that you're in atm
                 end
@@ -182,7 +182,7 @@ function initialise_grid_triangles(points::Vector{<:PointA}, Δ::Float64)
     connections = delaunay(pts) #, "qhull d Qbb Qc QJ Pp")
     #     "qhull d Qbb Qc QJ Pp"
     #         display(connections)
-    triangles = [TriangleA(orient_triangle(inds, pts, +100.)) for inds in eachcol(connections)]
+    triangles = [Simplex{3,Int}(orient_triangle(inds, pts, +100.)) for inds in eachcol(connections)]
     points = [float2complex(p) for p in points]
 
     ### filter out degenerate points!
@@ -198,7 +198,7 @@ function initialise_grid_triangles(points::Vector{<:PointA}, Δ::Float64)
         for i_t in eachindex(triangles)
             triangle = triangles[i_t]
             if triangle.active
-                #                 points_this_triangle = points[triangle.indices]
+                #                 points_this_triangle = points[triangle.vertices]
                 points, new_connections = subdivide_triangle_new!(points, triangle, Δ=Δ)
                 if !isempty(new_connections)
                     triangle.active = false
@@ -246,7 +246,7 @@ end
 # end
 
 ### this flows the whole surface
-function flow_down!(triangles::Vector{TriangleA}, points::Vector{<:PointA},
+function flow_down!(triangles::Vector{Simplex{3,Int}}, points::Vector{<:PointA},
     f::Function,
     f_grad::Function;
     threshold::Real=0.5, # for normalisation of the gradient
@@ -269,7 +269,7 @@ function flow_down!(triangles::Vector{TriangleA}, points::Vector{<:PointA},
 
     for i2 in eachindex(triangles)
         if triangles[i2].active
-            for v in triangles[i2].indices
+            for v in triangles[i2].vertices
                 if !points[v].active
                     # if real(f(points[v].x, points[v].y)) < h_threshold 
                     triangles[i2].active = false # am I sure that I want to turn the whole simplex inactive?
@@ -281,7 +281,7 @@ function flow_down!(triangles::Vector{TriangleA}, points::Vector{<:PointA},
 end
 
 
-function subdivide_triangles!(points::Vector{<:PointA}, triangles::Vector{TriangleA}, subdividethreshold::Real)
+function subdivide_triangles!(points::Vector{<:PointA}, triangles::Vector{Simplex{3,Int}}, subdividethreshold::Real)
     n_old = length(triangles)
     n_new = n_old + 1
 
@@ -295,14 +295,14 @@ function subdivide_triangles!(points::Vector{<:PointA}, triangles::Vector{Triang
         for i_t in eachindex(triangles)
             triangle = triangles[i_t]
             if triangle.active
-                if all([p.active for p in points[triangle.indices]])
+                if all([p.active for p in points[triangle.vertices]])
                     points, new_connections = subdivide_triangle_new!(points, triangle, Δ=subdividethreshold)
                     # n_actives = sum([t.active for t in triangles])
                     if !isempty(new_connections)
                         triangle.active = false
                         append!(triangles, new_connections)
                     end
-                elseif !any([p.active for p in points[triangle.indices]])
+                elseif !any([p.active for p in points[triangle.vertices]])
                     triangle.active = false
                     # println("here i have turned a triangle inactive")
                 end
@@ -319,7 +319,7 @@ end
 
 
 ### get_flowed_triangles()
-# to flow from the original real-valued domain, and return TriangleC
+# to flow from the original real-valued domain, and return Simplex{3, FlowPoint}
 export get_flowed_triangles
 function get_flowed_triangles(
     f::Function,
@@ -376,7 +376,7 @@ function get_flowed_triangles(
         end
     end
 
-    triangles = [TriangleC(points[sim.indices]) for sim in simplices]
+    triangles = [Simplex{3,FlowPoint}(points[sim.vertices]) for sim in simplices]
 
     return triangles, points, simplices
 end

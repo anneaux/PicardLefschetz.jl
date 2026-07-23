@@ -1,6 +1,6 @@
 using NLsolve
 
-using ..Types: ComplexDomain
+using ..Types: ComplexDomain, Saddle, FlowPoint
 
 function splat_complex(v::Vector{ComplexF64})
     return vec(collect(Iterators.flatten(reim.(v))))
@@ -51,7 +51,7 @@ function find_saddles_sobol(drv::Function,
     check::Function=(t1, t2) -> !isequal(t1, t2)
 )
 
-    solutions = Vector{Vector{ComplexF64}}()
+    solutions = Vector{Saddle}()
 
     t1_seq = SobolSeq(reim(t1_cd.min), reim(t1_cd.max))
     t2_seq = SobolSeq(reim(t2_cd.min), reim(t2_cd.max))
@@ -67,12 +67,12 @@ function find_saddles_sobol(drv::Function,
 
         ### check conditions and deposit in array
         if !isnothing(t1s) && check(t1s, t2s)
-            push!(solutions, [t1s, t2s])
+            push!(solutions, Saddle{Nothing, Nothing}(saddle=[FlowPoint(t1s), FlowPoint(t2s)]))
         end
     end
 
-    unique!(ts -> round.(ts, digits=digits), solutions)
+    unique!(s -> round.([s.saddle[1].coords[1], s.saddle[2].coords[1]], digits=digits), solutions)
 
-    sort!(solutions, by=x -> real(x[1]))
+    sort!(solutions, by=s -> real(s.saddle[1].coords[1]))
     return solutions
 end;

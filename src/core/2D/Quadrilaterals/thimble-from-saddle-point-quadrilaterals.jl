@@ -1,15 +1,17 @@
 module Thimble
 
-using ...Types: PointA, QuadC, LineSeg
+using ..Types: PointA, Simplex, Saddle
 
 ### I think this needs some functions from the necklace file
 
-function initialise_SD!(necklace::Vector{LineSeg}, points::Vector{<:PointA},
-    ti::ComplexF64, tr::ComplexF64;
+function initialise_SD!(necklace::Vector{Simplex{2,Int}}, points::Vector{<:PointA},
+    saddle_point::Saddle;
     f_hessian::Function,
     Ninit::Int64=20,
     ϵ::Float64=0.01)
 
+    ti = saddle_point.saddle[1].coords[1]
+    tr = saddle_point.saddle[2].coords[1]
     hessian = f_hessian(ti, tr)
 
     # this could certainly be made more julian    
@@ -18,18 +20,18 @@ function initialise_SD!(necklace::Vector{LineSeg}, points::Vector{<:PointA},
     pointsini = ([[ti, tr] .+ ϵ * (cos(θ) * eigenvectors[1] + sin(θ) * eigenvectors[2]) for θ in range(0, stop=2π, length=Ninit + 1)])[1:end-1]
 
     push!(points, [PointA(p[1], p[2]) for p in pointsini]...)
-    push!(necklace, [LineSeg(i, i + 1, true) for i in 1:(length(points)-1)]...)
-    push!(necklace, LineSeg(length(points), 1, true)) # closing the necklace
+    push!(necklace, [Simplex{2,Int}(i, i + 1, true) for i in 1:(length(points)-1)]...)
+    push!(necklace, Simplex{2,Int}(length(points), 1, true)) # closing the necklace
 end
 
-function adorn_necklace(necklace::Vector{LineSeg}, points::Vector{<:PointA})
+function adorn_necklace(necklace::Vector{Simplex{2,Int}}, points::Vector{<:PointA})
     for i in 1:length(necklace)
-        necklace[i] = LineSeg(points[necklace[i].sindex], points[necklace[i].eindex])
+        necklace[i] = Simplex{2,Int}(points[necklace[i].vertices[1]], points[necklace[i].vertices[2]])
     end
     return necklace
 end
 
-function flow_down!(necklace::Vector{LineSeg}, points::Vector{<:PointA},
+function flow_down!(necklace::Vector{Simplex{2,Int}}, points::Vector{<:PointA},
     f::Function,
     f_grad::Function;
     δ::Float64=0.1,
@@ -60,13 +62,18 @@ function get_necklace_SD_solver_with_traces(
     f::Function,
     f_grad::Function,
     f_hessian::Function,
-    ti::ComplexF64, tr::ComplexF64
-    ; Ninit::Int64=20, Ncounter::Int64=500,
-    eigvecfactorinit::Float64=0.02, # I should come up with sophisticated guesses here.
-    flowstepfactor::Float64=0.1,
-    subdividethreshold::Float64=0.5)
+    saddle_point::Saddle;
+    Ninit::Int64=20, Ncounter::Int64=400,
+    kwargs...)
 
-    necklace = Vector{LineSeg}()
+    ti = saddle_point.saddle[1].coords[1]
+    tr = saddle_point.saddle[2].coords[1]
+    
+    eigvecfactorinit = get(kwargs, :eigvecfactorinit, 0.02)
+    flowstepfactor = get(kwargs, :flowstepfactor, 0.1)
+    subdividethreshold = get(kwargs, :subdividethreshold, 0.5)
+
+    necklace = Vector{Simplex{2,Int}}()
     points = Vector{<:PointA}()
 
     initialise_SD!(necklace, points, ti, tr, f_hessian=f_hessian, Ninit=Ninit, ϵ=eigvecfactorinit)
@@ -76,7 +83,7 @@ function get_necklace_SD_solver_with_traces(
         push!(points_traces, Vector{<:PointA}())
     end
 
-    necklaces = Vector{Vector{LineSeg}}()
+    necklaces = Vector{Vector{Simplex{2,Int}}}()
     push!(necklaces, adorn_necklace(sort_linesegs(necklace), points))
 
     ### find a suitable threshold for the normalisation of the gradient
@@ -122,8 +129,8 @@ function get_necklace_SD_solver_with_traces(
 end
 
 ### l121 - 213 could be deleted once I finished this refurbishing experiment
-# function make_quads(necklace::Vector{LineSeg},
-#         points::Vector{<:PointA}, prev_necklace::Vector{LineSeg} )
+# function make_quads(necklace::Vector{Simplex{2, Int}},
+#         points::Vector{<:PointA}, prev_necklace::Vector{Simplex{2, Int}} )
 
 #     quads = Vector{Tuple}()
 #     new_necklace = adorn_necklace(sort_linesegs(necklace), points)  
@@ -148,7 +155,7 @@ end
 #     subdividethreshold::Float64 = 20.)
 
 #     ### check that Ninit ganzzahlig
-#     necklace = Vector{LineSeg}()
+#     necklace = Vector{Simplex{2, Int}}()
 #     points = Vector{<:PointA}()
 
 #     initialise_SD!(necklace, points, ti, tr, f_hessian=f_hessian, Ninit = Ninit, ϵ = eigvecfactorinit)
@@ -158,7 +165,7 @@ end
 #         #         push!(points_traces, Vector{<:PointA}())
 #         #     end
 
-#     necklaces = Vector{Vector{LineSeg}}()
+#     necklaces = Vector{Vector{Simplex{2, Int}}}()
 #     push!(necklaces, adorn_necklace(sort_linesegs(necklace), points))
 
 #     ### find a suitable threshold for the normalisation of the gradient
@@ -203,7 +210,7 @@ end
 ### why the fuck do i have a quadrangle and a quadrilateral ???
 # function integrate_quadrangle(
 #     f::Function,
-#     quadrangle::Tuple{LineSeg,LineSeg}, n::Int64=7;
+#     quadrangle::Tuple{Simplex{2, Int},Simplex{2, Int}}, n::Int64=7;
 #     prefactor::Function=(ti,tr) -> ones(2)
 #     )
 
@@ -212,23 +219,23 @@ end
 #     p3 = quadrangle[2].e
 #     p4 = quadrangle[1].e
 
-#     integrate_quadrilateral(f, QuadC([p1,p2,p3,p4]), n, prefactor=prefactor)
+#     integrate_quadrilateral(f, Simplex{4, FlowPoint}([p1,p2,p3,p4]), n, prefactor=prefactor)
 # end
 
-function make_quad(ls1::LineSeg, ls2::LineSeg)
+function make_quad(ls1::Simplex{2,Int}, ls2::Simplex{2,Int})
 
     p1 = ls1.s_pt
     p2 = ls2.s_pt
     p3 = ls2.e_pt
     p4 = ls1.e_pt
 
-    return QuadC([p1, p2, p3, p4])
+    return Simplex{4,FlowPoint}([p1, p2, p3, p4])
 end
 
-function make_quads(necklace::Vector{LineSeg},
-    points::Vector{<:PointA}, prev_necklace::Vector{LineSeg})
+function make_quads(necklace::Vector{Simplex{2,Int}},
+    points::Vector{<:PointA}, prev_necklace::Vector{Simplex{2,Int}})
 
-    quads = Vector{QuadC}()
+    quads = Vector{Simplex{4,FlowPoint}}()
     new_necklace = adorn_necklace(sort_linesegs(necklace), points)
     for idx in 1:length(prev_necklace)
         quad = make_quad(prev_necklace[idx], new_necklace[idx])
@@ -239,19 +246,26 @@ function make_quads(necklace::Vector{LineSeg},
 end
 
 export get_SD_thimble_quads
-function get_SD_thimble_quads(
-    f::Function,
+function get_SD_thimble_quads(f::Function,
     f_grad::Function,
     f_hessian::Function,
-    ti::ComplexF64, tr::ComplexF64
-    ; Ninit::Int64=20, Ncounter::Int64=500,
-    accuracy::Float64=1e-4,
-    eigvecfactorinit::Float64=0.02, # I should come up with sophisticated guesses here.
-    flowstepfactor::Float64=10.,
-    subdividethreshold::Float64=20.)
+    saddle_point::Saddle;
+    logerrors::Bool=false,
+    kwargs... # this passes on all th ekeyword arguments
+)
+
+    ti = saddle_point.saddle[1].coords[1]
+    tr = saddle_point.saddle[2].coords[1]
+    
+    Ninit = get(kwargs, :Ninit, 20)
+    Ncounter = get(kwargs, :Ncounter, 500)
+    accuracy = get(kwargs, :accuracy, 1e-4)
+    eigvecfactorinit = get(kwargs, :eigvecfactorinit, 0.02)
+    flowstepfactor = get(kwargs, :flowstepfactor, 10.)
+    subdividethreshold = get(kwargs, :subdividethreshold, 20.)
 
     ### check that Ninit ganzzahlig
-    necklace = Vector{LineSeg}()
+    necklace = Vector{Simplex{2,Int}}()
     points = Vector{PointA}()
 
     initialise_SD!(necklace, points, ti, tr, f_hessian=f_hessian, Ninit=Ninit, ϵ=eigvecfactorinit)
@@ -261,7 +275,7 @@ function get_SD_thimble_quads(
     #         push!(points_traces, Vector{<:PointA}())
     #     end
 
-    necklaces = Vector{Vector{LineSeg}}()
+    necklaces = Vector{Vector{Simplex{2,Int}}}()
     push!(necklaces, adorn_necklace(sort_linesegs(necklace), points))
 
     ### find a suitable threshold for the normalisation of the gradient
@@ -269,7 +283,7 @@ function get_SD_thimble_quads(
     threshold = round(minimum(gradient0), RoundDown, sigdigits=2)
 
     counter = 0
-    quads = Vector{QuadC}()
+    quads = Vector{Simplex{4,FlowPoint}}()
 
     while counter < Ncounter
         counter += 1
@@ -317,8 +331,8 @@ end
 #     flowstepfactor::Float64 = 4., 
 #     subdividethreshold::Float64 = 1.)
 #     println("careful, this function is probably outdated. Most likely the intersection numebr sign is incorrect here.")
-#     function integrate_annulus(necklace::Vector{LineSeg},
-#             points::Vector{<:PointA}, prev_necklace::Vector{LineSeg})
+#     function integrate_annulus(necklace::Vector{Simplex{2, Int}},
+#             points::Vector{<:PointA}, prev_necklace::Vector{Simplex{2, Int}})
 
 #         new_necklace = adorn_necklace(sort_linesegs(necklace), points)  
 #         int = zeros(ComplexF64, 2)
@@ -333,7 +347,7 @@ end
 
 
 #     ### TODO: check that Ninit is even
-#     necklace = Vector{LineSeg}()
+#     necklace = Vector{Simplex{2, Int}}()
 #     points = Vector{<:PointA}()
 
 #     initialise_SD!(necklace, points, ti, tr, f_hessian = f_hessian, Ninit = Ninit, ϵ = eigvecfactorinit)

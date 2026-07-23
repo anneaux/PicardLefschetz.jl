@@ -1,6 +1,6 @@
 ### normalised gradient
 
-using ..Types: PointA, QuadC, TriangleC
+using ..Types: PointA, Simplex
 
 function gradN(
     f_grad::Function,

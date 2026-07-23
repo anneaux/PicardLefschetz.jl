@@ -1,6 +1,6 @@
 module DownwardsFlow
 
-using ...Types: PointA, QuadC, QuadA
+using ..Types: PointA, Simplex
 
 function maxdist(simplex::Vector{PointA{T}}) where T<:Number
     p1, p2, p3, p4 = simplex
@@ -14,20 +14,20 @@ function maxdist(simplex::Vector{PointA{T}}) where T<:Number
 end
 
 
-function maxdist(idx::Int64, simplices::Vector{QuadA}, points::Vector{<:PointA})
+function maxdist(idx::Int64, simplices::Vector{Simplex{4,Int}}, points::Vector{<:PointA})
     sim = simplices[idx]
 
-    v1, v2, v3, v4 = sim.indices
+    v1, v2, v3, v4 = sim.vertices
     p1, p2, p3, p4 = points[v1], points[v2], points[v3], points[v4]
     return maxdist([p1, p2, p3, p4])
 end
 
-function subdivide_quads!(points::Vector{<:PointA}, simplices::Vector{QuadA}, Δ::Float64, init::Bool=false)
+function subdivide_quads!(points::Vector{<:PointA}, simplices::Vector{Simplex{4,Int}}, Δ::Float64, init::Bool=false)
 
     for i3 in eachindex(simplices)
         sim = simplices[i3]
         if sim.active
-            v1, v2, v3, v4 = sim.indices
+            v1, v2, v3, v4 = sim.vertices
             p1, p2, p3, p4 = points[v1], points[v2], points[v3], points[v4]
 
             if (p1.active && p2.active && p3.active && p4.active) || init # == allpointsactive
@@ -87,7 +87,7 @@ function subdivide_quads!(points::Vector{<:PointA}, simplices::Vector{QuadA}, Δ
                     sorted_keys = [keys[1]]
                     # Iterate until all line segments are sorted
                     while length(sorted_keys) != length(keys)
-                        # Find the next line segment based on the end index of the last sorted segment
+                        # Find the next line segment based on the end Simplex{2, Int} of the last sorted segment
                         matching_ls = keys_dict[last(sorted_keys)[2]]
                         push!(sorted_keys, matching_ls)
                     end
@@ -111,8 +111,8 @@ function subdivide_quads!(points::Vector{<:PointA}, simplices::Vector{QuadA}, Δ
                     ### now translate back to the actual indices
                     proper_indices = [v1, v2, v3, v4, new1_idx, new2_idx]
                     append!(simplices, [
-                        QuadA(proper_indices[new_sim1_idx]),
-                        QuadA(proper_indices[new_sim2_idx])])
+                        Simplex{4,Int}(proper_indices[new_sim1_idx]),
+                        Simplex{4,Int}(proper_indices[new_sim2_idx])])
                 end
 
             elseif !any([p1.active, p2.active, p3.active, p4.active])
@@ -125,7 +125,7 @@ end
 
 
 
-function subdivide(points::Vector{<:PointA}, simplices::Vector{QuadA}, Δ::Float64)
+function subdivide(points::Vector{<:PointA}, simplices::Vector{Simplex{4,Int}}, Δ::Float64)
     n_old = length(simplices)
     n_new = n_old + 1
     while (n_old != n_new)
@@ -138,7 +138,7 @@ end
 
 
 function initialise_grid_quads(points::Vector{<:PointA}, Δ::Float64)
-    simplices = [QuadA([1, 2, 3, 4])]
+    simplices = [Simplex{4,Int}([1, 2, 3, 4])]
 
     ### subdivide_2(points, simplices, Δ) # instead of calling this I'll do it here directly
     n_old = length(simplices)
@@ -155,7 +155,7 @@ end
 
 
 ### flowing a whole meshed surface
-function flow_down!(simplices::Vector{QuadA}, points::Vector{<:PointA},
+function flow_down!(simplices::Vector{Simplex{4,Int}}, points::Vector{<:PointA},
     f::Function,
     f_grad::Function;
     threshold::Float64=0.5, # for normalisation of the gradient
@@ -173,7 +173,7 @@ function flow_down!(simplices::Vector{QuadA}, points::Vector{<:PointA},
 
     for i2 in eachindex(simplices)
         if simplices[i2].active
-            for v in simplices[i2].indices
+            for v in simplices[i2].vertices
                 if real(f(points[v].x, points[v].y)) < h_threshold
                     simplices[i2].active = false # am I sure that I want to turn the whole simplex inactive?
                     points[v].active = false
@@ -195,8 +195,8 @@ end
 
 
 ### not sure if this is needed
-# isequal(q1::QuadC,q2::QuadC) = all([isequal(q1.points[i],q2.points[i]) for i in 1:4])
-# Base.hash(q::QuadC, h::UInt) = hash([(p.x, p.y) for p in q.points], h)
+# isequal(q1::Simplex{4, FlowPoint},q2::Simplex{4, FlowPoint}) = all([isequal(q1.vertices[i],q2.vertices[i]) for i in 1:4])
+# Base.hash(q::Simplex{4, FlowPoint}, h::UInt) = hash([(p.x, p.y) for p in q.vertices], h)
 
 
 ### get simplices
@@ -256,7 +256,7 @@ function get_flowed_quads(
         end
     end
 
-    quads = [QuadC(points[sim.indices]) for sim in simplices]
+    quads = [Simplex{4,FlowPoint}(points[sim.vertices]) for sim in simplices]
 
     return quads, points, simplices
 end
@@ -296,7 +296,7 @@ function integrate_flowed_quads(
         # @show simplices
         subdivide(points, simplices, subdividethreshold)
         # @show simplices
-        quads = [QuadC(points[sim.indices]) for sim in simplices]
+        quads = [Simplex{4,FlowPoint}(points[sim.vertices]) for sim in simplices]
         int = complex(zeros(2))
         for quad in quads
             int += integrate_quadrilateral(f, quad, prefactor=prefactor)
@@ -371,7 +371,7 @@ function integrate_flowed_quads_fixed_Nflow(
         flow_down!(simplices, points, f, f_grad,
             threshold=gradnthreshold, δ=flowstepfactor, h_threshold=h_threshold)
         subdivide(points, simplices, subdividethreshold)
-        quads = [QuadC(points[sim.indices]) for sim in simplices]
+        quads = [Simplex{4,FlowPoint}(points[sim.vertices]) for sim in simplices]
         int = complex(zeros(2))
         for quad in quads
             int += integrate_quadrilateral(f, quad, prefactor=prefactor)

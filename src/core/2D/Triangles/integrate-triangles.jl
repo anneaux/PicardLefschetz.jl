@@ -1,15 +1,15 @@
 module Integration
 
-using ...Types: PointA, QuadC, TriangleC
+using ...Types: PointA, Simplex
 
 # TRIANGLES
 
 # function integrate_triangle(points, triangle, integrand; order=1,dim=2)
 #     int = zeros(ComplexF64,dim)
-#     area = triangle_area_new(xy.(points[triangle.indices]))
+#     area = triangle_area_new(xy.(points[triangle.vertices]))
 #     wi = area/3
 
-#     v1,v2,v3 = triangle.indices
+#     v1,v2,v3 = triangle.vertices
 #     t_edges = [(v1,v2),(v2,v3),(v3,v1)] ### indices of the specific one I'm looking at
 #     for k in t_edges
 #         p1,p2 = points[[k...]]
@@ -27,16 +27,16 @@ midy(p1::PointA, p2::PointA) = (p2.y + p1.y) ./ 2
 midpoint(p1::PointA, p2::PointA) = PointA(midx(p1, p2), midy(p1, p2))
 
 
-function triangle_to_fake_quadrilateral(tri::TriangleC)
+function triangle_to_fake_quadrilateral(tri::Simplex{3,FlowPoint})
     t_edges = [(1, 2), (2, 3), (3, 1)]
-    d_edges = [dist(tri.points[k[1]], tri.points[k[2]]) for k in t_edges]
+    d_edges = [dist(tri.vertices[k[1]], tri.vertices[k[2]]) for k in t_edges]
     val, idx = findmax(d_edges)
     longest_edge = t_edges[idx]
 
-    extra_point = midpoint(tri.points[longest_edge[1]], tri.points[longest_edge[2]])
+    extra_point = midpoint(tri.vertices[longest_edge[1]], tri.vertices[longest_edge[2]])
     a, b, opp = longest_edge..., only(setdiff([1, 2, 3], [longest_edge...]))
-    fake_quad_points = [tri.points[a], extra_point, tri.points[b], tri.points[opp]]
-    return QuadC([PointA(p.x, p.y) for p in fake_quad_points])
+    fake_quad_points = [tri.vertices[a], extra_point, tri.vertices[b], tri.vertices[opp]]
+    return Simplex{4,FlowPoint}([PointA(p.x, p.y) for p in fake_quad_points])
 end
 
 function number_of_arguments(f::Function)
@@ -46,7 +46,7 @@ function number_of_arguments(f::Function)
     return arity
 end
 
-function integrate_triangle_cheat(f::Function, triangle::TriangleC;
+function integrate_triangle_cheat(f::Function, triangle::Simplex{3,FlowPoint};
     prefactor::Function=(ti, tr) -> ones(2), order=7, dim=2)
 
     @assert number_of_arguments(f) == 2
@@ -59,15 +59,15 @@ end
 
 using SimplexQuad
 
-function jacobian(tri::TriangleC)
-    p1, p2, p3 = tri.points
+function jacobian(tri::Simplex{3,FlowPoint})
+    p1, p2, p3 = tri.vertices
     [p2.x-p1.x p3.x-p1.x;
         p2.y-p1.y p3.y-p1.y]
 end
 
 export integrate_triangle
-function integrate_triangle(f::Function, triangle::TriangleC; prefactor=(ti, tr) -> ones(2), order=1, dim=2)
-    p1, p2, p3 = triangle.points
+function integrate_triangle(f::Function, triangle::Simplex{3,FlowPoint}; prefactor=(ti, tr) -> ones(2), order=1, dim=2)
+    p1, p2, p3 = triangle.vertices
 
     jac = jacobian(triangle)
 

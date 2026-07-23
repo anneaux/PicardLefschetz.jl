@@ -5,7 +5,6 @@ using FiniteDiff
 using StaticArrays
 using Contour
 
-include("types.jl")
 include("Utils/utils.jl")
 include("Quadrilaterals/quadrilaterals.jl")
 include("Triangles/triangles.jl")

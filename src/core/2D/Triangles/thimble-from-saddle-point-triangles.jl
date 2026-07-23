@@ -3,14 +3,16 @@ module Thimble
 #### making SD thimbles
 using Graphs, SimpleWeightedGraphs
 
-using ...Types: PointA, TriangleC, TriangleA
+using ...Types: PointA, Simplex, Saddle
 
-function initialise_triangulated_necklace(ti::ComplexF64, tr::ComplexF64, f_hessian::Function;
+function initialise_triangulated_necklace(saddle_point::Saddle, f_hessian::Function;
     Ninit::Int64=20,
     ϵ::Float64=0.1)
 
     points_all = Vector{PointA}()
 
+    ti = saddle_point.saddle[1].coords[1]
+    tr = saddle_point.saddle[2].coords[1]
     hessian = f_hessian(ti, tr)
 
     # this could certainly be made more julian
@@ -42,13 +44,13 @@ function initialise_triangulated_necklace(ti::ComplexF64, tr::ComplexF64, f_hess
 
     ### ensure they are all oriented in the same direction
     n_ref = triangle_normal(points_all[eachcol(connections)[1]]...) # randomly choose the first triangle as a reference triangle TODO could be a smarter choice
-    triangles = TriangleA[]
+    triangles = Simplex{3,Int}[]
     for inds in eachcol(connections)
         n = triangle_normal(points_all[inds]...)
         if real(dot(n, n_ref)) > 0
-            push!(triangles, TriangleA(inds))
+            push!(triangles, Simplex{3,Int}(inds))
         else
-            push!(triangles, TriangleA(reverse(inds)))
+            push!(triangles, Simplex{3,Int}(reverse(inds)))
         end
     end
 
@@ -80,10 +82,10 @@ function flow_down!(points::Vector{<:PointA},
     end
 end
 
-function mesh_edges(tris::AbstractVector{TriangleA})
+function mesh_edges(tris::AbstractVector{Simplex{3,Int}})
     edges = Set{Tuple{Int,Int}}()
     for tri in tris
-        (a, b, c) = tri.indices
+        (a, b, c) = tri.vertices
         for (i, j) in ((a, b), (b, c), (c, a))
             push!(edges, (min(i, j), max(i, j)))
         end
@@ -98,15 +100,15 @@ function triangulate_flowed_points(points_all::Vector, first_brim::Vector, secon
     ### connecting new (flowed) and old points to triangles
     points_local = vcat(first_brim, second_brim)
 
-    new_triangles_local = Vector{TriangleA}()
+    new_triangles_local = Vector{Simplex{3,Int}}()
     extra_edges = Vector{Tuple{Int64,Int64}}()
     #### Locally within the brim(s) ###
     for i in 1:N_fb
-        ### i is the local index within the brim
+        ### i is the local Simplex{2, Int} within the brim
         fb_i = first_brim[i]
         sb_i = second_brim[i]
 
-        i_next = i == N_fb ? 1 : i + 1 ### index in the brim
+        i_next = i == N_fb ? 1 : i + 1 ### Simplex{2, Int} in the brim
         fb_n = first_brim[i_next]
         sb_n = second_brim[i_next]
 
@@ -126,21 +128,21 @@ function triangulate_flowed_points(points_all::Vector, first_brim::Vector, secon
             continue
         elseif isequal(fb_i, sb_i) && !isequal(fb_n, sb_n)
             # println("case 2, i doesn't flow, defo take triangle choice 2.")
-            push!(new_triangles_local, TriangleA([i, i3, i4]))
+            push!(new_triangles_local, Simplex{3,Int}([i, i3, i4]))
         elseif !isequal(fb_i, sb_i) && isequal(fb_n, sb_n)
             # println("case 3, i flows, but i+1 doesn't, defo take triangle choice 1.")
-            push!(new_triangles_local, TriangleA([i, i2, i4]))
+            push!(new_triangles_local, Simplex{3,Int}([i, i2, i4]))
         else
             # println("case 4, gotta compare the distances.")
             d13 = dist(fb_i, sb_n)
             d24 = dist(sb_i, fb_n)
 
             if d13 < d24
-                push!(new_triangles_local, TriangleA([i, i3, i4]))
-                push!(new_triangles_local, TriangleA([i, i2, i3]))
+                push!(new_triangles_local, Simplex{3,Int}([i, i3, i4]))
+                push!(new_triangles_local, Simplex{3,Int}([i, i2, i3]))
             elseif d24 <= d13
-                push!(new_triangles_local, TriangleA([i, i2, i4]))
-                push!(new_triangles_local, TriangleA([i2, i3, i4]))
+                push!(new_triangles_local, Simplex{3,Int}([i, i2, i4]))
+                push!(new_triangles_local, Simplex{3,Int}([i2, i3, i4]))
             else
                 println("Warning in the triangle making!")
             end
@@ -148,14 +150,14 @@ function triangulate_flowed_points(points_all::Vector, first_brim::Vector, secon
 
     end
 
-    new_triangles_global = Vector{TriangleA}()
+    new_triangles_global = Vector{Simplex{3,Int}}()
     for tri in new_triangles_local
         indices_global = Vector{Int64}()
-        for i_local in tri.indices
+        for i_local in tri.vertices
             i_global = first(findall(p -> isequal(xy(p), xy(points_local[i_local])), points_all))
             push!(indices_global, i_global)
         end
-        push!(new_triangles_global, TriangleA(indices_global))
+        push!(new_triangles_global, Simplex{3,Int}(indices_global))
     end
     return new_triangles_global, extra_edges
 end
@@ -235,7 +237,7 @@ function get_SD_thimble_triangles(
     f::Function,
     f_grad::Function,
     f_hessian::Function,
-    ti::ComplexF64, tr::ComplexF64
+    saddle_point::Saddle
     ; Ninit::Int64=20, Nflow::Int64=10,
     eigvecfactorinit::Float64=0.1, # I should come up with sophisticated guesses here.
     flowstepfactor::Float64=6.,
@@ -243,7 +245,10 @@ function get_SD_thimble_triangles(
     gradn_threshold::Real=1.,
     h_threshold::Real=-50.) ### this makes the flow stop at some point
 
-    points_all, triangles, indices_necklace = initialise_triangulated_necklace(ti, tr, f_hessian, Ninit=Ninit, ϵ=eigvecfactorinit)
+    ti = saddle_point.saddle[1].coords[1]
+    tr = saddle_point.saddle[2].coords[1]
+
+    points_all, triangles, indices_necklace = initialise_triangulated_necklace(saddle_point, f_hessian; Ninit=Ninit, ϵ=eigvecfactorinit)
 
     ### find a suitable threshold for the normalisation of the gradient
     gradient0 = [norm(conj.(f_grad(p.x, p.y))) for p in points_all]
@@ -268,15 +273,15 @@ function get_SD_thimble_triangles(
         new_triangles_unoriented, extra_edges = triangulate_flowed_points(points_all, first_brim, second_brim)
 
         ### make sure new triangles are well oriented w.r.t. a previous one
-        n_ref = triangle_normal(points_all[triangles[end].indices]...) # choose the last triangle as a reference TODO this isn't necessarily a good choice
-        new_triangles = TriangleA[]
+        n_ref = triangle_normal(points_all[triangles[end].vertices]...) # choose the last triangle as a reference TODO this isn't necessarily a good choice
+        new_triangles = Simplex{3,Int}[]
         for inds in new_triangles_unoriented
-            n = triangle_normal(points_all[inds.indices]...)
+            n = triangle_normal(points_all[inds.vertices]...)
 
             if real(dot(n, n_ref)) > 0
-                push!(new_triangles, TriangleA(inds.indices, inds.active))
+                push!(new_triangles, Simplex{3,Int}(inds.vertices, inds.active))
             else
-                push!(new_triangles, TriangleA(reverse(inds.indices), inds.active))
+                push!(new_triangles, Simplex{3,Int}(reverse(inds.vertices), inds.active))
             end
         end
 
@@ -288,8 +293,8 @@ function get_SD_thimble_triangles(
 
         push!(triangles, deepcopy(new_triangles)...)
     end
-    trianglesC = [TriangleC(points_all[tri.indices]) for tri in triangles]
-    necklace = [LineSeg(points_all[indices_necklace[i]], points_all[indices_necklace[mod1(i + 1, length(indices_necklace))]]) for i in eachindex(indices_necklace)]
+    trianglesC = [Simplex{3,FlowPoint}(points_all[tri.vertices]) for tri in triangles]
+    necklace = [Simplex{2,Int}(points_all[indices_necklace[i]], points_all[indices_necklace[mod1(i + 1, length(indices_necklace))]]) for i in eachindex(indices_necklace)]
 
     return necklace, trianglesC, points_all, triangles
 
