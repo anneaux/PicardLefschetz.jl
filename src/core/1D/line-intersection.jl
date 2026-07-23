@@ -5,7 +5,7 @@ using StaticArrays
 using GeometryBasics
 using LinearAlgebra
 
-function crosses_point(line::Line2, point::Point, tolerance::Float64=0.25)
+function crosses_point(line::Line, point::Point, tolerance::Float64=0.25)
     if line.s.x <= line.e.x
         sx = line.s.x
         ex = line.e.x
@@ -74,7 +74,7 @@ function dissect_curve(zs::ComplexF64, curve::Curve2, ip_guess::Int64, crossthre
 end
 
 
-function intersection(l1::Line2, l2::Line2)
+function intersection(l1::Line, l2::Line)
     x1, y1 = l1.s
     x2, y2 = l1.e
     x3, y3 = l2.s
@@ -120,8 +120,8 @@ end
 function intersection(c1::Curve2, c2::Curve2)
     intersection_points = Vector{Point}()
     for i in 1:(length(c1.vertices)-1), i2 in 1:(length(c2.vertices)-1)
-        l1 = Line2(c1.vertices[i], c1.vertices[i+1])
-        l2 = Line2(c2.vertices[i2], c2.vertices[i2+1])
+        l1 = Line(c1.vertices[i], c1.vertices[i+1])
+        l2 = Line(c2.vertices[i2], c2.vertices[i2+1])
         p = intersection(l1, l2)
         if !isnothing(p)
             push!(intersection_points, p)
