@@ -1,3 +1,5 @@
+using Symbolics
+
 export find_analytic_saddles
 function find_analytic_saddles(
     z::Num, derivative::Num,

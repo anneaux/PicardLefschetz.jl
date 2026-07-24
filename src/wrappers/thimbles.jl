@@ -1,3 +1,5 @@
+using Symbolics
+
 export get_thimble!
 function get_thimble!(
     z::Num, S::Num,
