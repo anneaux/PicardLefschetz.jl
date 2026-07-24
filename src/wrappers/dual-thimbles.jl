@@ -1,7 +1,7 @@
 using Symbolics
 
 export get_dual_thimble!
-function get_dual_thimble(
+function get_dual_thimble!(
     z::Num, S::Num,
     saddle_point::Saddle,
     params::Dict
@@ -31,7 +31,7 @@ function get_dual_thimbles(
 end
 
 export get_dual_thimble_boundary!
-function get_dual_thimble_boundary(
+function get_dual_thimble_boundary!(
     z::Num, S::Num,
     saddle_point::Vector{ComplexF64},
     params::Dict
