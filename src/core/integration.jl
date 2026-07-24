@@ -134,4 +134,6 @@ function _integrate_SPM(
     return total_integral
 end
 
+include("../wrappers/integration.jl")
+
 end

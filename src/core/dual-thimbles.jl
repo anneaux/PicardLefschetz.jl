@@ -11,8 +11,8 @@ function get_dual_thimble!(S::Function, S_grad::Function, S_hessian::Function, s
     flow_step_factor = params["flow_step_factor"]
     max_iterations = params["max_iterations"]
     height_threshold = params["height_threshold"]
-    if length(saddle_point.saddle) == 1
-        thimbles, contributing = Methods1D.PathFlow.flow_up(S, S_grad, saddle_point.saddle[1], flow_step_factor, height_threshold, max_iterations)
+    if length(saddle_point) == 1
+        thimbles, contributing = Methods1D.PathFlow.flow_up(S, S_grad, saddle_point.saddle, flow_step_factor, height_threshold, max_iterations)
         saddle_point.dual_thimble = thimbles
     elseif length(saddle_point) == 2
         init_point_count = params["init_point_count"]
@@ -54,7 +54,7 @@ end
 
 # Gets the dual thimble boundary for a given saddle point.
 export get_dual_thimble_boundary!
-function get_dual_thimble_boundary!(S::Function, S_grad::Function, S_hessian::Function, saddle_point::Vector{ComplexF64}, params::Dict)
+function get_dual_thimble_boundary!(S::Function, S_grad::Function, S_hessian::Function, saddle_point::Types.Saddle, params::Dict)
     if length(saddle_point) == 1
         saddle = Methods1D.Types.MyPoint(saddle_point[1])
         flow_step_factor = params["flow_step_factor"]
@@ -99,5 +99,6 @@ function get_dual_thimble_boundaries(S::Function, S_grad::Function, S_hessian::F
     return saddles
 end
 
+include("../wrappers/dual-thimbles.jl")
 
 end

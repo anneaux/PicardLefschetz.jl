@@ -9,7 +9,7 @@ using ..Saddle: find_numerical_saddles
 export get_thimble!
 function get_thimble!(
     S::Function, S_grad::Function, S_hessian::Function,
-    saddle_point::Saddle, params::Dict;
+    saddle_point::Types.Saddle, params::Dict;
     mesh_type::String
 )::Nothing
     thimble = if length(saddle_point.saddle) == 2
@@ -138,7 +138,7 @@ end
 export get_thimble_boundary!
 function get_thimble_boundary!(
     S::Function, S_grad::Function, S_hessian::Function,
-    saddle_point::Saddle, params::Dict;
+    saddle_point::Types.Saddle, params::Dict;
     mesh_type::String
 )::Nothing
     init_perturbation_radius = params["init_perturbation_radius"]
@@ -227,5 +227,6 @@ function get_thimble_boundaries(
     return saddles
 end
 
+include("../wrappers/thimbles.jl")
 
 end
