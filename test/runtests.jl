@@ -21,5 +21,6 @@ using Test
     include("test_thimbles.jl")
     include("test_dual_thimbles.jl")
     include("test_integration.jl")
+    include("test_wrappers.jl")
 
 end
