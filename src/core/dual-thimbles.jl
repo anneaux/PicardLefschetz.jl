@@ -56,7 +56,7 @@ end
 export get_dual_thimble_boundary!
 function get_dual_thimble_boundary!(S::Function, S_grad::Function, S_hessian::Function, saddle_point::Types.Saddle, params::Dict)
     if length(saddle_point) == 1
-        saddle = Methods1D.Types.MyPoint(saddle_point[1])
+        saddle = saddle_point.saddle
         flow_step_factor = params["flow_step_factor"]
         max_iterations = params["max_iterations"]
         height_threshold = params["height_threshold"]

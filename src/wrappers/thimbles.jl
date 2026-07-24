@@ -7,11 +7,11 @@ function get_thimble!(
     params::Dict;
     mesh_type::String
 )
-    S_grad = Symbolics.gradient(S, z)
-    S_hessian = Symbolics.hessian(S, z)
+    S_grad = Symbolics.gradient(S, [z])[1]
+    S_hessian = Symbolics.hessian(S, [z])[1, 1]
     native_S = build_function(S, z, expression=Val{false})
-    native_grad = build_function(S_grad, z, expression=Val{false})[1]
-    native_hessian = build_function(S_hessian, z, expression=Val{false})[1]
+    native_grad = build_function(S_grad, z, expression=Val{false})
+    native_hessian = build_function(S_hessian, z, expression=Val{false})
 
     return get_thimble!(native_S, native_grad, native_hessian, saddle_point, params, mesh_type=mesh_type)
 end
@@ -24,9 +24,9 @@ function get_thimbles(
     contributing::Bool;
     mesh_type::String
 )
-    S_grad = Symbolics.gradient(S, z)
+    S_grad = Symbolics.gradient(S, [z])[1]
     native_S = build_function(S, z, expression=Val{false})
-    native_grad = build_function(S_grad, z, expression=Val{false})[1]
+    native_grad = build_function(S_grad, z, expression=Val{false})
 
     return get_thimbles(native_S, native_grad, params, domain, contributing, mesh_type=mesh_type)
 end
@@ -38,11 +38,11 @@ function get_thimble_boundary!(
     params::Dict;
     mesh_type::String
 )
-    S_grad = Symbolics.gradient(S, z)
-    S_hessian = Symbolics.hessian(S, z)
+    S_grad = Symbolics.gradient(S, [z])[1]
+    S_hessian = Symbolics.hessian(S, [z])[1, 1]
     native_S = build_function(S, z, expression=Val{false})
-    native_grad = build_function(S_grad, z, expression=Val{false})[1]
-    native_hessian = build_function(S_hessian, z, expression=Val{false})[1]
+    native_grad = build_function(S_grad, z, expression=Val{false})
+    native_hessian = build_function(S_hessian, z, expression=Val{false})
 
     return get_thimble_boundary!(native_S, native_grad, native_hessian, saddle_point, params, mesh_type=mesh_type)
 end
@@ -55,11 +55,11 @@ function get_thimble_boundaries(
     mesh_type::String,
     check::Function=(t_1, t_2) -> !isequal(t_1, t_2)
 )
-    S_grad = Symbolics.gradient(S, z)
-    S_hessian = Symbolics.hessian(S, z)
+    S_grad = Symbolics.gradient(S, [z])[1]
+    S_hessian = Symbolics.hessian(S, [z])[1, 1]
     native_S = build_function(S, z, expression=Val{false})
-    native_grad = build_function(S_grad, z, expression=Val{false})[1]
-    native_hessian = build_function(S_hessian, z, expression=Val{false})[1]
+    native_grad = build_function(S_grad, z, expression=Val{false})
+    native_hessian = build_function(S_hessian, z, expression=Val{false})
 
     return get_thimble_boundaries(native_S, native_grad, native_hessian, domain, params, contributing, mesh_type=mesh_type, check=check)
 end

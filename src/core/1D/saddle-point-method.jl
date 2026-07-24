@@ -9,7 +9,7 @@ using ..LineIntersection: crosses_point, dissect_curve, intersection
 export is_contributing
 function is_contributing(ts_saddle::Saddle, S::Function, tmin::ComplexF64, tmax::ComplexF64;
     Ntimes::Int64=100)
-    ts = ts_saddle.saddle[1].coords[1]
+    ts = ts_saddle[1]
     timags = range(imag(tmin), stop=imag(tmax), length=Ntimes)
     treals = range(real(tmin), stop=real(tmax), length=Ntimes)
     tlength = real(tmax - tmin)
@@ -59,7 +59,7 @@ function integrate_around_saddle_point(ts_saddle::Saddle,
     ; prefactor::Function=t -> 1.,
 )
 
-    ts = ts_saddle.saddle[1].coords[1]
+    ts = ts_saddle[1]
     S_ts = S(ts)
 
     int = prefactor(ts) * sqrt(-im * 2π / drv2(ts)) * exp(im * S_ts)
@@ -70,7 +70,7 @@ function integrate_SPM(S::Function, drv::Function, drv2::Function,
     tmin::ComplexF64, tmax::ComplexF64
     ; prefactor::Function=t -> 1.)
 
-    saddles = filter(ts -> real(tmin) < real(ts.saddle[1].coords[1]) < real(tmax),
+    saddles = filter(ts -> real(tmin) < real(ts[1]) < real(tmax),
         find_saddles_sobol(drv, tmin, tmax, 300)
     )
     int_SPM = complex(0.)

@@ -31,11 +31,11 @@ function check_contribution!(
     params::Dict;
     log_errors::Bool=false
 )
-    S_grad = Symbolics.gradient(S, z)
-    S_hessian = Symbolics.hessian(S, z)
+    S_grad = Symbolics.gradient(S, [z])[1]
+    S_hessian = Symbolics.hessian(S, [z])[1, 1]
     native_S = build_function(S, z, expression=Val{false})
-    native_derivative = build_function(S_grad, z, expression=Val{false})[1]
-    native_hessian = build_function(S_hessian, z, expression=Val{false})[1]
+    native_derivative = build_function(S_grad, z, expression=Val{false})
+    native_hessian = build_function(S_hessian, z, expression=Val{false})
 
     check_contribution!(native_S, native_derivative, native_hessian, saddle_point, domain, params, log_errors=log_errors)
 end

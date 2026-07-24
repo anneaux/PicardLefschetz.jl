@@ -7,11 +7,11 @@ using ..Saddle
 
 # Integrate using a given boundary around one thimble, i.e. boundary can be precomputed in this case.
 export integrate_thimble
-function integrate_thimble(S::Function, boundary::Vector, prefactor::Function, params::Dict)
-    if boundary isa Vector{Any}
+function integrate_thimble(S::Function, boundary::Any, prefactor::Function, params::Dict)
+    if typeof(boundary) <: Tuple && length(boundary) == 2
         # 1D case
         return Methods1D.Integration.integrate_thimble(S, boundary[1], boundary[2])
-    elseif boundary isa Vector{QuadC}
+    elseif boundary isa Vector{Simplex{4, FlowPoint}}
         # 2D case
         integral = 0
         for quad in boundary
@@ -19,7 +19,7 @@ function integrate_thimble(S::Function, boundary::Vector, prefactor::Function, p
         end
 
         return integral
-    elseif boundary isa Vector{TriangleC}
+    elseif boundary isa Vector{Simplex{3, FlowPoint}}
         integral = 0
         for triangle in boundary
             integral += Methods2D.Triangle.Integration.integrate_triangle(S, triangle, prefactor=prefactor, order=params["simplex_order"], dim=params["output_dim"])

@@ -1,7 +1,7 @@
 using Test
 using Symbolics
 using PicardLefschetz
-using PicardLefschetz.Types
+using PicardLefschetz.Types: Saddle
 using PicardLefschetz.Saddle
 using PicardLefschetz.Thimble
 using PicardLefschetz.DualThimble
@@ -48,7 +48,7 @@ using PicardLefschetz.Integration
 
     @testset "Saddles Wrappers" begin
         saddles = find_numerical_saddles(z, S_drv_expr, domain_1d_complex, params_1d)
-        @test saddles isa Vector{Saddle}
+        @test saddles isa Vector{<:Saddle}
 
         if !isempty(saddles)
             saddle = saddles[1]
@@ -75,7 +75,7 @@ using PicardLefschetz.Integration
         @test thimbles !== nothing
 
         boundaries = get_thimble_boundaries(z, S_expr, domain_1d_complex, params_1d, false, mesh_type="none")
-        @test boundaries isa Vector{Saddle}
+        @test boundaries isa Vector{<:Saddle}
     end
 
     @testset "Dual Thimbles Wrappers" begin
@@ -90,10 +90,10 @@ using PicardLefschetz.Integration
         end
 
         dual_thimbles = get_dual_thimbles(z, S_expr, params_1d, domain_1d_complex, false)
-        @test dual_thimbles isa Vector{Saddle}
+        @test dual_thimbles isa Vector{<:Saddle}
 
         dual_boundaries = get_dual_thimble_boundaries(z, S_expr, params_1d, domain_1d_complex, false)
-        @test dual_boundaries isa Vector{Saddle}
+        @test dual_boundaries isa Vector{<:Saddle}
     end
 
     @testset "Integration Wrappers" begin
@@ -105,10 +105,10 @@ using PicardLefschetz.Integration
             integrate_thimble!(z, S_expr, saddle, prefactor_expr)
             @test saddle.integral !== nothing
 
-            # test integrate_thimble (requires a boundary first)
-            get_thimble_boundary!(z, S_expr, saddle, params_1d, mesh_type="none")
-            if saddle.thimble_boundary !== nothing
-                integral = integrate_thimble(z, S_expr, saddle.thimble_boundary, prefactor_expr, params_1d)
+            # test integrate_thimble (requires a thimble first)
+            get_thimble!(z, S_expr, saddle, params_1d, mesh_type="none")
+            if saddle.thimble !== nothing
+                integral = integrate_thimble(z, S_expr, saddle.thimble, prefactor_expr, params_1d)
                 @test integral !== nothing
             end
         end

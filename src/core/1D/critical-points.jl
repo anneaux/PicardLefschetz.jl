@@ -49,7 +49,7 @@ function find_saddles_sobol(drv::Function,
         ts = solve_first_derivative(drv, t0, roundDigits)
         #         ### check conditons and deposit in array
         if length(ts) > 0
-            ts_val = ts[1].saddle[1].coords[1]
+            ts_val = ts[1][1]
             ts_r = round(ts_val, digits=roundDigits)
 
             ts_c = complex(
@@ -60,14 +60,14 @@ function find_saddles_sobol(drv::Function,
         end
     end
 
-    unique!(s -> round(s.saddle[1].coords[1], digits=roundDigits), saddles)
-    sort!(saddles, by=s -> real(s.saddle[1].coords[1]))
+    unique!(s -> round(s[1], digits=roundDigits), saddles)
+    sort!(saddles, by=s -> real(s[1]))
     return saddles
 end
 
 function find_saddle_similar_seed(drv::Function, ts::Saddle; roundDigits=2)
 
-    saddles = solve_first_derivative(drv, [reim(ts.saddle[1].coords[1])...], roundDigits)
+    saddles = solve_first_derivative(drv, [reim(ts[1])...], roundDigits)
 
     if length(saddles) > 0
         return saddles[1]
