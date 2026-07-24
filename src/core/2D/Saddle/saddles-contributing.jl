@@ -109,8 +109,8 @@ function check_contribution(necklace::Vector{Simplex{2,FlowPoint}},
     saddle_point::Saddle
     ; Ntimes=100, kwargs...)
 
-    ti = saddle_point.saddle[1].coords[1]
-    tr = saddle_point.saddle[2].coords[1]
+    ti = saddle_point[1]
+    tr = saddle_point[2]
 
     flowstepfactor = try
         kwargs[:flowstepfactor]
@@ -174,8 +174,8 @@ function check_contribution(
     ; Ntimes::Int64=100, logerrors::Bool=false, kwargs...)
     # Ncounter = 600, logerrors::Bool=false)
 
-    ti = saddle_point.saddle[1].coords[1]
-    tr = saddle_point.saddle[2].coords[1]
+    ti = saddle_point[1]
+    tr = saddle_point[2]
 
     if real(f([ti, tr])) < 0
         necklace = get_necklace(f, f_grad, f_hessian, saddle_point; logerrors=logerrors, kwargs...)

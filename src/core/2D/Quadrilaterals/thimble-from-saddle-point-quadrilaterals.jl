@@ -10,8 +10,8 @@ function initialise_SD!(necklace::Vector{Simplex{2,Int}}, points::Vector{<:FlowP
     Ninit::Int64=20,
     ϵ::Float64=0.01)
 
-    ti = saddle_point.saddle[1].coords[1]
-    tr = saddle_point.saddle[2].coords[1]
+    ti = saddle_point[1]
+    tr = saddle_point[2]
     hessian = f_hessian(ti, tr)
 
     # this could certainly be made more julian    
@@ -66,8 +66,8 @@ function get_necklace_SD_solver_with_traces(
     Ninit::Int64=20, Ncounter::Int64=400,
     kwargs...)
 
-    ti = saddle_point.saddle[1].coords[1]
-    tr = saddle_point.saddle[2].coords[1]
+    ti = saddle_point[1]
+    tr = saddle_point[2]
 
     eigvecfactorinit = get(kwargs, :eigvecfactorinit, 0.02)
     flowstepfactor = get(kwargs, :flowstepfactor, 0.1)
@@ -254,8 +254,8 @@ function get_SD_thimble_quads(f::Function,
     kwargs... # this passes on all th ekeyword arguments
 )
 
-    ti = saddle_point.saddle[1].coords[1]
-    tr = saddle_point.saddle[2].coords[1]
+    ti = saddle_point[1]
+    tr = saddle_point[2]
 
     Ninit = get(kwargs, :Ninit, 20)
     Ncounter = get(kwargs, :Ncounter, 500)

@@ -68,12 +68,12 @@ function find_saddles_sobol(drv::Function,
 
         ### check conditions and deposit in array
         if !isnothing(t1s) && check(t1s, t2s)
-            push!(solutions, Saddle{Any}(saddle=[FlowPoint(t1s), FlowPoint(t2s)]))
+            push!(solutions, Saddle{Any}(saddle=FlowPoint(t1s, t2s)))
         end
     end
 
-    unique!(s -> round.([s.saddle[1].coords[1], s.saddle[2].coords[1]], digits=digits), solutions)
+    unique!(s -> round.([s[1], s[2]], digits=digits), solutions)
 
-    sort!(solutions, by=s -> real(s.saddle[1].coords[1]))
+    sort!(solutions, by=s -> real(s[1]))
     return solutions
 end;

@@ -11,8 +11,8 @@ function initialise_triangulated_necklace(saddle_point::Saddle, f_hessian::Funct
 
     points_all = Vector{FlowPoint}()
 
-    ti = saddle_point.saddle[1].coords[1]
-    tr = saddle_point.saddle[2].coords[1]
+    ti = saddle_point[1]
+    tr = saddle_point[2]
     hessian = f_hessian(ti, tr)
 
     # this could certainly be made more julian
@@ -245,8 +245,8 @@ function get_SD_thimble_triangles(
     gradn_threshold::Real=1.,
     h_threshold::Real=-50.) ### this makes the flow stop at some point
 
-    ti = saddle_point.saddle[1].coords[1]
-    tr = saddle_point.saddle[2].coords[1]
+    ti = saddle_point[1]
+    tr = saddle_point[2]
 
     points_all, triangles, indices_necklace = initialise_triangulated_necklace(saddle_point, f_hessian; Ninit=Ninit, ϵ=eigvecfactorinit)
 

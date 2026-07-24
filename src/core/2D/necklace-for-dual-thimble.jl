@@ -252,8 +252,8 @@ function get_necklace(f::Function,
     kwargs... # this passes on all th ekeyword arguments
 )
 
-    ti = saddle_point.saddle[1].coords[1]
-    tr = saddle_point.saddle[2].coords[1]
+    ti = saddle_point[1]
+    tr = saddle_point[2]
 
     necklace, quadrangles = get_necklace_solver(f, f_grad, f_hessian, ti, tr; kwargs...)
 

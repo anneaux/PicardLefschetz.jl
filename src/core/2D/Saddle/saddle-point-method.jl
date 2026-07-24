@@ -32,8 +32,8 @@ function saddles_gaussian_contribution(f::Function,
     prefactor::Function=t -> ones(2)
 )
 
-    ti = saddle_point.saddle[1].coords[1]
-    tr = saddle_point.saddle[2].coords[1]
+    ti = saddle_point[1]
+    tr = saddle_point[2]
 
     ### prefactor for the saddle-point method
     prefactor_spm = hessian_root(f_hessian([ti, tr]))

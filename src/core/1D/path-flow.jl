@@ -250,7 +250,7 @@ function get_thimble(S::Function, S_grad::Function, S_hessian::Function,
     height_threshold::Float64
 )
 
-    saddle_mypt = saddle_point.saddle[1]
+    saddle_mypt = saddle_point.saddle
     saddle_mypt.active = false
 
     directions = Vector{ComplexF64}()

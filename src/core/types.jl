@@ -52,7 +52,7 @@ struct RealDomain
 end
 
 Base.@kwdef mutable struct Saddle{T}
-    saddle::Vector{FlowPoint}
+    saddle::FlowPoint
     contributing::Union{Nothing,Bool} = nothing
     thimble::Union{Nothing,T} = nothing
     thimble_boundary::Union{Nothing,T} = nothing
@@ -60,5 +60,9 @@ Base.@kwdef mutable struct Saddle{T}
     dual_thimble_boundary::Union{Nothing,T} = nothing
     integral::Union{Nothing,ComplexF64} = nothing
 end
+
+Base.length(p::FlowPoint{N}) where {N} = N
+Base.length(s::Saddle) = length(s.saddle)
+Base.getindex(s::Saddle, i::Int) = s.saddle.coords[i]
 
 end
