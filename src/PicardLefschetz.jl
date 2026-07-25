@@ -2,46 +2,30 @@ module PicardLefschetz
 
 ### make sure they're added to the Project.toml by doing ] activate .,  add PackageName
 using LinearAlgebra
-
-
 ### for finding critical points
 using NLsolve
 using Sobol
-
 ### for the contour intersection
 using Contour
 using StaticArrays
 using GeometryBasics
 
+# Types
+include("core/types.jl")
 
-### I probably want this at some point
-# import Base: show
+# 1D code
+include("core/1D/methods-1D.jl")
 
-include("1D/integration-path-flow.jl")
+# 2D code
+include("core/2D/methods-2D.jl")
 
-include("1D/critical-points.jl")
-include("1D/line-intersection.jl")
-include("1D/saddle-point-method.jl")
+include("core/saddles.jl")
+include("core/integration.jl")
+include("core/thimbles.jl")
+include("core/dual-thimbles.jl")
 
-include("n-dim/types.jl")
-include("n-dim/lefschetz-thimble-contour.jl")
-include("n-dim/gradient-descent.jl")
+using .DualThimble, .Integration, .Saddle, .Thimble
 
-export Types, LefschetzThimbleContour, GradientDescent
-
-export square
-
-# Write your package code here.
-function hello()
-    println("hello, World")
-end
-
-"""
-    square(x)
-
-Returns the square of `x`, for whatever type of argument.
-"""
-square(x) = x^2
-
+export Types, DualThimble, Integration, Saddle, Thimble
 
 end # PicardLefschetz
