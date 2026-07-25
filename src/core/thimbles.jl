@@ -7,6 +7,39 @@ using ..Saddle: find_numerical_saddles
 
 # Gets the thimble for a given saddle point.
 export get_thimble!
+"""
+    get_thimble!(S, S_grad, S_hessian, saddle_point, params; mesh_type)
+
+Calculates the Lefschetz thimble for a given saddle point, using gradient descent. 
+Gradient descent is done by solving the ODE along a time parameter \$ \\tau \$ to find the thimble. The ODE is as such
+\$\$
+\\frac{dS}{d\\tau} = -\\overline{\\nabla S(z)}
+\$\$
+
+The parameters for this function are listed in the table:
+
+| Parameter             | Required | Type | Description                                                                                                                                   |
+| --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `flow_step_factor`    | Yes      | `Float64` | The step size of the gradient descent solver.                                                                                                  |
+| `max_iterations`      | Yes      | `Int` | The maximum number of iterations to perform using the solver.                                                                                 |
+| `height_threshold`    | Yes      | `Float64` | The maximal magnitude of the imaginary component during gradient descent.        |
+| `gradient_normalisation_threshold` | Yes | `Float64` | The threshold for normalising the gradient in the flow. |
+| `init_perturbation_radius` | Yes  | `Float64` | The initial radius for the Lefschetz thimble contour. This is the contour evolved to give the thimble. |
+| `subdivision_threshold` | Yes     | `Float64` | The threshold for subdivding the segments between the points of the Lefschetz thimble. |
+| `initial_point_count` | No       | `Int` | The initial number of points for the Lefschetz thimble contour. (This parameter is only required when the dimension of the saddle is 2.) |
+| `accuracy` | No | `Int` | The precision used during the thimble finding process. (This parameter is required when `mesh_type` is "quad"). |
+
+# Arguments
+- `S::Function`: The action function. 
+- `S_grad::Function`: The gradient of the action function.
+- `S_hessian::Function`: The Hessian of the action function.
+- `saddle_point::Saddle`: The struct containing the saddle point and the related functions.
+- `params::Dict`: The parameters for the thimble calculation. All parameters listed above are to be included in this dictionary.
+- `mesh_type::String`: The type of mesh to generate in 2D (either "quad" or "triangles").
+
+# Returns
+- `Nothing`
+"""
 function get_thimble!(
     S::Function, S_grad::Function, S_hessian::Function,
     saddle_point::Types.Saddle, params::Dict;
@@ -72,6 +105,41 @@ end
 
 # Gets the thimbles for all saddle points.
 export get_thimbles
+"""
+    get_thimbles(S, S_grad, params, domain, contributing; mesh_type)
+
+Calculates the Lefschetz thimbles for a given domain, using gradient descent on an initial grid of points over the domain. 
+Gradient descent is done by solving the ODE along a time parameter \$ \\tau \$ to find the thimble. The ODE is as such
+\$\$
+\\frac{dS}{d\\tau} = -\\overline{\\nabla S(z)}
+\$\$
+
+The parameters for this function are listed in the table:
+
+| Parameter             | Required | Type | Description                                                                                                                                   |
+| --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `flow_step_factor`    | Yes      | `Float64` | The step size of the gradient descent solver.                                                                                                  |
+| `height_threshold`    | Yes      | `Float64` | The maximal magnitude of the imaginary component during gradient descent.        |
+| `gradient_normalisation_threshold` | Yes | `Float64` | The threshold for normalising the gradient in the flow. |
+| `subdivision_threshold` | Yes     | `Float64` | The threshold for subdivding the segments between the points of the Lefschetz thimble. |
+| `iterations` | No | `Int` | The maximum number of iterations to perform using the solver in 1D. |
+| `init_subdivision` | No | `Float64` | The initial subdivision of the line segment in 1D. |
+| `flow_steps` | No | `Int` | The maximum number of iterations to perform using the solver in 2D. |
+| `grid_resolution` | No | `Float64` | The resolution of the initial grid in 2D. |
+| `max_simplices` | No | `Int` | The maximum number of simplices (quads or triangles) to allow during the flow in 2D. |
+| `simplex_tolerance` | No | `Int` | The tolerance for the number of simplices during the flow in 2D. |
+
+# Arguments
+- `S::Function`: The action function. 
+- `S_grad::Function`: The gradient of the action function.
+- `params::Dict`: The parameters for the thimble calculation. All parameters listed above are to be included in this dictionary.
+- `domain::Vector{RealDomain}`: The domain over which to calculate the thimbles. In the 1D case, the domain should be only one `RealDomain`, and in 2D, it should be `RealDomain`s.
+- `contributing::Bool`: Whether to include only contributing points.
+- `mesh_type::String`: The type of mesh to generate in 2D (either "quad" or "triangles").
+
+# Returns
+- The result of the flow (a set of segments in 1D, or a list of quadrilaterals/triangles in 2D).
+"""
 function get_thimbles(
     S::Function, S_grad::Function,
     params::Dict, domain::Vector{RealDomain},
@@ -136,6 +204,39 @@ end
 
 # Gets the thimble boundary for a given saddle point.
 export get_thimble_boundary!
+"""
+    get_thimble_boundary!(S, S_grad, S_hessian, saddle_point, params; mesh_type)
+
+Calculates the boundary of the Lefschetz thimble for a given saddle point, using gradient descent. 
+Gradient descent is done by solving the ODE along a time parameter \$ \\tau \$ to find the thimble boundary. The ODE is as such
+\$\$
+\\frac{dS}{d\\tau} = -\\overline{\\nabla S(z)}
+\$\$
+
+The parameters for this function are listed in the table:
+
+| Parameter             | Required | Type | Description                                                                                                                                   |
+| --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `flow_step_factor`    | Yes      | `Float64` | The step size of the gradient descent solver.                                                                                                  |
+| `max_iterations`      | Yes      | `Int` | The maximum number of iterations to perform using the solver.                                                                                 |
+| `height_threshold`    | Yes      | `Float64` | The maximal magnitude of the imaginary component during gradient descent.        |
+| `gradient_normalisation_threshold` | Yes | `Float64` | The threshold for normalising the gradient in the flow. |
+| `init_perturbation_radius` | Yes  | `Float64` | The initial radius for the Lefschetz thimble contour. This is the contour evolved to give the thimble. |
+| `subdivision_threshold` | Yes     | `Float64` | The threshold for subdivding the segments between the points of the Lefschetz thimble. |
+| `init_point_count` | No       | `Int` | The initial number of points for the Lefschetz thimble contour. (This parameter is only required when the dimension of the saddle is 2.) |
+| `accuracy` | No | `Int` | The precision used during the thimble finding process. (This parameter is required when `mesh_type` is "quad"). |
+
+# Arguments
+- `S::Function`: The action function. 
+- `S_grad::Function`: The gradient of the action function.
+- `S_hessian::Function`: The Hessian of the action function.
+- `saddle_point::Saddle`: The struct containing the saddle point and the related functions.
+- `params::Dict`: The parameters for the thimble boundary calculation. All parameters listed above are to be included in this dictionary.
+- `mesh_type::String`: The type of mesh to generate in 2D (either "quad" or "triangle").
+
+# Returns
+- `Nothing`
+"""
 function get_thimble_boundary!(
     S::Function, S_grad::Function, S_hessian::Function,
     saddle_point::Types.Saddle, params::Dict;
@@ -206,6 +307,41 @@ end
 
 # Gets the thimble boundary for all saddle points.
 export get_thimble_boundaries
+"""
+    get_thimble_boundaries(S, S_grad, S_hessian, domain, params, contributing; mesh_type, check)
+
+Calculates the boundaries of the Lefschetz thimbles for all saddles, using gradient descent. 
+Gradient descent is done by solving the ODE along a time parameter \$ \\tau \$ to find the thimble boundary. The ODE is as such
+\$\$
+\\frac{dS}{d\\tau} = -\\overline{\\nabla S(z)}
+\$\$
+
+The parameters for this function are listed in the table:
+
+| Parameter             | Required | Type | Description                                                                                                                                   |
+| --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `flow_step_factor`    | Yes      | `Float64` | The step size of the gradient descent solver.                                                                                                  |
+| `max_iterations`      | Yes      | `Int` | The maximum number of iterations to perform using the solver.                                                                                 |
+| `height_threshold`    | Yes      | `Float64` | The maximal magnitude of the imaginary component during gradient descent.        |
+| `gradient_normalisation_threshold` | Yes | `Float64` | The threshold for normalising the gradient in the flow. |
+| `init_perturbation_radius` | Yes  | `Float64` | The initial radius for the Lefschetz thimble contour. This is the contour evolved to give the thimble. |
+| `subdivision_threshold` | Yes     | `Float64` | The threshold for subdivding the segments between the points of the Lefschetz thimble. |
+| `init_point_count` | No       | `Int` | The initial number of points for the Lefschetz thimble contour. (This parameter is only required when the dimension of the saddle is 2.) |
+| `accuracy` | No | `Int` | The precision used during the thimble finding process. (This parameter is required when `mesh_type` is "quad"). |
+
+# Arguments
+- `S::Function`: The action function. 
+- `S_grad::Function`: The gradient of the action function.
+- `S_hessian::Function`: The Hessian of the action function.
+- `domain::Vector{ComplexDomain}`: The domain over which to calculate the thimble boundaries.
+- `params::Dict`: The parameters for the thimble calculation. All parameters listed above are to be included in this dictionary.
+- `contributing::Bool`: Whether to include only contributing points.
+- `mesh_type::String`: The type of mesh to generate in 2D (either "quad" or "triangle").
+- `check::Function`: A function for checking equality of critical points.
+
+# Returns
+- `Vector{Saddle}`: A vector of the saddle points and their thimble boundaries.
+"""
 function get_thimble_boundaries(
     S::Function, S_grad::Function, S_hessian::Function,
     domain::Vector{ComplexDomain}, params::Dict,

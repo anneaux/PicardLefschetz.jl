@@ -1,6 +1,23 @@
 using Symbolics
 
 export integrate_thimble
+"""
+    integrate_thimble(z, S, boundary, prefactor, params)
+
+Integrates the given symbolic action function over a precomputed thimble boundary. This 
+is a wrapper function for compatibility with the Symbolics.jl package. For complete 
+documentation, see `integrate_thimble`.
+
+# Arguments
+- `z::Num`: The symbolic variable.
+- `S::Num`: The symbolic action function.
+- `boundary::Any`: The precomputed boundary over which to integrate.
+- `prefactor::Num`: A symbolic expression for the prefactor.
+- `params::Dict`: Integration parameters.
+
+# Returns
+- The result of the integration.
+"""
 function integrate_thimble(
     z::Num, S::Num,
     boundary::Any,
@@ -14,6 +31,22 @@ function integrate_thimble(
 end
 
 export integrate_thimble!
+"""
+    integrate_thimble!(z, S, saddle_point, prefactor)
+
+Integrates the symbolic action function around a single saddle point without a precomputed boundary. This 
+is a wrapper function for compatibility with the Symbolics.jl package. For complete documentation, see 
+`integrate_thimble!`.
+
+# Arguments
+- `z::Num`: The symbolic variable.
+- `S::Num`: The symbolic action function.
+- `saddle_point::Types.Saddle`: The saddle point struct, updated with the `integral` result.
+- `prefactor::Num`: A symbolic expression for the prefactor.
+
+# Returns
+- `Nothing` (the `integral` field of the `saddle_point` is modified in-place).
+"""
 function integrate_thimble!(
     z::Num, S::Num,
     saddle_point::Types.Saddle,
@@ -30,6 +63,25 @@ function integrate_thimble!(
 end
 
 export integrate_thimbles
+"""
+    integrate_thimbles(z, S, domain, deformation_parameters, prefactor, params, mode)
+
+Integrates the symbolic action function over the specified real domain by deforming the contour along the steepest descent paths.
+This is a wrapper function for compatibility with the Symbolics.jl package. For complete documentation, see 
+`integrate_thimbles`.
+
+# Arguments
+- `z::Num`: The symbolic variable.
+- `S::Num`: The symbolic action function.
+- `domain::Vector{RealDomain}`: The initial integration domain.
+- `deformation_parameters::Vector{<:Number}`: The parameters used to deform the integration contour.
+- `prefactor::Num`: A symbolic expression for the prefactor.
+- `params::Dict`: Integration and flow parameters.
+- `mode::String`: The integration mode.
+
+# Returns
+- The result of the total integration over the flowed contours.
+"""
 function integrate_thimbles(
     z::Num, S::Num,
     domain::Vector{RealDomain},
@@ -46,6 +98,24 @@ function integrate_thimbles(
 end
 
 export integrate_thimbles
+"""
+    integrate_thimbles(z, S, domain, params, prefactor; check)
+
+Integrates around all contributing thimbles using the saddle point approximation method with symbolic expressions. This 
+is a wrapper function for compatibility with the Symbolics.jl package. For complete documentation, see 
+`integrate_thimbles`.
+
+# Arguments
+- `z::Num`: The symbolic variable.
+- `S::Num`: The symbolic action function.
+- `domain::Vector{ComplexDomain}`: The domain over which to search for saddle points and integrate.
+- `params::Dict`: Parameters for saddle point finding and integration.
+- `prefactor::Num`: A symbolic expression for the prefactor.
+- `check::Function`: A function used to check if two found saddle points are identical.
+
+# Returns
+- The total integral approximated using the saddle point method.
+"""
 function integrate_thimbles(
     z::Num, S::Num,
     domain::Vector{ComplexDomain},

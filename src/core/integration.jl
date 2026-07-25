@@ -7,11 +7,36 @@ using ..Saddle
 
 # Integrate using a given boundary around one thimble, i.e. boundary can be precomputed in this case.
 export integrate_thimble
+"""
+    integrate_thimble(S, boundary, prefactor, params)
+
+Integrates the given action and prefactor functions over a precomputed thimble boundary. The algorithm used is the Gauss-Legendre quadrature method on each simplex of the boundary.
+This package is responsible for solving integrals of the form
+\$\$
+I = \\int^a_b f(z)e^{iS(z)}dz
+\$\$
+
+where S(z) is the action function which faster oscillation, and f(z) is the prefactor function with small oscillation. The parameters for this function are listed as such:
+| Parameter             | Required | Type | Description                                                                                                                                   |
+| --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GL_order`    | No      | `Int` | The order of the Gauss-Legendre quadrature. (This parameter is only required if the dimension is 2, and the simplex is a quadrangle). |
+| `simplex_order`      | No      | `Int` | The order of the simplex. (This parameter is only required if the dimension is 2, and the simplex is a triangle). |
+| `output_dim`    | No      | `Int` | The output dimension of the integral. (This parameter is only required if the dimension is 2, and the simplex is a triangle). |
+
+# Arguments
+- `S::Function`: The action function.
+- `boundary::Any`: The precomputed boundary over which to integrate. This can be a tuple for 1D or a vector of simplices (quadrilaterals or triangles) for 2D.
+- `prefactor::Function`: The prefactor function for the integrand, f(z).
+- `params::Dict`: Integration parameters
+
+# Returns
+- `Any`: Result of the integration.
+"""
 function integrate_thimble(S::Function, boundary::Any, prefactor::Function, params::Dict)
     if typeof(boundary) <: Tuple && length(boundary) == 2
         # 1D case
         return Methods1D.Integration.integrate_thimble(S, boundary[1], boundary[2])
-    elseif boundary isa Vector{Simplex{4, FlowPoint}}
+    elseif boundary isa Vector{Simplex{4,FlowPoint}}
         # 2D case
         integral = 0
         for quad in boundary
@@ -19,7 +44,7 @@ function integrate_thimble(S::Function, boundary::Any, prefactor::Function, para
         end
 
         return integral
-    elseif boundary isa Vector{Simplex{3, FlowPoint}}
+    elseif boundary isa Vector{Simplex{3,FlowPoint}}
         integral = 0
         for triangle in boundary
             integral += Methods2D.Triangle.Integration.integrate_triangle(S, triangle, prefactor=prefactor, order=params["simplex_order"], dim=params["output_dim"])
@@ -31,6 +56,25 @@ end
 
 # Integrate without a given boundary around one thimble, essentially steepest descent until integral converges to the required precision, or the number of flow steps is exceeded.
 export integrate_thimble!
+"""
+    integrate_thimble!(S, S_grad, S_hessian, saddle_point, prefactor)
+
+Integrates the action function around a single saddle point by using steepest descent without a precomputed boundary, continuing until the integral converges to the required precision 
+or the number of flow steps is exceeded. This package is responsible for solving integrals of the form
+\$\$
+I = \\int^a_b f(z)e^{iS(z)}dz
+\$\$
+
+# Arguments
+- `S::Function`: The action function.
+- `S_grad::Function`: The first derivative (gradient) of the action function.
+- `S_hessian::Function`: The second derivative (Hessian) of the action function.
+- `saddle_point::Types.Saddle`: The saddle point struct, which will be updated with the `integral` result.
+- `prefactor::Function`: A function that provides the prefactor for the integrand.
+
+# Returns
+- `Nothing` (the `integral` field of the `saddle_point` is modified in-place).
+"""
 function integrate_thimble!(S::Function, S_grad::Function, S_hessian::Function, saddle_point::Types.Saddle, prefactor::Function)
     if length(saddle_point.saddle) == 1
         # 1D case
@@ -46,20 +90,65 @@ end
 
 # Integrate without a given boundary around all contributing thimbles, essentially using steepest descent until integral converges to the required precision, or the number of flow steps is exceeded.
 export integrate_thimbles
+"""
+    integrate_thimbles(S, S_grad, domain, deformation_parameters, prefactor, params, mode)
+
+Integrates the action function over the specified domain by deforming the integration contour along the steepest descent paths (thimbles) until convergence to the required accuracy 
+or until the maximum number of flow steps is reached. This package is responsible for solving integrals of the form
+\$\$
+I = \\int^a_b f(z)e^{iS(z)}dz
+\$\$
+The parameters are listed as such:
+
+| Parameter | Required | Type | Description |
+| --------- | -------- | -------- | ----------- |
+| `flow_steps` | Yes | `Int` | Maximum number of flow steps to perform. |
+| `grid_spacing` | Yes | `Real` | Initial grad spacing parameters for the initial Lefschetz thimble contour. |
+| `gradient_normalisation_factor` | Yes | `Real` | The normalisation threshold for the gradient during gradient descent. Used to prevent the gradient descent from diverging. |
+| `flow_step_factor` | Yes | `Real` | The factor for determining how quickly the gradient descent moves. |
+| `subdivision_threshold` | Yes | `Real` | The threshold value above which segments in the Lefschetz thimble contour are subdivided. |
+| `height_threshold` | Yes | `Real` | The maximum magnitude of the imaginary component of the action to evolve the contour to. |
+| `max_grid_element_count` | Yes | `Int` | The maximum number of simplices that can be used in the calculation of the Lefschetz thimble. |
+| `verbose` | Yes | `Bool` | Whether or not to print the error message about when the simplices are maxed out. |
+| `integral_accuracy` | Yes | `Real` | The required accuracy for the integral. |
+| `integral_relative_error` | Yes | `Real` | The relative error threshold for the integral. |
+
+# Arguments
+- `S::Function`: The action function.
+- `S_grad::Function`: The gradient of the action function.
+- `domain::Vector{RealDomain}`: The initial integration domain.
+- `deformation_parameters::Vector{<:Number}`: The parameters used to deform the integration contour.
+- `prefactor::Function`: A function that provides the prefactor for the integrand.
+- `params::Dict`: Integration and flow parameters (e.g., `flow_steps`, `grid_spacing`, `gradient_normalisation_factor`, `flow_rate_scaling`, `integral_accuracy`, etc.).
+- `mode::String`: The integration mode, i.e. "fixed" or "adaptive".
+
+# Returns
+- The result of the total integration over the flowed contours.
+"""
 function integrate_thimbles(S::Function, S_grad::Function, domain::Vector{RealDomain}, deformation_parameters::Vector{<:Number}, prefactor::Function, params::Dict, mode::String)
+    flow_steps = params["flow_steps"]
+    grid_spacing = params["grid_spacing"]
+    gradient_normalisation_threshold = params["gradient_normalisation_threshold"]
+    flow_step_factor = params["flow_step_factor"]
+    subdivision_threshold = params["subdivision_threshold"]
+    height_threshold = params["height_threshold"]
+    max_grid_element_count = params["max_grid_element_count"]
+    verbosity = params["verbose"]
+    integral_accuracy = params["integral_accuracy"]
+    integral_relative_error = params["integral_relative_error"]
     if length(domain) == 2
-        # 2D fixed case
+        # 2D case
         if mode == "fixed"
             init_points = Methods2D.Utils.make_init_points_rectangle(domain[1].min, domain[1].max, domain[2].min, domain[2].max)
             return Methods2D.Quadrilateral.DownwardsFlow.integrate_flowed_quads_fixed_Nflow(S, S_grad,
                 init_points, prefactor=prefactor,
-                Nflow=params["flow_steps"], Δinit=params["grid_spacing"],
-                gradnthreshold=params["gradient_normalisation_factor"],
-                flowstepfactor=params["flow_rate_scaling"],
-                subdividethreshold=params["subdivision_threshold"],
-                h_threshold=params["height_threshold"],
-                maxNsimplices=params["max_grid_element_count"],
-                print_message=params["verbose"]
+                Nflow=flow_steps, Δinit=grid_spacing,
+                gradnthreshold=gradient_normalisation_threshold,
+                flowstepfactor=flow_step_factor,
+                subdividethreshold=subdivision_threshold,
+                h_threshold=height_threshold,
+                maxNsimplices=max_grid_element_count,
+                print_message=verbosity
             )
         else
             return Methods2D.Quadrilateral.DownwardsFlow.integrate_flowed_quads(S, S_grad,
@@ -67,37 +156,59 @@ function integrate_thimbles(S::Function, S_grad::Function, domain::Vector{RealDo
                 deformation_parameters[1],
                 deformation_parameters[2],
                 prefactor=prefactor,
-                Nflow=params["flow_steps"],
-                Δinit=params["grid_spacing"],
-                gradnthreshold=params["gradient_normalisation_factor"],
-                flowstepfactor=params["flow_rate_scaling"],
-                subdividethreshold=params["subdivision_threshold"],
-                h_threshold=params["height_threshold"],
-                maxNsimplices=params["max_grid_element_count"],
-                integral_accuracy=params["integral_accuracy"],
-                integral_rel_error=params["integral_relative_error"],
-                print_message=params["verbose"]
+                Nflow=flow_steps,
+                Δinit=grid_spacing,
+                gradnthreshold=gradient_normalisation_threshold,
+                flowstepfactor=flow_step_factor,
+                subdividethreshold=subdivision_threshold,
+                h_threshold=height_threshold,
+                maxNsimplices=max_grid_element_count,
+                integral_accuracy=integral_accuracy,
+                integral_rel_error=integral_relative_error,
+                print_message=verbosity
             )
         end
     elseif length(domain) == 1
         # 1D case
         return Methods1D.Integration.integrate_thimble(S, S_grad,
             domain[1].min, domain[1].max,
-            prefactor=prefactor, Δinit=params["grid_spacing"],
-            flowstepfactor=params["flow_rate_scaling"],
-            gradnthreshold=params["gradient_normalisation_factor"],
-            subdividethreshold=params["subdivision_threshold"],
-            h_threshold=params["height_threshold"],
-            Nmax=params["max_flow_steps"],
-            integral_accuracy=params["integral_accuracy"],
-            integral_rel_error=params["integral_relative_error"],
-            print_message=params["verbose"]
+            prefactor=prefactor, Δinit=grid_scaping,
+            flowstepfactor=flow_step_factor,
+            gradnthreshold=gradient_normalisation_threshold,
+            subdividethreshold=subdivision_threshold,
+            h_threshold=height_threshold,
+            Nmax=flow_steps,
+            integral_accuracy=integral_accuracy,
+            integral_rel_error=integral_relative_error,
+            print_message=verbosity
         )
     end
 end
 
 # Integrate around all contributing thimbles, using the saddle point method, where individual saddle point contributions are summed over.
 export integrate_thimbles
+"""
+    integrate_thimbles(S, S_grad, S_hessian, domain, params, prefactor; check)
+
+Integrates around all contributing thimbles using the saddle point approximation method. The contributions from the individual contributing saddle points are summed up to give the total integral.
+The parameters for algorithm are listed as below:
+
+| Parameter | Required | Type | Description |
+| --------- | -------- | ---- | ----------- |
+| `output_dim` | Yes | `Int` | The dimension of the integral. |
+
+# Arguments
+- `S::Function`: The action function.
+- `S_grad::Function`: The gradient of the action function.
+- `S_hessian::Function`: The Hessian of the action function.
+- `domain::Vector{ComplexDomain}`: The domain over which to search for saddle points and integrate.
+- `params::Dict`: Parameters for saddle point finding and integration (e.g., `output_dim`).
+- `prefactor::Function`: A function that provides the prefactor for the integrand.
+- `check::Function`: A function used to check if two found saddle points are identical (default `!isequal`).
+
+# Returns
+- The total integral approximated using the saddle point method.
+"""
 function integrate_thimbles(
     S::Function, S_grad::Function,
     S_hessian::Function,
