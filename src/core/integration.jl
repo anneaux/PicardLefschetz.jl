@@ -253,7 +253,7 @@ function _integrate_SPM(
     params::Dict, prefactor::Function;
     check::Function=(t_1, t_2) -> !isequal(t_1, t_2)
 )
-    saddles = find_numerical_saddles(S_grad, domain, params)
+    saddles = find_saddles(S_grad, domain, params)
     contributing_saddles = Types.Saddle[]
     for saddle in saddles
         if check_contribution!(S, S_grad, S_hessian, saddle, domain[1], params)
