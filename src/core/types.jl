@@ -54,6 +54,7 @@ end
 mutable struct Saddle{T,TB,DT,DTB}
     saddle::FlowPoint
     contributing::Union{Nothing,Bool}
+    intersection_number::Union{Nothing,Int}
     thimble::Union{Nothing,T}
     thimble_boundary::Union{Nothing,TB}
     dual_thimble::Union{Nothing,DT}
@@ -63,6 +64,7 @@ end
 
 function Saddle(; saddle::FlowPoint,
     contributing::Union{Nothing,Bool}=nothing,
+    intersection_number::Union{Nothing,Int}=nothing,
     thimble=nothing,
     thimble_boundary=nothing,
     dual_thimble=nothing,
@@ -73,7 +75,7 @@ function Saddle(; saddle::FlowPoint,
     TB = thimble_boundary === nothing ? Any : typeof(thimble_boundary)
     DT = dual_thimble === nothing ? Any : typeof(dual_thimble)
     DTB = dual_thimble_boundary === nothing ? Any : typeof(dual_thimble_boundary)
-    return Saddle{T,TB,DT,DTB}(saddle, contributing, thimble, thimble_boundary, dual_thimble, dual_thimble_boundary, integral)
+    return Saddle{T,TB,DT,DTB}(saddle, contributing, intersection_number, thimble, thimble_boundary, dual_thimble, dual_thimble_boundary, integral)
 end
 
 Saddle{T}(; kwargs...) where T = Saddle{T,T,T,T}(; kwargs...)
