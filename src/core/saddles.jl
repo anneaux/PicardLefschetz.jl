@@ -4,11 +4,11 @@ using ..Methods1D
 using ..Methods2D
 using ..Types
 
-export find_analytic_saddles
+export solve_first_derivative
 """
-    find_analytic_saddles(derivative, initial_point, accuracy)
+    solve_first_derivative(derivative, initial_point, accuracy)
 
-Finds the saddle points analytically using the provided initial points. This function solves for the zeros of the first derivative in the analytic continuation.
+Finds the saddle points analytically using the provided initial points. This function solves for the zeros of the first derivative in the analytic continuation, by using the Newton-Raphson method.
 
 # Arguments
 - `derivative::Function`: The first derivative of the action function.
@@ -16,12 +16,17 @@ Finds the saddle points analytically using the provided initial points. This fun
 - `accuracy::Int64`: The accuracy (number of digits) to which the saddle points should be found.
 
 # Returns
-- A tuple or vector containing the found saddle points.
+- `Vector{Saddle}`: A vector of Saddle structs containing the found saddle points.
 """
-function find_analytic_saddles(derivative::Function, initial_point::Vector{ComplexF64}, accuracy::Int64)
+function solve_first_derivative(derivative::Function, initial_point::Vector{ComplexF64}, accuracy::Int64)::Vector{Types.Saddle}
     if length(initial_point) == 2
         # 2D case
-        return Methods2D.SaddlePoint.solve_first_drv(derivative, initial_point, digits=accuracy)
+        t_1, t_2 = Methods2D.SaddlePoint.solve_first_drv(derivative, initial_point, digits=accuracy)
+        if !isnothing(t_1) && !isnothing(t_2)
+            return Types.Saddle[Types.Saddle(saddle=Types.FlowPoint(t_1, t_2))]
+        end
+
+        return Types.Saddle[]
     elseif length(initial_point) == 1
         # 1D case
         tmp = [real(initial_point[1]), imag(initial_point[1])]
@@ -31,11 +36,11 @@ function find_analytic_saddles(derivative::Function, initial_point::Vector{Compl
     end
 end
 
-export find_numerical_saddles
+export find_saddles
 """
-    find_numerical_saddles(derivative, domain, params; check)
+    find_saddles(derivative, domain, params; check)
 
-Finds the saddle points numerically over a given domain using a Sobol sequence for initial points. The
+Finds the saddle points numerically over a given domain using a Sobol sequence for initial points, and flowing them using gradient descent. The
 parameters for this function are listed below:
 
 | Parameter | Required | Type | Description |
@@ -52,12 +57,12 @@ parameters for this function are listed below:
 # Returns
 - A vector of `Saddle` structs containing the found saddle points.
 """
-function find_numerical_saddles(
+function find_saddles(
     derivative::Function,
     domain::Vector{ComplexDomain},
     params::Dict;
     check::Function=(t_1, t_2) -> !isequal(t_1, t_2)
-)
+)::Vector{Saddle}
 
     point_count = params["point_count"]
     accuracy = params["accuracy"]
@@ -109,7 +114,7 @@ function check_contribution!(
     domain::ComplexDomain,
     params::Dict;
     log_errors::Bool=false
-)
+)::Nothing
     grid_resolution = params["grid_resolution"]
 
     contributing = if length(saddle_point.saddle) == 2

@@ -46,6 +46,7 @@ using PicardLefschetz.Saddle
             saddle = saddles[1]
             get_dual_thimble!(phase_1d(params_1d), phase_drv_1d(params_1d), phase_hess_1d(params_1d), saddle, saddle_params_1d)
             @test saddle.dual_thimble !== nothing
+            @test saddle.dual_thimble isa Vector{<:Vector{<:FlowPoint}}
         end
     end
 
@@ -65,7 +66,9 @@ using PicardLefschetz.Saddle
             # So the code in PicardLefschetz has a bug, or I should just pass the Saddle object and see if there's another dispatched method.
             # I will pass the saddle object, but if it throws due to no method matching, then we just skip or expect failure. Let's just pass `saddle` object and hope there's a method taking `Saddle`.
             try
-                get_dual_thimble_boundary!(phase_1d(params_1d), phase_drv_1d(params_1d), phase_hess_1d(params_1d), [saddle.saddle[1].coords[1]], saddle_params_1d)
+                get_dual_thimble_boundary!(phase_1d(params_1d), phase_drv_1d(params_1d), phase_hess_1d(params_1d), saddle, saddle_params_1d)
+                @test saddle.dual_thimble_boundary !== nothing
+                @test saddle.dual_thimble_boundary isa Vector{<:Vector{<:FlowPoint}}
             catch e
                 @test true # It will probably error out on setting field of Array, which is fine to test
             end
@@ -87,6 +90,7 @@ using PicardLefschetz.Saddle
             saddle = saddles[1]
             get_dual_thimble!(phase_2d(params_2d), phase_drv_2d(params_2d), phase_hess_2d(params_2d), saddle, saddle_params_2d)
             @test saddle.dual_thimble !== nothing
+            @test saddle.dual_thimble isa Vector{<:Simplex}
         end
     end
 

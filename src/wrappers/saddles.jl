@@ -1,12 +1,12 @@
 using Symbolics
 
-export find_analytic_saddles
+export solve_first_derivative
 """
-    find_analytic_saddles(z, derivative, initial_point, accuracy)
+    solve_first_derivative(z, derivative, initial_point, accuracy)
 
 Finds the saddle points analytically using symbolic expressions. This 
 is a wrapper function for compatibility with the Symbolics.jl package. 
-For complete documentation, see `find_analytic_saddles`.
+For complete documentation, see `solve_first_derivative`.
 
 # Arguments
 - `z::Num`: The symbolic variable.
@@ -17,23 +17,23 @@ For complete documentation, see `find_analytic_saddles`.
 # Returns
 - A tuple or vector containing the found saddle points.
 """
-function find_analytic_saddles(
+function solve_first_derivative(
     z::Num, derivative::Num,
     initial_point::Vector{ComplexF64},
     accuracy::Int64
-)
+)::Vector{Types.Saddle}
     native_derivative = build_function(derivative, z, expression=Val{false})
 
-    return find_analytic_saddles(native_derivative, initial_point, accuracy)
+    return solve_first_derivative(native_derivative, initial_point, accuracy)
 end
 
-export find_numerical_saddles
+export find_saddles
 """
-    find_numerical_saddles(z, derivative, domain, params; check)
+    find_saddles(z, derivative, domain, params; check)
 
 Finds the saddle points numerically over a given domain using symbolic expressions. This 
 is a wrapper function for compatibility with the Symbolics.jl package. For complete 
-documentation, see `find_numerical_saddles`.
+documentation, see `find_saddles`.
 
 # Arguments
 - `z::Num`: The symbolic variable.
@@ -45,15 +45,15 @@ documentation, see `find_numerical_saddles`.
 # Returns
 - A vector of `Saddle` structs containing the found saddle points.
 """
-function find_numerical_saddles(
+function find_saddles(
     z::Num, derivative::Num,
     domain::Vector{ComplexDomain},
     params::Dict;
     check::Function=(t_1, t_2) -> !isequal(t_1, t_2)
-)
+)::Vector{Types.Saddle}
     native_derivative = build_function(derivative, z, expression=Val{false})
 
-    return find_numerical_saddles(native_derivative, domain, params, check=check)
+    return find_saddles(native_derivative, domain, params, check=check)
 end
 
 export check_contribution!
@@ -81,7 +81,7 @@ function check_contribution!(
     domain::ComplexDomain,
     params::Dict;
     log_errors::Bool=false
-)
+)::Nothing
     S_grad = Symbolics.gradient(S, [z])[1]
     S_hessian = Symbolics.hessian(S, [z])[1, 1]
     native_S = build_function(S, z, expression=Val{false})
