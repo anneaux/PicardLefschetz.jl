@@ -51,7 +51,7 @@ function integrate_thimble!(
     z::Num, S::Num,
     saddle_point::Types.Saddle,
     prefactor::Num
-)
+)::Nothing
     S_grad = Symbolics.gradient(S, [z])[1]
     S_hessian = Symbolics.hessian(S, [z])[1, 1]
     native_S = build_function(S, z, expression=Val{false})

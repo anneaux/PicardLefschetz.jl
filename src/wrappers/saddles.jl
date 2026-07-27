@@ -50,7 +50,7 @@ function find_numerical_saddles(
     domain::Vector{ComplexDomain},
     params::Dict;
     check::Function=(t_1, t_2) -> !isequal(t_1, t_2)
-)
+)::Vector{Saddele}
     native_derivative = build_function(derivative, z, expression=Val{false})
 
     return find_numerical_saddles(native_derivative, domain, params, check=check)
@@ -81,7 +81,7 @@ function check_contribution!(
     domain::ComplexDomain,
     params::Dict;
     log_errors::Bool=false
-)
+)::Nothing
     S_grad = Symbolics.gradient(S, [z])[1]
     S_hessian = Symbolics.hessian(S, [z])[1, 1]
     native_S = build_function(S, z, expression=Val{false})

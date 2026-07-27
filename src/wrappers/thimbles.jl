@@ -23,7 +23,7 @@ function get_thimble!(
     saddle_point::Types.Saddle,
     params::Dict;
     mesh_type::String
-)
+)::Nothing
     S_grad = Symbolics.gradient(S, [z])[1]
     S_hessian = Symbolics.hessian(S, [z])[1, 1]
     native_S = build_function(S, z, expression=Val{false})
@@ -89,7 +89,7 @@ function get_thimble_boundary!(
     saddle_point::Types.Saddle,
     params::Dict;
     mesh_type::String
-)
+)::Nothing
     S_grad = Symbolics.gradient(S, [z])[1]
     S_hessian = Symbolics.hessian(S, [z])[1, 1]
     native_S = build_function(S, z, expression=Val{false})
@@ -125,7 +125,7 @@ function get_thimble_boundaries(
     params::Dict, contributing::Bool;
     mesh_type::String,
     check::Function=(t_1, t_2) -> !isequal(t_1, t_2)
-)
+)::Vector{Saddle}
     S_grad = Symbolics.gradient(S, [z])[1]
     S_hessian = Symbolics.hessian(S, [z])[1, 1]
     native_S = build_function(S, z, expression=Val{false})

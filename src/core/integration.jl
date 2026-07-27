@@ -75,7 +75,7 @@ I = \\int^a_b f(z)e^{iS(z)}dz
 # Returns
 - `Nothing` (the `integral` field of the `saddle_point` is modified in-place).
 """
-function integrate_thimble!(S::Function, S_grad::Function, S_hessian::Function, saddle_point::Types.Saddle, prefactor::Function)
+function integrate_thimble!(S::Function, S_grad::Function, S_hessian::Function, saddle_point::Types.Saddle, prefactor::Function)::Nothing
     if length(saddle_point.saddle) == 1
         # 1D case
         integral = Methods1D.SaddlePoint.integrate_around_saddle_point(saddle_point, S, S_grad, S_hessian, prefactor=prefactor)

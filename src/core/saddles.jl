@@ -57,7 +57,7 @@ function find_numerical_saddles(
     domain::Vector{ComplexDomain},
     params::Dict;
     check::Function=(t_1, t_2) -> !isequal(t_1, t_2)
-)
+)::Vector{Saddle}
 
     point_count = params["point_count"]
     accuracy = params["accuracy"]
@@ -109,7 +109,7 @@ function check_contribution!(
     domain::ComplexDomain,
     params::Dict;
     log_errors::Bool=false
-)
+)::Nothing
     grid_resolution = params["grid_resolution"]
 
     contributing = if length(saddle_point.saddle) == 2
