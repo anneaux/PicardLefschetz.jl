@@ -157,7 +157,7 @@ function integrate_thimbles(
                 maxNsimplices=max_grid_element_count,
                 print_message=verbosity
             )
-            return Vector{ComplexF64}(integral), simplices
+            return [ComplexF64(integral)], simplices
         else
             integral, simplices = Methods2D.Quadrilateral.DownwardsFlow.integrate_flowed_quads(S, S_grad,
                 domain[1].min, domain[1].max,
@@ -176,7 +176,7 @@ function integrate_thimbles(
                 print_message=verbosity
             )
 
-            return Vector{ComplexF64}(integral), simplices
+            return [ComplexF64(integral)], simplices
         end
     elseif length(domain) == 1
         # 1D case

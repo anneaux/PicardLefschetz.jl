@@ -48,7 +48,7 @@ using PicardLefschetz.Integration
     prefactor_expr = z^0  # effectively 1.0
 
     @testset "Saddles Wrappers" begin
-        saddles = find_numerical_saddles(z, S_drv_expr, domain_1d_complex, params_1d)
+        saddles = find_saddles(z, S_drv_expr, domain_1d_complex, params_1d)
         @test saddles isa Vector{<:Saddle}
 
         if !isempty(saddles)
@@ -56,13 +56,13 @@ using PicardLefschetz.Integration
             check_contribution!(z, S_expr, saddle, domain_1d_complex[1], params_1d)
             @test saddle.contributing isa Bool
 
-            ans = find_analytic_saddles(z, S_drv_expr, [complex(0.0)], 5)
+            ans = solve_first_derivative(z, S_drv_expr, [complex(0.0)], 5)
             @test !isnothing(ans)
         end
     end
 
     @testset "Thimbles Wrappers" begin
-        saddles = find_numerical_saddles(z, S_drv_expr, domain_1d_complex, params_1d)
+        saddles = find_saddles(z, S_drv_expr, domain_1d_complex, params_1d)
         if !isempty(saddles)
             saddle = saddles[1]
             get_thimble!(z, S_expr, saddle, params_1d, mesh_type="none")
@@ -82,16 +82,16 @@ using PicardLefschetz.Integration
     end
 
     @testset "Dual Thimbles Wrappers" begin
-        saddles = find_numerical_saddles(z, S_drv_expr, domain_1d_complex, params_1d)
+        saddles = find_saddles(z, S_drv_expr, domain_1d_complex, params_1d)
         if !isempty(saddles)
             saddle = saddles[1]
             get_dual_thimble!(z, S_expr, saddle, params_1d)
             @test saddle.dual_thimble !== nothing
-            @test saddle.dual_thimble isa Vector{<:Vector{<:FlowPoint}}
+            @test saddle.dual_thimble isa Vector{<:FlowPoint}
 
             get_dual_thimble_boundary!(z, S_expr, saddle, params_1d)
             @test saddle.dual_thimble_boundary !== nothing
-            @test saddle.dual_thimble_boundary isa Vector{<:Vector{<:FlowPoint}}
+            @test saddle.dual_thimble_boundary isa Vector{<:FlowPoint}
         end
 
         dual_thimbles = get_dual_thimbles(z, S_expr, params_1d, domain_1d_complex, false)
@@ -102,7 +102,7 @@ using PicardLefschetz.Integration
     end
 
     @testset "Integration Wrappers" begin
-        saddles = find_numerical_saddles(z, S_drv_expr, domain_1d_complex, params_1d)
+        saddles = find_saddles(z, S_drv_expr, domain_1d_complex, params_1d)
         if !isempty(saddles)
             saddle = saddles[1]
 
@@ -123,13 +123,13 @@ using PicardLefschetz.Integration
         integral_real = integrate_thimbles(z, S_expr, domain_1d_real, [0.0], prefactor_expr, params_1d, "unfixed")
         @test integral_real !== nothing
         @test integral_real isa Tuple
-        @test integral_real[1] isa Number
+        @test integral_real[1] isa AbstractVector
 
         # test integrate_thimbles (complex domains) 
         integral_complex = integrate_thimbles(z, S_expr, domain_1d_complex, params_1d, prefactor_expr)
         @test integral_complex !== nothing
         @test integral_complex isa Vector{<:Types.Saddle}
         @test !isempty(integral_complex)
-        @test integral_complex[1].integral isa ComplexF64
+        @test integral_complex[1].integral isa AbstractVector
     end
 end

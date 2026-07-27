@@ -53,7 +53,7 @@ using PicardLefschetz.Saddle
     )
 
     @testset "1D get_thimble!" begin
-        saddles = find_numerical_saddles(phase_drv_1d(params_1d), complex_domain_1d, saddle_params_1d)
+        saddles = find_saddles(phase_drv_1d(params_1d), complex_domain_1d, saddle_params_1d)
         if !isempty(saddles)
             saddle = saddles[1]
             get_thimble!(phase_1d(params_1d), phase_drv_1d(params_1d), phase_hess_1d(params_1d), saddle, saddle_params_1d, mesh_type="none")
@@ -70,7 +70,7 @@ using PicardLefschetz.Saddle
     end
 
     @testset "1D get_thimble_boundary!" begin
-        saddles = find_numerical_saddles(phase_drv_1d(params_1d), complex_domain_1d, saddle_params_1d)
+        saddles = find_saddles(phase_drv_1d(params_1d), complex_domain_1d, saddle_params_1d)
         if !isempty(saddles)
             saddle = saddles[1]
             get_thimble_boundary!(phase_1d(params_1d), phase_drv_1d(params_1d), phase_hess_1d(params_1d), saddle, saddle_params_1d, mesh_type="none")
@@ -85,7 +85,7 @@ using PicardLefschetz.Saddle
     end
 
     @testset "2D get_thimble! (quad)" begin
-        saddles = find_numerical_saddles(phase_drv_2d(params_2d), complex_domain_2d, saddle_params_2d)
+        saddles = find_saddles(phase_drv_2d(params_2d), complex_domain_2d, saddle_params_2d)
         if !isempty(saddles)
             saddle = saddles[1]
             get_thimble!(phase_2d(params_2d), phase_drv_2d(params_2d), phase_hess_2d(params_2d), saddle, saddle_params_2d, mesh_type="quad")
@@ -101,7 +101,7 @@ using PicardLefschetz.Saddle
     end
 
     @testset "2D get_thimble_boundary! (quad)" begin
-        saddles = find_numerical_saddles(phase_drv_2d(params_2d), complex_domain_2d, saddle_params_2d)
+        saddles = find_saddles(phase_drv_2d(params_2d), complex_domain_2d, saddle_params_2d)
         if !isempty(saddles)
             saddle = saddles[1]
             get_thimble_boundary!(phase_2d(params_2d), phase_drv_2d(params_2d), phase_hess_2d(params_2d), saddle, saddle_params_2d, mesh_type="quad")

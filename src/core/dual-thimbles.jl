@@ -3,7 +3,7 @@ module DualThimble
 using ..Methods1D
 using ..Methods2D
 using ..Types
-using ..Saddle: find_numerical_saddles
+using ..Saddle: find_saddles
 
 # Gets the dual thimble for a given saddle point.
 export get_dual_thimble!
@@ -100,7 +100,7 @@ The parameters for this function are listed in the table:
 - `Vector{Saddle}`: A vector of the saddle points and their dual thimbles.
 """
 function get_dual_thimbles(S::Function, S_grad::Function, S_hessian::Function, params::Dict, domain::Vector{ComplexDomain}, contributing::Bool)::Vector{Saddle}
-    saddles = find_numerical_saddles(S_grad, domain, params)
+    saddles = find_saddles(S_grad, domain, params)
     for saddle in saddles
         if contributing
             check_contribution!(S, S_grad, S_hessian, saddle, domain[1], params)
@@ -211,7 +211,7 @@ The parameters for this function are listed in the table:
 - `Vector{Saddle}`: A vector of the saddle points and their dual thimbles.
 """
 function get_dual_thimble_boundaries(S::Function, S_grad::Function, S_hessian::Function, params::Dict, domain::Vector{ComplexDomain}, contributing::Bool)::Vector{Saddle}
-    saddles = find_numerical_saddles(S_grad, domain, params)
+    saddles = find_saddles(S_grad, domain, params)
     for saddle in saddles
         if contributing
             check_contribution!(S, S_grad, S_hessian, saddle, domain[1], params)

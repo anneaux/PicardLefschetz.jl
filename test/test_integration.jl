@@ -64,7 +64,7 @@ using PicardLefschetz.Saddle
     integ_params_2d_multi["output_dim"] = 2
 
     @testset "1D integrate_thimble!" begin
-        saddles = find_numerical_saddles(phase_drv_1d(params_1d), complex_domain_1d, integ_params_1d)
+        saddles = find_saddles(phase_drv_1d(params_1d), complex_domain_1d, integ_params_1d)
         if !isempty(saddles)
             saddle = saddles[1]
             integrate_thimble!(phase_1d(params_1d), phase_drv_1d(params_1d), phase_hess_1d(params_1d), saddle, prefactor_1d)
@@ -86,7 +86,7 @@ using PicardLefschetz.Saddle
     end
 
     @testset "2D integrate_thimble!" begin
-        saddles = find_numerical_saddles(phase_drv_2d(params_2d), complex_domain_2d, integ_params_2d)
+        saddles = find_saddles(phase_drv_2d(params_2d), complex_domain_2d, integ_params_2d)
         if !isempty(saddles)
             saddle = saddles[1]
             integrate_thimble!(phase_2d(params_2d), phase_drv_2d(params_2d), phase_hess_2d(params_2d), saddle, prefactor_2d)

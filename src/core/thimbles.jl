@@ -3,7 +3,7 @@ module Thimble
 using ..Methods1D
 using ..Methods2D
 using ..Types
-using ..Saddle: find_numerical_saddles
+using ..Saddle: find_saddles
 
 # Gets the thimble for a given saddle point.
 export get_thimble!
@@ -348,7 +348,7 @@ function get_thimble_boundaries(
     contributing::Bool; mesh_type::String,
     check::Function=(t_1, t_2) -> !isequal(t_1, t_2)
 )::Vector{Saddle}
-    saddles = find_numerical_saddles(S_grad, domain, params)
+    saddles = find_saddles(S_grad, domain, params; check=check)
     for saddle in saddles
         if contributing
             check_contribution!(S, S_grad, S_hessian, saddle, domain[1], params)
