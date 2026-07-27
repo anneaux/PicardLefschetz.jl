@@ -52,7 +52,7 @@ function find_saddles_sobol(drv::Function,
     check::Function=(t1, t2) -> !isequal(t1, t2)
 )
 
-    solutions = Vector{Saddle{Any}}()
+    solutions = Vector{Saddle}()
 
     t1_seq = SobolSeq(reim(t1_cd.min), reim(t1_cd.max))
     t2_seq = SobolSeq(reim(t2_cd.min), reim(t2_cd.max))
@@ -68,7 +68,7 @@ function find_saddles_sobol(drv::Function,
 
         ### check conditions and deposit in array
         if !isnothing(t1s) && check(t1s, t2s)
-            push!(solutions, Saddle{Any}(saddle=FlowPoint(t1s, t2s)))
+            push!(solutions, Saddle(saddle=FlowPoint(t1s, t2s)))
         end
     end
 

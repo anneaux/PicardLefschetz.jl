@@ -51,15 +51,28 @@ struct RealDomain
     RealDomain() = new(zero(Float64), zero(Float64))
 end
 
-Base.@kwdef mutable struct Saddle{T}
+Base.@kwdef mutable struct Saddle{T,TB,DT,DTB}
     saddle::FlowPoint
     contributing::Union{Nothing,Bool} = nothing
     thimble::Union{Nothing,T} = nothing
-    thimble_boundary::Union{Nothing,T} = nothing
-    dual_thimble::Union{Nothing,T} = nothing
-    dual_thimble_boundary::Union{Nothing,T} = nothing
-    integral::Union{Nothing,ComplexF64} = nothing
+    thimble_boundary::Union{Nothing,TB} = nothing
+    dual_thimble::Union{Nothing,DT} = nothing
+    dual_thimble_boundary::Union{Nothing,DTB} = nothing
+    integral::Union{Nothing,ComplexF64,AbstractVector{ComplexF64}} = nothing
 end
+
+function Saddle(; saddle::FlowPoint,
+    contributing::Union{Nothing,Bool}=nothing,
+    thimble::Union{Nothing,T}=nothing,
+    thimble_boundary::Union{Nothing,TB}=nothing,
+    dual_thimble::Union{Nothing,DT}=nothing,
+    dual_thimble_boundary::Union{Nothing,DTB}=nothing,
+    integral::Union{Nothing,ComplexF64,AbstractVector{ComplexF64}}=nothing
+) where {T,TB,DT,DTB}
+    return Saddle{T,TB,DT,DTB}(saddle, contributing, thimble, thimble_boundary, dual_thimble, dual_thimble_boundary, integral)
+end
+
+Saddle{T}(; kwargs...) where T = Saddle{T,T,T,T}(; kwargs...)
 
 Base.length(p::FlowPoint{N}) where {N} = N
 Base.length(s::Saddle) = length(s.saddle)
