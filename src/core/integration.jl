@@ -172,7 +172,7 @@ function integrate_thimbles(S::Function, S_grad::Function, domain::Vector{RealDo
         # 1D case
         return Methods1D.Integration.integrate_thimble(S, S_grad,
             domain[1].min, domain[1].max,
-            prefactor=prefactor, Δinit=grid_scaping,
+            prefactor=prefactor, Δinit=grid_spacing,
             flowstepfactor=flow_step_factor,
             gradnthreshold=gradient_normalisation_threshold,
             subdividethreshold=subdivision_threshold,
@@ -235,14 +235,15 @@ function _integrate_SPM(
     output_dim = params["output_dim"]
 
     saddles = find_numerical_saddles(S_grad, domain, params)
-    total_integral = zeros(ComplexF64, output_dim)
+    contributing_saddles = Types.Saddle[]
     for saddle in saddles
         if check_contribution!(S, S_grad, S_hessian, saddle, domain[1], params)
-            total_integral += Methods2D.SaddlePoint.saddles_gaussian_contribution(S, S_hessian, saddle, prefactor=prefactor)
+            saddle.integral = Methods2D.SaddlePoint.saddles_gaussian_contribution(S, S_hessian, saddle, prefactor=prefactor)
+            push!(contributing_saddles, saddle)
         end
     end
 
-    return total_integral
+    return contributing_saddles
 end
 
 include("../wrappers/integration.jl")

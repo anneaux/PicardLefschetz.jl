@@ -2,7 +2,7 @@ module SaddlePoint
 
 using Contour, GeometryBasics
 
-using ..Types: Saddle
+using ..Types: Saddle, FlowPoint
 using ..CriticalPoints: find_saddles_sobol
 using ..LineIntersection: crosses_point, dissect_curve, intersection
 
@@ -73,13 +73,16 @@ function integrate_SPM(S::Function, drv::Function, drv2::Function,
     saddles = filter(ts -> real(tmin) < real(ts[1]) < real(tmax),
         find_saddles_sobol(drv, tmin, tmax, 300)
     )
-    int_SPM = complex(0.)
+    contributing_saddles = Saddle[]
     for ts in saddles
         if is_contributing(ts, S, tmin, tmax)
-            int_SPM += integrate_around_saddle_point(ts, S, drv, drv2, prefactor=prefactor)
+            integral = integrate_around_saddle_point(ts, S, drv, drv2, prefactor=prefactor)
+            ts.integral = integral
+            ts.contributing = true
+            push!(contributing_saddles, ts)
         end
     end
-    return int_SPM
+    return contributing_saddles
 end
 
 end
