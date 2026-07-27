@@ -74,8 +74,14 @@ using PicardLefschetz.Integration
             @test saddle.thimble_boundary isa Vector{<:AbstractVector}
         end
 
-        thimbles = get_thimbles(z, S_expr, params_1d, domain_1d_real, false, mesh_type="none")
+        thimbles = get_thimbles(z, S_expr, params_1d, domain_1d_real, mesh_type="none")
         @test thimbles !== nothing
+
+        thimbles_complex = get_thimbles(z, S_expr, params_1d, domain_1d_complex, false, mesh_type="none")
+        @test thimbles_complex isa Vector{<:Saddle}
+        if !isempty(thimbles_complex)
+            @test thimbles_complex[1].thimble !== nothing
+        end
 
         boundaries = get_thimble_boundaries(z, S_expr, domain_1d_complex, params_1d, false, mesh_type="none")
         @test boundaries isa Vector{<:Saddle}

@@ -64,9 +64,17 @@ using PicardLefschetz.Saddle
 
     @testset "1D get_thimbles" begin
         # Passing real domains for 1D as per Thimbles method signature
-        thimbles = get_thimbles(phase_1d(params_1d), phase_drv_1d(params_1d), saddle_params_1d, domain_1d, false, mesh_type="none")
+        thimbles = get_thimbles(phase_1d(params_1d), phase_drv_1d(params_1d), saddle_params_1d, domain_1d, mesh_type="none")
         @test thimbles !== nothing
         @test thimbles isa Tuple{Vector{<:FlowPoint},Vector{<:Simplex}}
+    end
+
+    @testset "1D get_thimbles (Complex overload)" begin
+        thimbles = get_thimbles(phase_1d(params_1d), phase_drv_1d(params_1d), phase_hess_1d(params_1d), saddle_params_1d, complex_domain_1d, false, mesh_type="none")
+        @test thimbles isa Vector{<:Types.Saddle}
+        if !isempty(thimbles)
+            @test thimbles[1].thimble !== nothing
+        end
     end
 
     @testset "1D get_thimble_boundary!" begin
@@ -95,9 +103,17 @@ using PicardLefschetz.Saddle
     end
 
     @testset "2D get_thimbles (quad)" begin
-        thimbles = get_thimbles(phase_2d(params_2d), phase_drv_2d(params_2d), saddle_params_2d, domain_2d, false, mesh_type="quad")
+        thimbles = get_thimbles(phase_2d(params_2d), phase_drv_2d(params_2d), saddle_params_2d, domain_2d, mesh_type="quad")
         @test thimbles !== nothing
         @test thimbles isa Tuple{Vector{<:Simplex}, Vector{<:FlowPoint}, Vector{<:Simplex}}
+    end
+
+    @testset "2D get_thimbles (Complex overload, quad)" begin
+        thimbles = get_thimbles(phase_2d(params_2d), phase_drv_2d(params_2d), phase_hess_2d(params_2d), saddle_params_2d, complex_domain_2d, false, mesh_type="quad")
+        @test thimbles isa Vector{<:Types.Saddle}
+        if !isempty(thimbles)
+            @test thimbles[1].thimble !== nothing
+        end
     end
 
     @testset "2D get_thimble_boundary! (quad)" begin
