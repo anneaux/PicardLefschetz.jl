@@ -58,6 +58,13 @@ using PicardLefschetz.Integration
 
             ans = solve_first_derivative(z, S_drv_expr, [complex(0.0)], 5)
             @test !isnothing(ans)
+
+            flow_params_1d = copy(params_1d)
+            flow_params_1d["height_threshold"] = -10.0
+            flow_params_1d["gradient_normalisation_threshold"] = 1.0
+            get_intersection_number!(z, S_expr, saddle, flow_params_1d)
+            @test saddle.intersection_number !== nothing
+            @test saddle.intersection_number isa Int
         end
     end
 
