@@ -100,7 +100,7 @@ This is a wrapper function for compatibility with the Symbolics.jl package. For 
 documentation, see `get_intersection_number!`.
 
 # Arguments
-- `z::Num`: The symbolic variable.
+- `z::AbstractVector{Num}`: The symbolic variable.
 - `S::Num`: The symbolic action function.
 - `saddle::Types.Saddle`: The saddle point struct to check.
 - `params::Dict`: Parameters for checking contribution.
