@@ -9,7 +9,7 @@ function for compatibility with the Symbolics.jl package. For complete documenta
 `get_dual_thimble!`. 
 
 # Arguments
-- `z::Num`: The symbolic variable.
+- `z::AbstractVector{Num}`: The symbolic variable.
 - `S::Num`: The symbolic action function.
 - `saddle_point::Saddle`: The struct containing the saddle point.
 - `params::Dict`: The parameters for the dual thimble calculation.
@@ -18,15 +18,15 @@ function for compatibility with the Symbolics.jl package. For complete documenta
 - `Nothing`
 """
 function get_dual_thimble!(
-    z::Num, S::Num,
+    z::AbstractVector{Num}, S::Num,
     saddle_point::Saddle,
     params::Dict
 )::Nothing
-    S_grad = Symbolics.gradient(S, [z])[1]
-    S_hessian = Symbolics.hessian(S, [z])[1, 1]
-    native_S = build_function(S, z, expression=Val{false})
-    native_grad = build_function(S_grad, z, expression=Val{false})
-    native_hessian = build_function(S_hessian, z, expression=Val{false})
+    S_grad = Symbolics.gradient(S, z)
+    S_hessian = Symbolics.hessian(S, z)
+    native_S = build_function(S, z, expression=Val{false})[1]
+    native_grad = build_function(S_grad, z, expression=Val{false})[1]
+    native_hessian = build_function(S_hessian, z, expression=Val{false})[1]
 
     return get_dual_thimble!(native_S, native_grad, native_hessian, saddle_point, params)
 end
@@ -40,7 +40,7 @@ function for compatibility with the Symbolics.jl package. For complete documenta
 `get_dual_thimbles`.
 
 # Arguments
-- `z::Num`: The symbolic variable.
+- `z::AbstractVector{Num}`: The symbolic variable.
 - `S::Num`: The symbolic action function.
 - `params::Dict`: The parameters for the dual thimble calculation.
 - `domain::Vector{ComplexDomain}`: The domain over which to calculate the dual thimbles.
@@ -50,15 +50,15 @@ function for compatibility with the Symbolics.jl package. For complete documenta
 - `Vector{Saddle}`: A vector of the saddle points and their dual thimbles.
 """
 function get_dual_thimbles(
-    z::Num, S::Num, params::Dict,
+    z::AbstractVector{Num}, S::Num, params::Dict,
     domain::Vector{ComplexDomain},
     contributing::Bool
 )::Vector{Saddle}
-    S_grad = Symbolics.gradient(S, [z])[1]
-    S_hessian = Symbolics.hessian(S, [z])[1, 1]
-    native_S = build_function(S, z, expression=Val{false})
-    native_grad = build_function(S_grad, z, expression=Val{false})
-    native_hessian = build_function(S_hessian, z, expression=Val{false})
+    S_grad = Symbolics.gradient(S, z)
+    S_hessian = Symbolics.hessian(S, z)
+    native_S = build_function(S, z, expression=Val{false})[1]
+    native_grad = build_function(S_grad, z, expression=Val{false})[1]
+    native_hessian = build_function(S_hessian, z, expression=Val{false})[1]
 
     return get_dual_thimbles(native_S, native_grad, native_hessian, params, domain, contributing)
 end
@@ -72,7 +72,7 @@ function for compatibility with the Symbolics.jl package. For complete documenta
 `get_dual_thimble_boundary!`.
 
 # Arguments
-- `z::Num`: The symbolic variable.
+- `z::AbstractVector{Num}`: The symbolic variable.
 - `S::Num`: The symbolic action function.
 - `saddle_point::Saddle`: The struct containing the saddle point.
 - `params::Dict`: The parameters for the dual thimble calculation.
@@ -81,15 +81,15 @@ function for compatibility with the Symbolics.jl package. For complete documenta
 - `Nothing`
 """
 function get_dual_thimble_boundary!(
-    z::Num, S::Num,
+    z::AbstractVector{Num}, S::Num,
     saddle_point::Saddle,
     params::Dict
 )::Nothing
-    S_grad = Symbolics.gradient(S, [z])[1]
-    S_hessian = Symbolics.hessian(S, [z])[1, 1]
-    native_S = build_function(S, z, expression=Val{false})
-    native_grad = build_function(S_grad, z, expression=Val{false})
-    native_hessian = build_function(S_hessian, z, expression=Val{false})
+    S_grad = Symbolics.gradient(S, z)
+    S_hessian = Symbolics.hessian(S, z)
+    native_S = build_function(S, z, expression=Val{false})[1]
+    native_grad = build_function(S_grad, z, expression=Val{false})[1]
+    native_hessian = build_function(S_hessian, z, expression=Val{false})[1]
 
     return get_dual_thimble_boundary!(native_S, native_grad, native_hessian, saddle_point, params)
 end
@@ -103,7 +103,7 @@ function for compatibility with the Symbolics.jl package. For complete documenta
 `get_dual_thimble_boundaries`.
 
 # Arguments
-- `z::Num`: The symbolic variable.
+- `z::AbstractVector{Num}`: The symbolic variable.
 - `S::Num`: The symbolic action function.
 - `params::Dict`: The parameters for the dual thimble calculation.
 - `domain::Vector{ComplexDomain}`: The domain over which to calculate the dual thimbles.
@@ -113,16 +113,16 @@ function for compatibility with the Symbolics.jl package. For complete documenta
 - `Vector{Saddle}`: A vector of the saddle points and their dual thimbles.
 """
 function get_dual_thimble_boundaries(
-    z::Num, S::Num,
+    z::AbstractVector{Num}, S::Num,
     params::Dict,
     domain::Vector{ComplexDomain},
     contributing::Bool
 )::Vector{Saddle}
-    S_grad = Symbolics.gradient(S, [z])[1]
-    S_hessian = Symbolics.hessian(S, [z])[1, 1]
-    native_S = build_function(S, z, expression=Val{false})
-    native_grad = build_function(S_grad, z, expression=Val{false})
-    native_hessian = build_function(S_hessian, z, expression=Val{false})
+    S_grad = Symbolics.gradient(S, z)
+    S_hessian = Symbolics.hessian(S, z)
+    native_S = build_function(S, z, expression=Val{false})[1]
+    native_grad = build_function(S_grad, z, expression=Val{false})[1]
+    native_hessian = build_function(S_hessian, z, expression=Val{false})[1]
 
     return get_dual_thimble_boundaries(native_S, native_grad, native_hessian, params, domain, contributing)
 end
