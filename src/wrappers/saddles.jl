@@ -10,7 +10,7 @@ For complete documentation, see `solve_first_derivative`.
 
 # Arguments
 - `z::AbstractVector{Num}`: The symbolic variable.
-- `derivative::Num`: The symbolic first derivative of the action function.
+- `derivative::AbstractVector{Num}`: The symbolic first derivative of the action function.
 - `initial_point::Vector{ComplexF64}`: The initial points to start the search from.
 - `accuracy::Int64`: The accuracy (number of digits) to which the saddle points should be found.
 
@@ -18,7 +18,7 @@ For complete documentation, see `solve_first_derivative`.
 - A tuple or vector containing the found saddle points.
 """
 function solve_first_derivative(
-    z::AbstractVector{Num}, derivative::Num,
+    z::AbstractVector{Num}, derivative::AbstractVector{Num},
     initial_point::Vector{ComplexF64},
     accuracy::Int64
 )::Vector{Types.Saddle}
@@ -37,7 +37,7 @@ documentation, see `find_saddles`.
 
 # Arguments
 - `z::AbstractVector{Num}`: The symbolic variable.
-- `derivative::Num`: The symbolic first derivative of the action function.
+- `derivative::AbstractVector{Num}`: The symbolic first derivative of the action function.
 - `domain::Vector{ComplexDomain}`: The domain over which to search for the saddle points.
 - `params::Dict`: The parameters for the numerical search.
 - `check::Function`: A function used to check if two found saddle points are identical.
@@ -46,7 +46,7 @@ documentation, see `find_saddles`.
 - A vector of `Saddle` structs containing the found saddle points.
 """
 function find_saddles(
-    z::AbstractVector{Num}, derivative::Num,
+    z::AbstractVector{Num}, derivative::AbstractVector{Num},
     domain::Vector{ComplexDomain},
     params::Dict;
     check::Function=(t_1, t_2) -> !isequal(t_1, t_2)
