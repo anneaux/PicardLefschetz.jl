@@ -67,7 +67,7 @@ function get_thimble!(
         elseif mesh_type == "triangles"
             gradient_normalisation_threshold = params["gradient_normalisation_threshold"]
             height_threshold = params["height_threshold"]
-            Methods2D.Triangle.Thimble.get_SD_thimble_triangles(
+            necklace, trianglesC, points_all, triangles = Methods2D.Triangle.Thimble.get_SD_thimble_triangles(
                 S, S_grad, S_hessian,
                 saddle_point,
                 Ninit=initial_point_count,
@@ -78,6 +78,7 @@ function get_thimble!(
                 gradn_threshold=gradient_normalisation_threshold,
                 h_threshold=height_threshold
             )
+            trianglesC
         else
             throw(error("Mesh type not supported."))
         end
