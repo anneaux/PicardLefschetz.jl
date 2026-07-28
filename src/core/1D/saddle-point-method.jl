@@ -55,37 +55,7 @@ function is_contributing(ts_saddle::Saddle, S::Function, tmin::ComplexF64, tmax:
 end
 
 export get_intersection_number!
-function get_intersection_number!(
-    S::Function, S_grad::Function, S_hessian::Function,
-    saddle::Saddle, params::Dict
-)::Nothing
-
-    if isnothing(saddle.thimble)
-        init_perturbation_radius = params["init_perturbation_radius"]
-        max_iterations = params["max_iterations"]
-        flow_step_factor = params["flow_step_factor"]
-        subdivision_threshold = params["subdivision_threshold"]
-        height_threshold = params["height_threshold"]
-        gradient_normalisation_threshold = params["gradient_normalisation_threshold"]
-
-        saddle.thimble = get_thimble(S, S_grad, S_hessian, saddle,
-            init_perturbation_radius=init_perturbation_radius,
-            max_iterations=max_iterations,
-            flow_step_factor=flow_step_factor,
-            subdivision_threshold=subdivision_threshold,
-            gradient_normalisation_threshold=gradient_normalisation_threshold,
-            height_threshold=height_threshold
-        )
-    end
-
-    if isnothing(saddle.dual_thimble)
-        flow_step_factor = params["flow_step_factor"]
-        height_threshold = params["height_threshold"]
-        max_iterations = params["max_iterations"]
-        thimble, contributing = flow_up(S, S_grad, saddle.saddle, flow_step_factor, height_threshold, max_iterations)
-        saddle.dual_thimble = thimble
-    end
-
+function get_intersection_number!(S_grad::Function, saddle::Saddle)::Nothing
     intersection_point = find_intersection_point(saddle.dual_thimble)
     z_prime = conj(S_grad(intersection_point.coords[1]))
     determinant = imag(z_prime)
