@@ -5,8 +5,10 @@ authors = ["Anne Weber <anne.weber@mailbox.org> and contributors"]
 
 [deps]
 Contour = "d38c429a-6771-53c6-b99e-75d170b6e991"
+DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 FastGaussQuadrature = "442a2c76-b920-505d-bb47-c5924d526838"
 FiniteDiff = "6a86dc24-6348-571c-b903-95158fe2bd41"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 GeometryBasics = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -21,8 +23,10 @@ Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 
 [compat]
 Contour = "0.6.3"
+DifferentialEquations = "8.0.2"
 FastGaussQuadrature = "1.0.2"
 FiniteDiff = "2.32.0"
+ForwardDiff = "1.4.3"
 GeometryBasics = "0.5.1"
 Graphs = "1.14.0"
 LinearAlgebra = "1.10.0"
