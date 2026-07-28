@@ -9,7 +9,7 @@ is a wrapper function for compatibility with the Symbolics.jl package.
 For complete documentation, see `solve_first_derivative`.
 
 # Arguments
-- `z::Num`: The symbolic variable.
+- `z::AbstractVector{Num}`: The symbolic variable.
 - `derivative::Num`: The symbolic first derivative of the action function.
 - `initial_point::Vector{ComplexF64}`: The initial points to start the search from.
 - `accuracy::Int64`: The accuracy (number of digits) to which the saddle points should be found.
@@ -18,11 +18,11 @@ For complete documentation, see `solve_first_derivative`.
 - A tuple or vector containing the found saddle points.
 """
 function solve_first_derivative(
-    z::Num, derivative::Num,
+    z::AbstractVector{Num}, derivative::Num,
     initial_point::Vector{ComplexF64},
     accuracy::Int64
 )::Vector{Types.Saddle}
-    native_derivative = build_function(derivative, z, expression=Val{false})
+    native_derivative = build_function(derivative, z, expression=Val{false})[1]
 
     return solve_first_derivative(native_derivative, initial_point, accuracy)
 end
@@ -36,7 +36,7 @@ is a wrapper function for compatibility with the Symbolics.jl package. For compl
 documentation, see `find_saddles`.
 
 # Arguments
-- `z::Num`: The symbolic variable.
+- `z::AbstractVector{Num}`: The symbolic variable.
 - `derivative::Num`: The symbolic first derivative of the action function.
 - `domain::Vector{ComplexDomain}`: The domain over which to search for the saddle points.
 - `params::Dict`: The parameters for the numerical search.
@@ -46,12 +46,12 @@ documentation, see `find_saddles`.
 - A vector of `Saddle` structs containing the found saddle points.
 """
 function find_saddles(
-    z::Num, derivative::Num,
+    z::AbstractVector{Num}, derivative::Num,
     domain::Vector{ComplexDomain},
     params::Dict;
     check::Function=(t_1, t_2) -> !isequal(t_1, t_2)
 )::Vector{Types.Saddle}
-    native_derivative = build_function(derivative, z, expression=Val{false})
+    native_derivative = build_function(derivative, z, expression=Val{false})[1]
 
     return find_saddles(native_derivative, domain, params, check=check)
 end
@@ -65,7 +65,7 @@ This is a wrapper function for compatibility with the Symbolics.jl package. For 
 documentation, see `check_contribution!`.
 
 # Arguments
-- `z::Num`: The symbolic variable.
+- `z::AbstractVector{Num}`: The symbolic variable.
 - `S::Num`: The symbolic action function.
 - `saddle_point::Types.Saddle`: The saddle point struct to check.
 - `domain::ComplexDomain`: The integration domain.
@@ -76,17 +76,17 @@ documentation, see `check_contribution!`.
 - `Nothing` (the `contributing` field of the `saddle_point` is modified in-place).
 """
 function check_contribution!(
-    z::Num, S::Num,
+    z::AbstractVector{Num}, S::Num,
     saddle_point::Types.Saddle,
     domain::ComplexDomain,
     params::Dict;
     log_errors::Bool=false
 )::Nothing
-    S_grad = Symbolics.gradient(S, [z])[1]
-    S_hessian = Symbolics.hessian(S, [z])[1, 1]
-    native_S = build_function(S, z, expression=Val{false})
-    native_derivative = build_function(S_grad, z, expression=Val{false})
-    native_hessian = build_function(S_hessian, z, expression=Val{false})
+    S_grad = Symbolics.gradient(S, z)
+    S_hessian = Symbolics.hessian(S, z)
+    native_S = build_function(S, z, expression=Val{false})[1]
+    native_derivative = build_function(S_grad, z, expression=Val{false})[1]
+    native_hessian = build_function(S_hessian, z, expression=Val{false})[1]
 
     check_contribution!(native_S, native_derivative, native_hessian, saddle_point, domain, params, log_errors=log_errors)
 end

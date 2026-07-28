@@ -9,7 +9,7 @@ is a wrapper function for compatibility with the Symbolics.jl package. For compl
 documentation, see `integrate_thimble`.
 
 # Arguments
-- `z::Num`: The symbolic variable.
+- `z::AbstractVector{Num}`: The symbolic variable.
 - `S::Num`: The symbolic action function.
 - `boundary::Any`: The precomputed boundary over which to integrate.
 - `prefactor::Num`: A symbolic expression for the prefactor.
@@ -19,13 +19,13 @@ documentation, see `integrate_thimble`.
 - `Vector{ComplexF64}`: The result of the integration.
 """
 function integrate_thimble(
-    z::Num, S::Num,
+    z::AbstractVector{Num}, S::Num,
     boundary::Any,
     prefactor::Num,
     params::Dict
 )::Vector{ComplexF64}
-    native_S = build_function(S, z, expression=Val{false})
-    native_prefactor = build_function(prefactor, z, expression=Val{false})
+    native_S = build_function(S, z, expression=Val{false})[1]
+    native_prefactor = build_function(prefactor, z, expression=Val{false})[1]
 
     return integrate_thimble(native_S, boundary, native_prefactor, params)
 end
@@ -48,16 +48,16 @@ is a wrapper function for compatibility with the Symbolics.jl package. For compl
 - `Nothing` (the `integral` field of the `saddle_point` is modified in-place).
 """
 function integrate_thimble!(
-    z::Num, S::Num,
+    z::AbstractVector{Num}, S::Num,
     saddle_point::Types.Saddle,
     prefactor::Num
 )::Nothing
-    S_grad = Symbolics.gradient(S, [z])[1]
-    S_hessian = Symbolics.hessian(S, [z])[1, 1]
-    native_S = build_function(S, z, expression=Val{false})
-    native_grad = build_function(S_grad, z, expression=Val{false})
-    native_hessian = build_function(S_hessian, z, expression=Val{false})
-    native_prefactor = build_function(prefactor, z, expression=Val{false})
+    S_grad = Symbolics.gradient(S, z)
+    S_hessian = Symbolics.hessian(S, z)
+    native_S = build_function(S, z, expression=Val{false})[1]
+    native_grad = build_function(S_grad, z, expression=Val{false})[1]
+    native_hessian = build_function(S_hessian, z, expression=Val{false})[1]
+    native_prefactor = build_function(prefactor, z, expression=Val{false})[1]
 
     return integrate_thimble!(native_S, native_grad, native_hessian, saddle_point, native_prefactor)
 end
@@ -71,7 +71,7 @@ This is a wrapper function for compatibility with the Symbolics.jl package. For 
 `integrate_thimbles`.
 
 # Arguments
-- `z::Num`: The symbolic variable.
+- `z::AbstractVector{Num}`: The symbolic variable.
 - `S::Num`: The symbolic action function.
 - `domain::Vector{RealDomain}`: The initial integration domain.
 - `deformation_parameters::Vector{<:Number}`: The parameters used to deform the integration contour.
@@ -83,16 +83,16 @@ This is a wrapper function for compatibility with the Symbolics.jl package. For 
 - `Tuple{Vector{ComplexF64}, Int}`: A tuple of the integral value, and the number of simplices used to evaluate the integral.
 """
 function integrate_thimbles(
-    z::Num, S::Num,
+    z::AbstractVector{Num}, S::Num,
     domain::Vector{RealDomain},
     deformation_parameters::Vector{<:Number},
     prefactor::Num,
     params::Dict, mode::String
 )::Tuple{Vector{ComplexF64},Int}
-    S_grad = Symbolics.gradient(S, [z])[1]
-    native_S = build_function(S, z, expression=Val{false})
-    native_grad = build_function(S_grad, z, expression=Val{false})
-    native_prefactor = build_function(prefactor, z, expression=Val{false})
+    S_grad = Symbolics.gradient(S, z)
+    native_S = build_function(S, z, expression=Val{false})[1]
+    native_grad = build_function(S_grad, z, expression=Val{false})[1]
+    native_prefactor = build_function(prefactor, z, expression=Val{false})[1]
 
     return integrate_thimbles(native_S, native_grad, domain, deformation_parameters, native_prefactor, params, mode)
 end
@@ -106,7 +106,7 @@ is a wrapper function for compatibility with the Symbolics.jl package. For compl
 `integrate_thimbles`.
 
 # Arguments
-- `z::Num`: The symbolic variable.
+- `z::AbstractVector{Num}`: The symbolic variable.
 - `S::Num`: The symbolic action function.
 - `domain::Vector{ComplexDomain}`: The domain over which to search for saddle points and integrate.
 - `params::Dict`: Parameters for saddle point finding and integration.
@@ -117,17 +117,17 @@ is a wrapper function for compatibility with the Symbolics.jl package. For compl
 - `Vector{Types.Saddle}`: The saddle points, with their computed Saddle Point Method approximation integrals.
 """
 function integrate_thimbles(
-    z::Num, S::Num,
+    z::AbstractVector{Num}, S::Num,
     domain::Vector{ComplexDomain},
     params::Dict, prefactor::Num;
     check::Function=(t_1, t_2) -> !isequal(t_1, t_2)
 )::Vector{Types.Saddle}
-    S_grad = Symbolics.gradient(S, [z])[1]
-    S_hessian = Symbolics.hessian(S, [z])[1, 1]
-    native_S = build_function(S, z, expression=Val{false})
-    native_grad = build_function(S_grad, z, expression=Val{false})
-    native_hessian = build_function(S_hessian, z, expression=Val{false})
-    native_prefactor = build_function(prefactor, z, expression=Val{false})
+    S_grad = Symbolics.gradient(S, z)
+    S_hessian = Symbolics.hessian(S, z)
+    native_S = build_function(S, z, expression=Val{false})[1]
+    native_grad = build_function(S_grad, z, expression=Val{false})[1]
+    native_hessian = build_function(S_hessian, z, expression=Val{false})[1]
+    native_prefactor = build_function(prefactor, z, expression=Val{false})[1]
 
     return integrate_thimbles(native_S, native_grad, native_hessian, domain, params, native_prefactor, check=check)
 end
