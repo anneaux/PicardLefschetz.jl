@@ -108,12 +108,10 @@ documentation, see `get_intersection_number!`.
 # Returns
 - `Nothing` (the `intersection_number` field of the `saddle` is modified in-place).
 """
-function get_intersection_number!(z::Num, S::Num, saddle::Types.Saddle, params::Dict)::Nothing
-    S_grad = Symbolics.gradient(S, [z])[1]
-    S_hessian = Symbolics.hessian(S, [z])[1]
+function get_intersection_number!(z::AbstractVector{Num}, S::Num, saddle::Types.Saddle, params::Dict)::Nothing
+    S_grad = Symbolics.gradient(S, z)[1]
     native_S = build_function(S, z, expression=Val{false})
     native_derivative = build_function(S_grad, z, expression=Val{false})
-    native_hessian = build_function(S_hessian, z, expression=Val{false})
 
-    return get_intersection_number!(native_S, native_derivative, native_hessian, saddle, params)
+    return get_intersection_number!(native_S, native_derivative, saddle, params)
 end

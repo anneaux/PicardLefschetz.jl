@@ -148,30 +148,24 @@ The parameters for this function are listed below:
 
 | Parameter | Required | Type | Description |
 | --------- | -------- | ---- | ----------- |
-| `grid_resolution` | Yes | `Int` | The number of points to use for discretizing the thimble paths. |
-| `flow_step_factor` | Yes | `Float64` | The step size factor for the flow equation. |
-| `max_iterations` | Yes | `Int` | The maximum number of iterations for the flow equation. |
-| `init_pertubation_radius` | Yes | `Float64` | The initial radius of the perturbation used to generate the necklace. |
-| `subdivision_threshold` | Yes | `Float64` | The threshold for subdividing the necklace to improve accuracy. |
-| `height_threshold` | Yes | `Float64` | The threshold for the cutoff of the thimble/dual thimble, in the imaginary magnitude of the action. |
-| `gradient_normalisation_threshold` | Yes | `Float64` | The threshold for normalising the gradient during gradient flow. |
+| `max_iterations` | Yes | `Int` | The maximum number of iterations for the flow equation. (This parameter is only required in 2D). |
+| `init_pertubation_radius` | Yes | `Float64` | The initial radius of the perturbation used to generate the necklace. (This parameter is only required in 2D). |
 
 # Arguments
 - `S::Function`: The action function.
 - `S_grad::Function`: The first derivative (gradient) of the action function.
-- `S_hessian::Function`: The second derivative (Hessian) of the action function.
 - `saddle_point::Types.Saddle`: The saddle point struct to check.
 - `params::Dict`: Parameters for checking contribution.
 
 # Returns
 - `Nothing` (the `intersection_number` field of the `saddle` is modified in-place).
 """
-function get_intersection_number!(S::Function, S_grad::Function, S_hessian::Function, saddle::Types.Saddle, params::Dict)
+function get_intersection_number!(S::Function, S_grad::Function, saddle::Types.Saddle, params::Dict)::Nothing
     if length(saddle.saddle) == 1
-        return Methods1D.SaddlePoint.get_intersection_number!(S, S_grad, S_hessian, saddle, params)
+        return Methods1D.SaddlePoint.get_intersection_number!(S_grad, saddle)
+    elseif length(saddle.saddle) == 2
+        return Methods2D.SaddlePoint.get_intersection_number!(S, saddle, params)
     end
-
-    return nothing
 end
 
 include("../wrappers/saddles.jl")
