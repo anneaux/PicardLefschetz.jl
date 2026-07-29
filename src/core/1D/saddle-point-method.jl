@@ -55,7 +55,15 @@ function is_contributing(ts_saddle::Saddle, S::Function, tmin::ComplexF64, tmax:
 end
 
 export get_intersection_number!
-function get_intersection_number!(S_grad::Function, saddle::Saddle)::Nothing
+function get_intersection_number!(S::Function, S_grad::Function, saddle::Saddle, params::Dict)::Nothing
+    if isnothing(saddle.dual_thimble)
+        flow_step_factor = params["flow_step_factor"]
+        height_threshold = params["height_threshold"]
+        max_iterations = params["max_iterations"]
+        thimble, contributing = flow_up(S, S_grad, saddle.saddle, flow_step_factor, height_threshold, max_iterations)
+        saddle.dual_thimble = thimble
+    end
+
     intersection_point = find_intersection_point(saddle.dual_thimble)
     z_prime = conj(S_grad(intersection_point.coords[1]))
     determinant = imag(z_prime)

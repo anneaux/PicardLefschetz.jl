@@ -162,7 +162,7 @@ The parameters for this function are listed below:
 """
 function get_intersection_number!(S::Function, S_grad::Function, saddle::Types.Saddle, params::Dict)::Nothing
     if length(saddle.saddle) == 1
-        return Methods1D.SaddlePoint.get_intersection_number!(S_grad, saddle)
+        return Methods1D.SaddlePoint.get_intersection_number!(S, S_grad, saddle, params)
     elseif length(saddle.saddle) == 2
         return Methods2D.SaddlePoint.get_intersection_number!(S, saddle, params)
     end
