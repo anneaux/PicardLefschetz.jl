@@ -1,8 +1,15 @@
-# using Contour, GeometryBasics
-# export is_contributing, integrate_around_saddle_point, integrate_SPM
+module SaddlePoint
 
-function is_contributing(ts::ComplexF64, S::Function, tmin::ComplexF64, tmax::ComplexF64;
+using Contour, GeometryBasics
+
+using ..Types: Saddle
+using ..CriticalPoints: find_saddles_sobol
+using ..LineIntersection: crosses_point, dissect_curve, intersection
+
+export is_contributing
+function is_contributing(ts_saddle::Saddle, S::Function, tmin::ComplexF64, tmax::ComplexF64;
     Ntimes::Int64=100)
+    ts = ts_saddle[1]
     timags = range(imag(tmin), stop=imag(tmax), length=Ntimes)
     treals = range(real(tmin), stop=real(tmax), length=Ntimes)
     tlength = real(tmax - tmin)
@@ -13,7 +20,7 @@ function is_contributing(ts::ComplexF64, S::Function, tmin::ComplexF64, tmax::Co
 
     Svals = [S(tr + im * ti) for tr in treals, ti in timags]
 
-    real_axis = Curve2([(real(tmin) - tlength, 0.), (real(tmax) + tlength, 0.)])
+    real_axis = Contour.Curve2([(real(tmin) - tlength, 0.), (real(tmax) + tlength, 0.)])
 
     relevant = false
     S_saddle = S(ts)
@@ -28,8 +35,8 @@ function is_contributing(ts::ComplexF64, S::Function, tmin::ComplexF64, tmax::Co
             segs = dissect_curve(ts, curve, saddle_ip, crossthresh)
             #             saddle_ip = closest_intersection(saddle_ip, curve, GeometryBasics.Point(reim(ts)...), crossthresh)
             # #                 ### disect curve
-            #             c1 = Curve2(curve.vertices[1:saddle_ip+1])
-            #             c2 = Curve2(curve.vertices[saddle_ip+1:end])
+            #             c1 = Contour.Curve2(curve.vertices[1:saddle_ip+1])
+            #             c2 = Contour.Curve2(curve.vertices[saddle_ip+1:end])
 
             for c in segs
                 actiondiff = S(complex(c.vertices[minimum([5, length(c.vertices)])]...)) - S(ts)
@@ -46,36 +53,33 @@ function is_contributing(ts::ComplexF64, S::Function, tmin::ComplexF64, tmax::Co
 
 end
 
-
-
-
-function integrate_around_saddle_point(ts::ComplexF64,
+export integrate_around_saddle_point
+function integrate_around_saddle_point(ts_saddle::Saddle,
     S::Function, drv::Function, drv2::Function
     ; prefactor::Function=t -> 1.,
 )
 
+    ts = ts_saddle[1]
     S_ts = S(ts)
 
     int = prefactor(ts) * sqrt(-im * 2π / drv2(ts)) * exp(im * S_ts)
 end
 
-
+export integrate_SPM
 function integrate_SPM(S::Function, drv::Function, drv2::Function,
     tmin::ComplexF64, tmax::ComplexF64
     ; prefactor::Function=t -> 1.)
 
-    saddles = filter(ts -> real(tmin) < real(ts) < real(tmax),
+    saddles = filter(ts -> real(tmin) < real(ts[1]) < real(tmax),
         find_saddles_sobol(drv, tmin, tmax, 300)
     )
     int_SPM = complex(0.)
     for ts in saddles
         if is_contributing(ts, S, tmin, tmax)
-            int_SPM += prefactor(ts) * integrate_around_saddle_point(ts, S, drv, drv2)
+            int_SPM += integrate_around_saddle_point(ts, S, drv, drv2, prefactor=prefactor)
         end
     end
     return int_SPM
 end
 
-
-
-nothing
+end
