@@ -111,7 +111,7 @@ function check_contribution!(
     S_grad::Function,
     S_hessian::Function,
     saddle_point::Types.Saddle,
-    domain::ComplexDomain,
+    domain::Union{ComplexDomain,Vector{ComplexDomain}},
     params::Dict;
     log_errors::Bool=false
 )::Nothing
@@ -121,14 +121,14 @@ function check_contribution!(
         flow_step_factor = params["flow_step_factor"]
         initial_necklace_size = params["initial_necklace_size"]
         max_iterations = params["max_iterations"]
-        init_pertubation_radius = params["init_pertubation_radius"]
+        init_perturbation_radius = params["init_perturbation_radius"]
         subdivision_threshold = params["subdividethreshold"]
 
         Methods2D.SaddlePoint.check_contribution(
             S, S_grad, S_hessian, saddle_point,
             Ntimes=grid_resolution, logerrors=log_errors,
             flowstepfactor=flow_step_factor, initial_necklace_size=initial_necklace_size,
-            max_iterations=max_iterations, init_pertubation_radius=init_pertubation_radius,
+            max_iterations=max_iterations, init_perturbation_radius=init_perturbation_radius,
             subdivision_threshold=subdivision_threshold
         )
     elseif length(saddle_point.saddle) == 1

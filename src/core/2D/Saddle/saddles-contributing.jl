@@ -1,6 +1,8 @@
 ### everything to decide whether or not a given saddle point contributes.
 ### this could be implemented in various methods again. Also maybe it should give a warning if there're multiple saddle points nearby and if a Gaussian approximation is a bad idea?
 using ..Types: Simplex, FlowPoint, Saddle
+using ..DualThimble: get_necklace, get_point
+import LinearAlgebra: norm
 
 
 ### utils for deciding whether a line crosses a given point
@@ -9,9 +11,12 @@ function distance_point_to_line(p::AbstractVector, s::AbstractVector, t::Abstrac
     return norm(p .- midpoint)
 end
 
-function distance_point_to_line(p::FlowPoint, l::Simplex{2,Int})
-    return distance_point_to_line([p[1], p[2]], [l.s_pt[1], l.s_pt[2]], [l.e_pt[1], l.e_pt[2]])
+function distance_point_to_line(p::FlowPoint, l::Simplex{2,FlowPoint})
+    return distance_point_to_line([p[1], p[2]], [l.vertices[1][1], l.vertices[1][2]], [l.vertices[2][1], l.vertices[2][2]])
 end
+
+norm(s::Simplex{2,FlowPoint}) = norm(s.vertices[1].coords .- s.vertices[2].coords)
+
 
 # function find_crossing(line::Vector{Simplex{2, Int}}, point::FlowPoint, tolerance::Float64=0.8)
 #     mindist, Simplex{2, Int} = findmin([distance_point_to_line(point, seg) for seg in line])
@@ -23,7 +28,7 @@ end
 #     end
 # end
 
-function average_distance(line::Vector{Simplex{2,Int}}, pidx::Int64, threshold::Float64=0.5) # flowstepfactor
+function average_distance(line::Vector{Simplex{2,FlowPoint}}, pidx::Int64, threshold::Float64=0.5) # flowstepfactor
     line_region = [line[pidx]]
 
     for r in 1:min(10, length(line) - pidx - 1)
@@ -44,34 +49,22 @@ function average_distance(line::Vector{Simplex{2,Int}}, pidx::Int64, threshold::
     return av_dist
 end
 
-function find_crossing(line::Vector{Simplex{2,Int}}, point::FlowPoint, tolerance::Float64=1.; threshold::Float64=0.5,
+function find_crossing(line::Vector{Simplex{2,FlowPoint}}, point::FlowPoint, tolerance::Float64=1.; threshold::Float64=0.5,
     loginfo=[])
 
     distances = [distance_point_to_line(point, seg) for seg in line]
+    mindist, idx = findmin(distances)
 
-    # finds local minima of the distances, filters for those where the height is <tolerance, and returns the respective indices
-    # https://docs.juliahub.com/Peaks/3TWUM/0.5.2/
-    intersections = findminima(vcat(distances, distances[1:min(20, length(distances))])) |> peakheights(; max=tolerance) |> peakproms(; min=0.5)
-    peakindices = unique(mod1.(intersections.vertices, length(distances)))
-
-    ### double-check that peaks are smaller than norm, think: adaptive tolerance for peak height. averaging over norms in that region because otherwise sometimes I'm unlucky
-
-    filter!(pidx -> distances[pidx] < average_distance(line, pidx, threshold), peakindices)
-
-    if length(peakindices) == 1
-        return peakindices[1]
-    elseif length(peakindices) == 0
-        return nothing
+    if mindist < tolerance && mindist < average_distance(line, idx, threshold)
+        return idx
     else
-        @warn "I'm hitting the integration plane more than once I think"
-        # log_error("new-necklace-hitting-ID-errors.txt", "Warning (2) for $(loginfo).")
-        return peakindices[1]
+        return nothing
     end
 end
 
 
 function find_crossing(curve::Contour.Curve2{Tuple{T,T}}, point::FlowPoint, tolerance::Float64=0.8; threshold::Float64=0.5) where T<:Real
-    line = [Simplex{2,Int}(FlowPoint(curve.vertices[i]...), FlowPoint(curve.vertices[i+1]...)) for i in 1:(length(curve.vertices)-1)]
+    line = [Simplex{2,FlowPoint}(FlowPoint[FlowPoint(complex(curve.vertices[i][1]), complex(curve.vertices[i][2])), FlowPoint(complex(curve.vertices[i+1][1]), complex(curve.vertices[i+1][2]))]) for i in 1:(length(curve.vertices)-1)]
     return find_crossing(line, point, tolerance, threshold=threshold)
 end
 
@@ -119,7 +112,7 @@ function check_contribution(necklace::Vector{Simplex{2,FlowPoint}},
     end
 
     ### check if necklace hits real plane
-    p = FlowPoint(0., 0.)
+    p = FlowPoint(0.0im, 0.0im)
     idx = find_crossing(imag.(necklace), p, threshold=2 * flowstepfactor) # can add loginfo here
 
     if isnothing(idx)
@@ -178,7 +171,7 @@ function check_contribution(
     tr = saddle_point[2]
 
     if real(f([ti, tr])) < 0
-        necklace = get_necklace(f, f_grad, f_hessian, saddle_point; logerrors=logerrors, kwargs...)
+        necklace, _ = get_necklace(f, f_grad, f_hessian, saddle_point; logerrors=logerrors, kwargs...)
         check_contribution(necklace, f, saddle_point, Ntimes=Ntimes)
     else
         @debug "it doesn't contribute! (0)"
