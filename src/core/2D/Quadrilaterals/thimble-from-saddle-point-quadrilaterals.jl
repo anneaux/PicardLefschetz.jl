@@ -1,6 +1,9 @@
 module Thimble
 
 using ..Types: FlowPoint, Simplex, Saddle
+using LinearAlgebra
+using ...DualThimble: sort_linesegs, subdivide!
+using ...Utils: gradN
 
 ### I think this needs some functions from the necklace file
 
@@ -14,21 +17,31 @@ function initialise_SD!(necklace::Vector{Simplex{2,Int}}, points::Vector{<:FlowP
     tr = saddle_point[2]
     hessian = f_hessian(ti, tr)
 
+    if size(hessian) == (2, 2)
+        hessian = [
+            imag(hessian[1, 1]) real(hessian[1, 1]) imag(hessian[1, 2]) real(hessian[1, 2]);
+            real(hessian[1, 1]) -imag(hessian[1, 1]) real(hessian[1, 2]) -imag(hessian[1, 2]);
+            imag(hessian[2, 1]) real(hessian[2, 1]) imag(hessian[2, 2]) real(hessian[2, 2]);
+            real(hessian[2, 1]) -imag(hessian[2, 1]) real(hessian[2, 2]) -imag(hessian[2, 2])
+        ]
+    end
+
     # this could certainly be made more julian    
     eigenvectors = [[complex(vec[1:2]...), complex(vec[3:4]...)] for vec in eachcol(eigvecs(hessian))]
 
     pointsini = ([[ti, tr] .+ ϵ * (cos(θ) * eigenvectors[1] + sin(θ) * eigenvectors[2]) for θ in range(0, stop=2π, length=Ninit + 1)])[1:end-1]
 
     push!(points, [FlowPoint(p[1], p[2]) for p in pointsini]...)
-    push!(necklace, [Simplex{2,Int}(i, i + 1, true) for i in 1:(length(points)-1)]...)
-    push!(necklace, Simplex{2,Int}(length(points), 1, true)) # closing the necklace
+    push!(necklace, [Simplex{2,Int}([i, i + 1], true) for i in 1:(length(points)-1)]...)
+    push!(necklace, Simplex{2,Int}([length(points), 1], true)) # closing the necklace
 end
 
 function adorn_necklace(necklace::Vector{Simplex{2,Int}}, points::Vector{<:FlowPoint})
+    new_necklace = Vector{Simplex{2,FlowPoint}}(undef, length(necklace))
     for i in 1:length(necklace)
-        necklace[i] = Simplex{2,Int}(points[necklace[i].vertices[1]], points[necklace[i].vertices[2]])
+        new_necklace[i] = Simplex{2,FlowPoint}([points[necklace[i].vertices[1]], points[necklace[i].vertices[2]]])
     end
-    return necklace
+    return new_necklace
 end
 
 function flow_down!(necklace::Vector{Simplex{2,Int}}, points::Vector{<:FlowPoint},
@@ -83,7 +96,7 @@ function get_necklace_SD_solver_with_traces(
         push!(points_traces, Vector{<:FlowPoint}())
     end
 
-    necklaces = Vector{Vector{Simplex{2,Int}}}()
+    necklaces = Vector{Vector{Simplex{2,FlowPoint}}}()
     push!(necklaces, adorn_necklace(sort_linesegs(necklace), points))
 
     ### find a suitable threshold for the normalisation of the gradient
@@ -222,18 +235,18 @@ end
 #     integrate_quadrilateral(f, Simplex{4, FlowPoint}([p1,p2,p3,p4]), n, prefactor=prefactor)
 # end
 
-function make_quad(ls1::Simplex{2,Int}, ls2::Simplex{2,Int})
+function make_quad(ls1::Simplex{2,FlowPoint}, ls2::Simplex{2,FlowPoint})
 
-    p1 = ls1.s_pt
-    p2 = ls2.s_pt
-    p3 = ls2.e_pt
-    p4 = ls1.e_pt
+    p1 = ls1.vertices[1]
+    p2 = ls2.vertices[1]
+    p3 = ls2.vertices[2]
+    p4 = ls1.vertices[2]
 
     return Simplex{4,FlowPoint}([p1, p2, p3, p4])
 end
 
 function make_quads(necklace::Vector{Simplex{2,Int}},
-    points::Vector{<:FlowPoint}, prev_necklace::Vector{Simplex{2,Int}})
+    points::Vector{<:FlowPoint}, prev_necklace::Vector{Simplex{2,FlowPoint}})
 
     quads = Vector{Simplex{4,FlowPoint}}()
     new_necklace = adorn_necklace(sort_linesegs(necklace), points)
@@ -275,7 +288,7 @@ function get_SD_thimble_quads(f::Function,
     #         push!(points_traces, Vector{<:FlowPoint}())
     #     end
 
-    necklaces = Vector{Vector{Simplex{2,Int}}}()
+    necklaces = Vector{Vector{Simplex{2,FlowPoint}}}()
     push!(necklaces, adorn_necklace(sort_linesegs(necklace), points))
 
     ### find a suitable threshold for the normalisation of the gradient
@@ -310,9 +323,7 @@ function get_SD_thimble_quads(f::Function,
     end
 
     necklace = sort_linesegs(necklace)
-    adorn_necklace!(necklace, points)
-
-    return necklace, quads
+    return adorn_necklace(necklace, points), quads, points
     #     return necklace, necklaces, points_traces
 end
 
