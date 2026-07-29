@@ -34,8 +34,14 @@ where S(z) is the action function which faster oscillation, and f(z) is the pref
 """
 function integrate_thimble(S::Function, boundary::Any, prefactor::Function, params::Dict)::Vector{ComplexF64}
     if typeof(boundary) <: Tuple && length(boundary) == 2
-        # 1D case
+        # 1D case (Tuple)
         result = Methods1D.Integration.integrate_thimble(S, boundary[1], boundary[2]) # Returns a ComplexF64
+        return result isa Number ? ComplexF64[result] : Vector{ComplexF64}[result]
+    elseif boundary isa Vector{Simplex{2,FlowPoint}}
+        # 1D case (Vector of Simplex{2})
+        points = unique([v for s in boundary for v in s.vertices])
+        simplices = [Simplex{2,Int}([findfirst(==(s.vertices[1]), points), findfirst(==(s.vertices[2]), points)]) for s in boundary]
+        result = Methods1D.Integration.integrate_thimble(S, points, simplices)
         return result isa Number ? ComplexF64[result] : Vector{ComplexF64}[result]
     elseif boundary isa Vector{Simplex{4,FlowPoint}}
         # 2D case
@@ -261,6 +267,9 @@ function _integrate_SPM(
         check_contribution!(S, S_grad, S_hessian, saddle, domain[1], params)
         if saddle.contributing
             saddle.integral = Methods2D.SaddlePoint.saddles_gaussian_contribution(S, S_hessian, saddle, prefactor=prefactor)
+            if !(saddle.integral isa Vector)
+                saddle.integral = saddle.integral isa Number ? ComplexF64[saddle.integral] : Vector{ComplexF64}(saddle.integral)
+            end
             push!(contributing_saddles, saddle)
         end
     end
