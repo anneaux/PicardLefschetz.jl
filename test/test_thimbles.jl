@@ -58,7 +58,7 @@ using PicardLefschetz.Saddle
             saddle = saddles[1]
             get_thimble!(phase_1d(params_1d), phase_drv_1d(params_1d), phase_hess_1d(params_1d), saddle, saddle_params_1d, mesh_type="none")
             @test saddle.thimble !== nothing
-            @test saddle.thimble isa Tuple{Vector{<:FlowPoint},Vector{<:Simplex}}
+            @test saddle.thimble isa Vector{<:Simplex}
         end
     end
 
@@ -105,7 +105,7 @@ using PicardLefschetz.Saddle
     @testset "2D get_thimbles (quad)" begin
         thimbles = get_thimbles(phase_2d(params_2d), phase_drv_2d(params_2d), saddle_params_2d, domain_2d, mesh_type="quad")
         @test thimbles !== nothing
-        @test thimbles isa Tuple{Vector{<:Simplex}, Vector{<:FlowPoint}, Vector{<:Simplex}}
+        @test thimbles isa Tuple{Vector{<:FlowPoint},Vector{<:Simplex}}
     end
 
     @testset "2D get_thimbles (Complex overload, quad)" begin
