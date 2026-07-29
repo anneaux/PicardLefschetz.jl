@@ -157,6 +157,8 @@ function get_dual_thimble_boundary!(S::Function, S_grad::Function, S_hessian::Fu
         thimbles, contributing = Methods1D.PathFlow.flow_up(S, S_grad, saddle, flow_step_factor, height_threshold, max_iterations)
         saddle_point.dual_thimble_boundary = thimbles
     elseif length(saddle_point) == 2
+        flow_step_factor = params["flow_step_factor"]
+        max_iterations = params["max_iterations"]
         init_point_count = params["init_point_count"]
         init_perturbation_radius = params["init_perturbation_radius"]
         subdivision_threshold = params["subdivision_threshold"]
