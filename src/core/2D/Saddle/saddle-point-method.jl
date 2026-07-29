@@ -66,7 +66,7 @@ function intersection_number_sign_cheat(int::AbstractArray{<:Complex},
 end
 
 export get_intersection_number!
-function get_intersection_number!(S::Function, saddle::Types.Saddle, params::Dict)::Nothing
+function get_intersection_number!(S::Function, saddle::Saddle, params::Dict)::Nothing
     max_iterations = Float64(params["max_iterations"])
     ϵ = params["init_perturbation_radius"]
     # Compute the velocity field.
@@ -85,9 +85,10 @@ function get_intersection_number!(S::Function, saddle::Types.Saddle, params::Dic
 
     solution = pushforward(δX, eigenvectors, max_iterations)
     final_state = solution[end]
-    N = 4, K = 2
+    N = 4
+    K = 2
     U_final = SMatrix{N,K}(final_state[N+1:end])
-    E = @SMatrix[1.0, 0.0; 0.0, 0.0; 0.0, 1.0; 0.0, 0.0]
+    E = @SMatrix[1.0 0.0; 0.0 0.0; 0.0 1.0; 0.0 0.0]
     M = hcat(E, U_final)
     saddle.intersection_number = sign(det(M))
     return nothing
