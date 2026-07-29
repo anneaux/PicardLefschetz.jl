@@ -156,6 +156,7 @@ function flow_up(S::Function, S_prime::Function, saddle_point::FlowPoint, δ::Fl
     max_height = abs(h_threshold)
     directions = Vector{ComplexF64}()
     get_hessian_eigenvectors!(directions, saddle_point, S, :ascent)
+    should_stop_infinity(vertices) = -imag(S(vertices)) >= max_height
 
     on_real_line = isapprox(imag(saddle_point.coords[1]), 0.0, atol=1e-10)
 
@@ -172,7 +173,6 @@ function flow_up(S::Function, S_prime::Function, saddle_point::FlowPoint, δ::Fl
         pass_down = saddle_point.coords[1] + δ * dir_down
 
         # Flow up to infinity (where -Im(S) exceeds max_height)
-        should_stop_infinity(vertices) = -imag(S(vertices)) >= max_height
         points_up = flow_line(S, S_prime, pass_up, δ, 1.0, should_stop_infinity, flow_steps)
         points_down = flow_line(S, S_prime, pass_down, δ, 1.0, should_stop_infinity, flow_steps)
 
@@ -200,8 +200,7 @@ function flow_up(S::Function, S_prime::Function, saddle_point::FlowPoint, δ::Fl
         contributing = imag(last_coord) * imag(saddle_point.coords[1]) <= 0
 
         # Flow backward pass to infinity
-        should_stop_infinity_backwards(vertices) = -imag(S(vertices)) >= max_height
-        points_backward = flow_line(S, S_prime, backward_pass, δ, 1.0, should_stop_infinity_backwards, flow_steps)
+        points_backward = flow_line(S, S_prime, backward_pass, δ, 1.0, should_stop_infinity, flow_steps)
 
         dual_thimble = vcat(reverse(points_backward), [saddle_point], points_forward)
     end
