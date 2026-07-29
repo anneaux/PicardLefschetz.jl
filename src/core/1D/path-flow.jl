@@ -157,7 +157,7 @@ function flow_up(S::Function, S_prime::Function, saddle_point::FlowPoint, δ::Fl
     directions = Vector{ComplexF64}()
     get_hessian_eigenvectors!(directions, saddle_point, S, :ascent)
 
-    on_real_line = imag(saddle_point.coords[1]) == 0
+    on_real_line = floor(imag(saddle_point.coords[1])) == 0
 
     if on_real_line
         # Both directions move away from the real line.
