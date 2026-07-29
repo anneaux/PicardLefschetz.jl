@@ -93,7 +93,6 @@ using PicardLefschetz.Saddle
             get_intersection_number!(
                 phase_1d(params_1d),
                 phase_drv_1d(params_1d),
-                phase_hess_1d(params_1d),
                 saddle,
                 flow_params_1d
             )

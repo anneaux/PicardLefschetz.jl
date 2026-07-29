@@ -99,7 +99,7 @@ This is a wrapper function for compatibility with the Symbolics.jl package. For 
 documentation, see `get_intersection_number!`.
 
 # Arguments
-- `z::AbstractVector{Num}`: The symbolic variable.
+- `z::Union{Num, AbstractVector{Num}}`: The symbolic variable.
 - `S::Num`: The symbolic action function.
 - `saddle::Types.Saddle`: The saddle point struct to check.
 - `params::Dict`: Parameters for checking contribution.
@@ -107,10 +107,11 @@ documentation, see `get_intersection_number!`.
 # Returns
 - `Nothing` (the `intersection_number` field of the `saddle` is modified in-place).
 """
-function get_intersection_number!(z::AbstractVector{Num}, S::Num, saddle::Types.Saddle, params::Dict)::Nothing
-    S_grad = Symbolics.gradient(S, z)[1]
+function get_intersection_number!(z::Union{Num,AbstractVector{Num}}, S::Num, saddle::Types.Saddle, params::Dict)::Nothing
+    S_grad = z isa AbstractVector ? Symbolics.gradient(S, z) : Symbolics.gradient(S, [z])[1]
+
     native_S = build_function(S, z, expression=Val{false})
-    native_derivative = build_function(S_grad, z, expression=Val{false})
+    native_derivative = S_grad isa AbstractArray ? build_function(S_grad, z, expression=Val{false})[1] : build_function(S_grad, z, expression=Val{false})
 
     return get_intersection_number!(native_S, native_derivative, saddle, params)
 end
