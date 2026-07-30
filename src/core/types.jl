@@ -80,6 +80,16 @@ end
 
 Saddle{T}(; kwargs...) where T = Saddle{T,T,T,T}(; kwargs...)
 
+function Saddle(coords::AbstractVector{<:Number}; kwargs...)
+    if length(coords) == 1
+        return Saddle(; saddle=FlowPoint(coords[1]), kwargs...)
+    elseif length(coords) == 2
+        return Saddle(; saddle=FlowPoint(coords[1], coords[2]), kwargs...)
+    else
+        error("Saddle constructor only supports 1 or 2 coordinates. Received: $(length(coords))")
+    end
+end
+
 Base.length(p::FlowPoint{N}) where {N} = N
 Base.length(s::Saddle) = length(s.saddle)
 Base.getindex(s::Saddle, i::Int) = s.saddle.coords[i]
