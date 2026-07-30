@@ -172,7 +172,7 @@ function get_dual_thimble_boundary!(S::Function, S_grad::Function, S_hessian::Fu
             subdividethreshold=subdivision_threshold
         )
 
-        saddle_point.dual_thimble_boundary = necklace
+        saddle_point.dual_thimble_boundary = (points, necklace)
     end
 
     return nothing

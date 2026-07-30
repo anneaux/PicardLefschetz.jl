@@ -107,4 +107,8 @@ function convert_to_mesh(point_cloud::Tuple{Vector{<:FlowPoint},Vector{Simplex{A
     return [Simplex{A,FlowPoint}(points[simplex.vertices]) for simplex in simplices]
 end
 
+convert_to_mesh(::Nothing) = nothing
+convert_to_mesh(point_cloud::Vector{<:FlowPoint}) = point_cloud
+convert_to_mesh(point_cloud::Vector{<:AbstractVector}) = point_cloud
+
 end

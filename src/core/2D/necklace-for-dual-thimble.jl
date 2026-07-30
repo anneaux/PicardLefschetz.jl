@@ -106,17 +106,20 @@ function make_quads(necklace::Vector{Simplex{2,Int}}, points::Vector{<:FlowPoint
 end
 
 ### simple Gauss area formula to find the area enclosed by the necklace (to double-check if it's not got folded into itself)
-function enclosed_area(linesegs::Vector{Simplex{2,FlowPoint}}, f::Function=x -> real(x))
+function enclosed_area(points::Vector{<:FlowPoint}, linesegs::Vector{<:Simplex}, f::Function=x -> real(x))
     # Initialize the area accumulator
     area = 0.0
 
     # Iterate over each line segment
     for i in 1:length(linesegs)
         # Get the coordinates of the endpoints of the line segment
-        x1 = f(linesegs[i].vertices[1].coords[1])
-        y1 = f(linesegs[i].vertices[1].coords[2])
-        x2 = f(linesegs[i].vertices[2].coords[1])
-        y2 = f(linesegs[i].vertices[2].coords[2])
+        v1_idx = linesegs[i].vertices[1]
+        v2_idx = linesegs[i].vertices[2]
+
+        x1 = f(points[v1_idx].coords[1])
+        y1 = f(points[v1_idx].coords[2])
+        x2 = f(points[v2_idx].coords[1])
+        y2 = f(points[v2_idx].coords[2])
 
         # Update the area accumulator
         area += x1 * y2 - x2 * y1
@@ -284,9 +287,9 @@ function get_necklace(f::Function,
     necklace, quadrangles, points = get_necklace_solver(f, f_grad, f_hessian, ti, tr; kwargs...)
 
     necklace_init, quadrangles_init, points_init = get_necklace_solver(f, f_grad, f_hessian, ti, tr; kwargs..., Ncounter=1)
-    enclosed_area_init = enclosed_area(necklace_init, imag) + enclosed_area(necklace_init, real)
+    enclosed_area_init = enclosed_area(points_init, necklace_init, imag) + enclosed_area(points_init, necklace_init, real)
 
-    if (enclosed_area(necklace, imag) + enclosed_area(necklace, real)) > enclosed_area_init
+    if (enclosed_area(points, necklace, imag) + enclosed_area(points, necklace, real)) > enclosed_area_init
         return necklace, quadrangles, points
     else
         if (real(f([ti, tr]))) > -0.2

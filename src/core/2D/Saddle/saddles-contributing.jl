@@ -1,6 +1,6 @@
 ### everything to decide whether or not a given saddle point contributes.
 ### this could be implemented in various methods again. Also maybe it should give a warning if there're multiple saddle points nearby and if a Gaussian approximation is a bad idea?
-using ..Types: Simplex, FlowPoint, Saddle
+using ..Types: Simplex, FlowPoint, Saddle, convert_to_mesh
 using ..DualThimble: get_necklace, get_point
 import LinearAlgebra: norm
 
@@ -171,8 +171,9 @@ function check_contribution(
     tr = saddle_point[2]
 
     if real(f([ti, tr])) < 0
-        necklace, _ = get_necklace(f, f_grad, f_hessian, saddle_point; logerrors=logerrors, kwargs...)
-        check_contribution(necklace, f, saddle_point, Ntimes=Ntimes)
+        necklace, _, points = get_necklace(f, f_grad, f_hessian, saddle_point; logerrors=logerrors, kwargs...)
+        mesh = necklace === nothing ? nothing : convert_to_mesh((points, necklace))
+        check_contribution(mesh, f, saddle_point, Ntimes=Ntimes)
     else
         @debug "it doesn't contribute! (0)"
         return false

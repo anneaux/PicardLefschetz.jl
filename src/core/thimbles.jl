@@ -325,7 +325,8 @@ function get_thimble_boundary!(
             end
         end
         boundary_indices = [index for (index, count) in counts if count == 1]
-        [points[index].coords for index in boundary_indices]
+        T = typeof(points[1].coords)
+        T[points[index].coords for index in boundary_indices]
     elseif length(saddle_point.saddle) == 2
         init_point_count = params["init_point_count"]
         accuracy = params["accuracy"]
@@ -342,7 +343,7 @@ function get_thimble_boundary!(
                 flowstepfactor=flow_step_factor,
                 subdividethreshold=subdivision_threshold
             )
-            necklace
+            (points, necklace)
         elseif mesh_type == "triangle"
             necklace, trianglesC, points_all, triangles = Methods2D.Triangle.Thimble.get_SD_thimble_triangles(
                 S, S_grad, S_hessian,
@@ -355,7 +356,7 @@ function get_thimble_boundary!(
                 gradn_threshold=gradient_normalisation_threshold,
                 h_threshold=height_threshold
             )
-            necklace
+            (points_all, necklace)
         end
     end
 
