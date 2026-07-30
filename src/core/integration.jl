@@ -33,7 +33,7 @@ where S(z) is the action function which faster oscillation, and f(z) is the pref
 - `Vector{ComplexF64}`: Result of the integration.
 """
 function integrate_thimble(S::Function, boundary::Any, prefactor::Function, params::Dict)::Vector{ComplexF64}
-    if boundary isa Tuple{Vector{<:FlowPoint}, Vector{<:Simplex{2, Int}}}
+    if boundary isa Tuple{Vector{<:FlowPoint},Vector{<:Simplex{2,Int}}}
         # 1D case (Tuple)
         result = Methods1D.Integration.integrate_thimble(S, boundary[1], boundary[2]) # Returns a ComplexF64
         return result isa Number ? ComplexF64[result] : Vector{ComplexF64}[result]
@@ -43,7 +43,7 @@ function integrate_thimble(S::Function, boundary::Any, prefactor::Function, para
         simplices = [Simplex{2,Int}([findfirst(==(s.vertices[1]), points), findfirst(==(s.vertices[2]), points)]) for s in boundary]
         result = Methods1D.Integration.integrate_thimble(S, points, simplices)
         return result isa Number ? ComplexF64[result] : Vector{ComplexF64}[result]
-    elseif boundary isa Tuple{Vector{<:FlowPoint}, Vector{<:Simplex{4, Int}}} || boundary isa Vector{Simplex{4,FlowPoint}}
+    elseif boundary isa Tuple{Vector{<:FlowPoint},Vector{<:Simplex{4,Int}}} || boundary isa Vector{Simplex{4,FlowPoint}}
         # 2D case quad
         mesh = boundary isa Tuple ? Types.convert_to_mesh(boundary) : boundary
         output_dim = params["output_dim"]
@@ -53,13 +53,13 @@ function integrate_thimble(S::Function, boundary::Any, prefactor::Function, para
         end
 
         return integral
-    elseif boundary isa Tuple{Vector{<:FlowPoint}, Vector{<:Simplex{3, Int}}} || boundary isa Vector{Simplex{3,FlowPoint}}
+    elseif boundary isa Tuple{Vector{<:FlowPoint},Vector{<:Simplex{3,Int}}} || boundary isa Vector{Simplex{3,FlowPoint}}
         # 2D case triangle
         mesh = boundary isa Tuple ? Types.convert_to_mesh(boundary) : boundary
         output_dim = params["output_dim"]
         integral = zeros(ComplexF64, output_dim)
         for triangle in mesh
-            integral .+= Methods2D.Triangle.Integration.integrate_triangle(S, triangle, prefactor=prefactor, order=params["simplex_order"], dim=params["output_dim"])
+            integral .+= Methods2D.Triangle.Integration.integrate_triangle(S, triangle, prefactor=prefactor, order=params["simplex_order"], dim=output_dim)
         end
 
         return integral

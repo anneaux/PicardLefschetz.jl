@@ -88,11 +88,11 @@ The parameters for this function are listed below:
 | Parameter | Required | Type | Description |
 | --------- | -------- | ---- | ----------- |
 | `grid_resolution` | Yes | `Int` | The number of points to use for discretizing the thimble paths. |
-| `flow_step_factor` | No | `Float64` | The step size factor for the flow equation. (This parameter is only required in 2D.)|
+| `flow_step_factor` | No | `Real` | The step size factor for the flow equation. (This parameter is only required in 2D.)|
 | `initial_necklace_size` | No | `Int` | The initial number of points in the dual Lefschetz thimble contour. (This parameter is only required in 2D.)|
 | `max_iterations` | No | `Int` | The maximum number of iterations for the flow equation. (This parameter is only required in 2D.)|
-| `init_pertubation_radius` | No | `Float64` | The initial radius of the perturbation used to generate the necklace. (This parameter is only required in 2D.)|
-| `subdivision_threshold` | No | `Float64` | The threshold for subdividing the necklace to improve accuracy. (This parameter is only required in 2D.)|
+| `init_perturbation_radius` | No | `Real` | The initial radius of the perturbation used to generate the necklace. (This parameter is only required in 2D.)|
+| `subdivision_threshold` | No | `Real` | The threshold for subdividing the necklace to improve accuracy. (This parameter is only required in 2D.)|
 
 # Arguments
 - `S::Function`: The action function.
@@ -122,7 +122,7 @@ function check_contribution!(
         initial_necklace_size = params["initial_necklace_size"]
         max_iterations = params["max_iterations"]
         init_perturbation_radius = params["init_perturbation_radius"]
-        subdivision_threshold = params["subdividethreshold"]
+        subdivision_threshold = params["subdivision_threshold"]
 
         Methods2D.SaddlePoint.check_contribution(
             S, S_grad, S_hessian, saddle_point,
@@ -149,12 +149,12 @@ The parameters for this function are listed below:
 | Parameter | Required | Type | Description |
 | --------- | -------- | ---- | ----------- |
 | `grid_resolution` | Yes | `Int` | The number of points to use for discretizing the thimble paths. |
-| `flow_step_factor` | Yes | `Float64` | The step size factor for the flow equation. |
+| `flow_step_factor` | Yes | `Real` | The step size factor for the flow equation. |
 | `max_iterations` | Yes | `Int` | The maximum number of iterations for the flow equation. |
-| `init_perturbation_radius` | Yes | `Float64` | The initial radius of the perturbation used to generate the necklace. |
-| `subdivision_threshold` | Yes | `Float64` | The threshold for subdividing the necklace to improve accuracy. |
-| `height_threshold` | Yes | `Float64` | The threshold for the cutoff of the thimble/dual thimble, in the imaginary magnitude of the action. |
-| `gradient_normalisation_threshold` | Yes | `Float64` | The threshold for normalising the gradient during gradient flow. |
+| `init_perturbation_radius` | Yes | `Real` | The initial radius of the perturbation used to generate the necklace. |
+| `subdivision_threshold` | Yes | `Real` | The threshold for subdividing the necklace to improve accuracy. |
+| `height_threshold` | Yes | `Real` | The threshold for the cutoff of the thimble/dual thimble, in the imaginary magnitude of the action. |
+| `gradient_normalisation_threshold` | Yes | `Real` | The threshold for normalising the gradient during gradient flow. |
 
 # Arguments
 - `S::Function`: The action function.

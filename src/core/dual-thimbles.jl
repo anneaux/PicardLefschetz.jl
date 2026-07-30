@@ -20,12 +20,12 @@ The parameters for this function are listed in the table:
 
 | Parameter             | Required | Type | Description                                                                                                                                   |
 | --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `flow_step_factor`    | Yes      | `Float64` | The step size of the gradient ascent solver.                                                                                                  |
+| `flow_step_factor`    | Yes      | `Real` | The step size of the gradient ascent solver.                                                                                                  |
 | `max_iterations`      | Yes      | `Int` | The maximum number of iterations to perform using the solver.                                                                                 |
-| `height_threshold`    | Yes      | `Float64` | The maximal magnitude of the imaginary component during gradient ascent. This is used when checking if the saddle point contributes.        |
+| `height_threshold`    | Yes      | `Real` | The maximal magnitude of the imaginary component during gradient ascent. This is used when checking if the saddle point contributes.        |
 | `init_point_count`    | No       | `Int` | The initial number of points for the dual Lefschetz thimble contour. (This parameter is only required when the dimension of the saddle is 2.) |
-| `init_perturbation_radius` | No  | `Float64` | The initial radius for the dual Lefschetz thimble contour. This is the contour evolved to give the dual thimble. (This parameter is only required when the dimension of the saddle is 2.) |
-| `subdivision_threshold` | No     | `Float64` | The threshold for subdivding the segments between the points of the dual Lefschetz thimble. (This parameter is only required when the dimension of the saddle is 2.) |
+| `init_perturbation_radius` | No  | `Real` | The initial radius for the dual Lefschetz thimble contour. This is the contour evolved to give the dual thimble. (This parameter is only required when the dimension of the saddle is 2.) |
+| `subdivision_threshold` | No     | `Real` | The threshold for subdivding the segments between the points of the dual Lefschetz thimble. (This parameter is only required when the dimension of the saddle is 2.) |
 
 
 # Arguments
@@ -80,12 +80,12 @@ The parameters for this function are listed in the table:
 
 | Parameter             | Required | Type | Description                                                                                                                                   |
 | --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `flow_step_factor`    | Yes      | `Float64` | The step size of the gradient ascent solver.                                                                                                  |
+| `flow_step_factor`    | Yes      | `Real` | The step size of the gradient ascent solver.                                                                                                  |
 | `max_iterations`      | Yes      | `Int` | The maximum number of iterations to perform using the solver.                                                                                 |
-| `height_threshold`    | Yes      | `Float64` | The maximal magnitude of the imaginary component during gradient ascent. This is used when checking if the saddle point contributes.        |
+| `height_threshold`    | Yes      | `Real` | The maximal magnitude of the imaginary component during gradient ascent. This is used when checking if the saddle point contributes.        |
 | `init_point_count`    | No       | `Int` | The initial number of points for the dual Lefschetz thimble contour. (This parameter is only required when the dimension of the saddle is 2.) |
-| `init_perturbation_radius` | No  | `Float64` | The initial radius for the dual Lefschetz thimble contour. This is the contour evolved to give the dual thimble. (This parameter is only required when the dimension of the saddle is 2.) |
-| `subdivision_threshold` | No     | `Float64` | The threshold for subdivding the segments between the points of the dual Lefschetz thimble. (This parameter is only required when the dimension of the saddle is 2.) |
+| `init_perturbation_radius` | No  | `Real` | The initial radius for the dual Lefschetz thimble contour. This is the contour evolved to give the dual thimble. (This parameter is only required when the dimension of the saddle is 2.) |
+| `subdivision_threshold` | No     | `Real` | The threshold for subdivding the segments between the points of the dual Lefschetz thimble. (This parameter is only required when the dimension of the saddle is 2.) |
 
 
 # Arguments
@@ -130,12 +130,12 @@ The parameters for this function are listed in the table:
 
 | Parameter             | Required | Type | Description                                                                                                                                   |
 | --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `flow_step_factor`    | Yes      | `Float64` | The step size of the gradient ascent solver.                                                                                                  |
+| `flow_step_factor`    | Yes      | `Real` | The step size of the gradient ascent solver.                                                                                                  |
 | `max_iterations`      | Yes      | `Int` | The maximum number of iterations to perform using the solver.                                                                                 |
-| `height_threshold`    | Yes      | `Float64` | The maximal magnitude of the imaginary component during gradient ascent. This is used when checking if the saddle point contributes.        |
+| `height_threshold`    | Yes      | `Real` | The maximal magnitude of the imaginary component during gradient ascent. This is used when checking if the saddle point contributes.        |
 | `init_point_count`    | No       | `Int` | The initial number of points for the dual Lefschetz thimble contour. (This parameter is only required when the dimension of the saddle is 2.) |
-| `init_perturbation_radius` | No  | `Float64` | The initial radius for the dual Lefschetz thimble contour. This is the contour evolved to give the dual thimble. (This parameter is only required when the dimension of the saddle is 2.) |
-| `subdivision_threshold` | No     | `Float64` | The threshold for subdivding the segments between the points of the dual Lefschetz thimble. (This parameter is only required when the dimension of the saddle is 2.) |
+| `init_perturbation_radius` | No  | `Real` | The initial radius for the dual Lefschetz thimble contour. This is the contour evolved to give the dual thimble. (This parameter is only required when the dimension of the saddle is 2.) |
+| `subdivision_threshold` | No     | `Real` | The threshold for subdivding the segments between the points of the dual Lefschetz thimble. (This parameter is only required when the dimension of the saddle is 2.) |
 
 
 # Arguments
@@ -193,12 +193,12 @@ The parameters for this function are listed in the table:
 
 | Parameter             | Required | Type | Description                                                                                                                                   |
 | --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `flow_step_factor`    | Yes      | `Float64` | The step size of the gradient ascent solver.                                                                                                  |
+| `flow_step_factor`    | Yes      | `Real` | The step size of the gradient ascent solver.                                                                                                  |
 | `max_iterations`      | Yes      | `Int` | The maximum number of iterations to perform using the solver.                                                                                 |
-| `height_threshold`    | Yes      | `Float64` | The maximal magnitude of the imaginary component during gradient ascent. This is used when checking if the saddle point contributes.        |
+| `height_threshold`    | Yes      | `Real` | The maximal magnitude of the imaginary component during gradient ascent. This is used when checking if the saddle point contributes.        |
 | `init_point_count`    | No       | `Int` | The initial number of points for the dual Lefschetz thimble contour. (This parameter is only required when the dimension of the saddle is 2.) |
-| `init_perturbation_radius` | No  | `Float64` | The initial radius for the dual Lefschetz thimble contour. This is the contour evolved to give the dual thimble. (This parameter is only required when the dimension of the saddle is 2.) |
-| `subdivision_threshold` | No     | `Float64` | The threshold for subdivding the segments between the points of the dual Lefschetz thimble. (This parameter is only required when the dimension of the saddle is 2.) |
+| `init_perturbation_radius` | No  | `Real` | The initial radius for the dual Lefschetz thimble contour. This is the contour evolved to give the dual thimble. (This parameter is only required when the dimension of the saddle is 2.) |
+| `subdivision_threshold` | No     | `Real` | The threshold for subdivding the segments between the points of the dual Lefschetz thimble. (This parameter is only required when the dimension of the saddle is 2.) |
 
 
 # Arguments
