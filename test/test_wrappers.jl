@@ -69,7 +69,7 @@ using PicardLefschetz.Integration
             saddle = saddles[1]
             get_thimble!(z, S_expr, saddle, params_1d, mesh_type="none")
             @test saddle.thimble !== nothing
-            @test saddle.thimble isa Vector{<:Simplex}
+            @test saddle.thimble isa Tuple{Vector{<:FlowPoint}, Vector{<:Simplex}}
 
             get_thimble_boundary!(z, S_expr, saddle, params_1d, mesh_type="none")
             @test saddle.thimble_boundary !== nothing
@@ -212,11 +212,11 @@ end
 
             get_thimble!(z, S_expr, saddle, params_2d, mesh_type="quad")
             @test saddle.thimble !== nothing
-            @test saddle.thimble isa Vector{<:Simplex}
+            @test saddle.thimble isa Tuple{Vector{<:FlowPoint}, Vector{<:Simplex}}
 
             get_thimble_boundary!(z, S_expr, saddle, params_2d, mesh_type="quad")
             @test saddle.thimble_boundary !== nothing
-            @test saddle.thimble_boundary isa Vector{<:Simplex}
+            @test saddle.thimble_boundary isa Tuple{Vector{<:FlowPoint}, Vector{<:Simplex}}
         end
 
         thimbles = get_thimbles(z, S_expr, params_2d, domain_2d_real, mesh_type="quad")
@@ -238,11 +238,11 @@ end
             saddle = saddles[1]
             get_dual_thimble!(z, S_expr, saddle, params_2d)
             @test saddle.dual_thimble !== nothing
-            @test saddle.dual_thimble isa Vector{<:Simplex}
+            @test saddle.dual_thimble isa Tuple{Vector{<:FlowPoint}, Vector{<:Simplex}}
 
             get_dual_thimble_boundary!(z, S_expr, saddle, params_2d)
             @test saddle.dual_thimble_boundary !== nothing
-            @test saddle.dual_thimble_boundary isa Vector{<:Simplex}
+            @test saddle.dual_thimble_boundary isa Tuple{Vector{<:FlowPoint}, Vector{<:Simplex}}
         end
 
         dual_thimbles = get_dual_thimbles(z, S_expr, params_2d, domain_2d_complex, false)
