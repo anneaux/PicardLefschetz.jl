@@ -235,21 +235,21 @@ end
 #     integrate_quadrilateral(f, Simplex{4, FlowPoint}([p1,p2,p3,p4]), n, prefactor=prefactor)
 # end
 
-function make_quad(ls1::Simplex{2,FlowPoint}, ls2::Simplex{2,FlowPoint})
+function make_quad(ls1::Simplex{2,Int}, ls2::Simplex{2,Int})
 
     p1 = ls1.vertices[1]
     p2 = ls2.vertices[1]
     p3 = ls2.vertices[2]
     p4 = ls1.vertices[2]
 
-    return Simplex{4,FlowPoint}([p1, p2, p3, p4])
+    return Simplex{4,Int}([p1, p2, p3, p4])
 end
 
 function make_quads(necklace::Vector{Simplex{2,Int}},
-    points::Vector{<:FlowPoint}, prev_necklace::Vector{Simplex{2,FlowPoint}})
+    points::Vector{<:FlowPoint}, prev_necklace::Vector{Simplex{2,Int}})
 
-    quads = Vector{Simplex{4,FlowPoint}}()
-    new_necklace = adorn_necklace(sort_linesegs(necklace), points)
+    quads = Vector{Simplex{4,Int}}()
+    new_necklace = sort_linesegs(necklace)
     for idx in 1:length(prev_necklace)
         quad = make_quad(prev_necklace[idx], new_necklace[idx])
         push!(quads, quad)
@@ -288,19 +288,19 @@ function get_SD_thimble_quads(f::Function,
     #         push!(points_traces, Vector{<:FlowPoint}())
     #     end
 
-    necklaces = Vector{Vector{Simplex{2,FlowPoint}}}()
-    push!(necklaces, adorn_necklace(sort_linesegs(necklace), points))
+    necklaces = Vector{Vector{Simplex{2,Int}}}()
+    push!(necklaces, deepcopy(sort_linesegs(necklace)))
 
     ### find a suitable threshold for the normalisation of the gradient
     gradient0 = [norm(conj.(f_grad([p[1], p[2]]))) for p in points]
     threshold = round(minimum(gradient0), RoundDown, sigdigits=2)
 
     counter = 0
-    quads = Vector{Simplex{4,FlowPoint}}()
+    quads = Vector{Simplex{4,Int}}()
 
     while counter < Ncounter
         counter += 1
-        push!(necklaces, deepcopy(adorn_necklace(sort_linesegs(necklace), points)))
+        push!(necklaces, deepcopy(sort_linesegs(necklace)))
 
         flow_down!(necklace, points, f, f_grad, threshold=threshold, δ=flowstepfactor)
 
@@ -308,7 +308,7 @@ function get_SD_thimble_quads(f::Function,
             @debug "I broke because the flow stopped after $counter iterations"
             break
         end
-        prev_necklace = necklaces[end]
+        prev_necklace = necklaces[end-1]
         new_quads = make_quads(necklace, points, prev_necklace)
         push!(quads, deepcopy(new_quads)...)
 
@@ -323,7 +323,7 @@ function get_SD_thimble_quads(f::Function,
     end
 
     necklace = sort_linesegs(necklace)
-    return adorn_necklace(necklace, points), quads, points
+    return necklace, quads, points
     #     return necklace, necklaces, points_traces
 end
 

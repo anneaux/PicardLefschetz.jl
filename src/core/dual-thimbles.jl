@@ -50,7 +50,7 @@ function get_dual_thimble!(S::Function, S_grad::Function, S_hessian::Function, s
         init_perturbation_radius = params["init_perturbation_radius"]
         subdivision_threshold = params["subdivision_threshold"]
 
-        necklace, quadrangles = Methods2D.DualThimble.get_necklace(
+        necklace, quadrangles, points = Methods2D.DualThimble.get_necklace(
             S, S_grad, S_hessian,
             saddle_point,
             Ninit=init_point_count,
@@ -59,7 +59,7 @@ function get_dual_thimble!(S::Function, S_grad::Function, S_hessian::Function, s
             flowstepfactor=flow_step_factor,
             subdividethreshold=subdivision_threshold
         )
-        saddle_point.dual_thimble = quadrangles
+        saddle_point.dual_thimble = (points, quadrangles)
     end
 
     return nothing
@@ -162,7 +162,7 @@ function get_dual_thimble_boundary!(S::Function, S_grad::Function, S_hessian::Fu
         init_point_count = params["init_point_count"]
         init_perturbation_radius = params["init_perturbation_radius"]
         subdivision_threshold = params["subdivision_threshold"]
-        necklace, quadrangles = Methods2D.DualThimble.get_necklace_solver(
+        necklace, quadrangles, points = Methods2D.DualThimble.get_necklace_solver(
             S, S_grad, S_hessian,
             saddle_point[1], saddle_point[2],
             Ninit=init_point_count,

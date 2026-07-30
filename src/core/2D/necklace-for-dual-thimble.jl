@@ -83,18 +83,21 @@ function adorn_necklace(necklace::Vector{Simplex{2,Int}}, points::Vector{<:FlowP
     return new_necklace
 end
 
-function make_quad(ls1::Simplex{2,FlowPoint}, ls2::Simplex{2,FlowPoint})
+function make_quad(ls1::Simplex{2,Int}, ls2::Simplex{2,Int})
+
     p1 = ls1.vertices[1]
     p2 = ls2.vertices[1]
-    p3 = ls1.vertices[2]
-    p4 = ls2.vertices[2]
-    return Simplex{4,FlowPoint}([p1, p2, p3, p4])
+    p3 = ls2.vertices[2]
+    p4 = ls1.vertices[2]
+
+    return Simplex{4,Int}([p1, p2, p3, p4])
 end
 
-function make_quads(necklace::Vector{Simplex{2,Int}}, points::Vector{<:FlowPoint}, prev_necklace::Vector{Simplex{2,FlowPoint}})
-    quads = Vector{Simplex{4,FlowPoint}}()
-    new_necklace = adorn_necklace(sort_linesegs(deepcopy(necklace)), points)
-    for simplex in eachindex(prev_necklace)
+function make_quads(necklace::Vector{Simplex{2,Int}}, points::Vector{<:FlowPoint}, prev_necklace::Vector{Simplex{2,Int}})
+
+    quads = Vector{Simplex{4,Int}}()
+    new_necklace = sort_linesegs(necklace)
+    for simplex in 1:length(prev_necklace)
         quad = make_quad(prev_necklace[simplex], new_necklace[simplex])
         push!(quads, quad)
     end
@@ -224,15 +227,15 @@ function get_necklace_solver(f::Function,
 
     initialise!(necklace, points, ti, tr, f, Ninit=Ninit, ϵ=eigvecfactorinit)
 
-    necklaces = Vector{Vector{Simplex{2,FlowPoint}}}()
-    push!(necklaces, adorn_necklace(sort_linesegs(deepcopy(necklace)), points))
+    necklaces = Vector{Vector{Simplex{2,Int}}}()
+    push!(necklaces, sort_linesegs(deepcopy(necklace)))
 
     ### find a suitable threshold for the normalisation of the gradient
     gradient0 = [norm(conj.(f_grad([p.coords[1], p.coords[2]]))) for p in points]
     threshold = round(minimum(gradient0), RoundDown, sigdigits=2)
 
     counter = 0
-    quadrangles = Vector{Simplex{4,FlowPoint}}()
+    quadrangles = Vector{Simplex{4,Int}}()
 
     while counter < Ncounter
         counter += 1
@@ -249,7 +252,7 @@ function get_necklace_solver(f::Function,
         prev_necklace = necklaces[end]
         new_quads = make_quads(deepcopy(necklace), points, prev_necklace)
         push!(quadrangles, new_quads...)
-        push!(necklaces, adorn_necklace(sort_linesegs(deepcopy(necklace)), points))
+        push!(necklaces, sort_linesegs(deepcopy(necklace)))
 
         for i in 1:length(necklace)
             subdivide!(necklace[i], necklace, points, Δ=subdividethreshold)
@@ -262,9 +265,8 @@ function get_necklace_solver(f::Function,
     end
 
     necklace = sort_linesegs(necklace)
-    adorned_necklace = adorn_necklace(necklace, points)
 
-    return adorned_necklace, quadrangles
+    return necklace, quadrangles, points
 end
 
 
@@ -279,21 +281,21 @@ function get_necklace(f::Function,
     ti = saddle_point[1]
     tr = saddle_point[2]
 
-    necklace, quadrangles = get_necklace_solver(f, f_grad, f_hessian, ti, tr; kwargs...)
+    necklace, quadrangles, points = get_necklace_solver(f, f_grad, f_hessian, ti, tr; kwargs...)
 
-    necklace_init, quadrangles_init = get_necklace_solver(f, f_grad, f_hessian, ti, tr; kwargs..., Ncounter=1)
+    necklace_init, quadrangles_init, points_init = get_necklace_solver(f, f_grad, f_hessian, ti, tr; kwargs..., Ncounter=1)
     enclosed_area_init = enclosed_area(necklace_init, imag) + enclosed_area(necklace_init, real)
 
     if (enclosed_area(necklace, imag) + enclosed_area(necklace, real)) > enclosed_area_init
-        return necklace, quadrangles
+        return necklace, quadrangles, points
     else
         if (real(f([ti, tr]))) > -0.2
-            return necklace, quadrangles
+            return necklace, quadrangles, points
         else
             @warn ("Warning (3)! The necklace is smaller than its initialisation, real(f) = $(real(f([ti, tr])))")
             # println("Warning (3)! The necklace is smaller than its initialisation for beam $b at q $q with ti $ti and tr $tr, where h was $(real(-im * S(b, Ip, ti, tr, q)))!")
             # logerrors ? log_error("necklace-errors.txt", "Warning (3) for beam $b at q $q with ti $ti and tr $tr.") : nothing
-            return nothing, nothing
+            return nothing, nothing, nothing
         end
 
     end
