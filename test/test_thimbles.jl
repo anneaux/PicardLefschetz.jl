@@ -58,13 +58,13 @@ using PicardLefschetz.Saddle
             saddle = saddles[1]
             get_thimble!(phase_1d(params_1d), phase_drv_1d(params_1d), phase_hess_1d(params_1d), saddle, saddle_params_1d, mesh_type="none")
             @test saddle.thimble !== nothing
-            @test saddle.thimble isa Vector{<:Simplex}
+            @test saddle.thimble isa Tuple{Vector{<:FlowPoint}, Vector{<:Simplex}}
         end
     end
 
-    @testset "1D get_thimbles" begin
+    @testset "1D get_FLIC" begin
         # Passing real domains for 1D as per Thimbles method signature
-        thimbles = get_thimbles(phase_1d(params_1d), phase_drv_1d(params_1d), saddle_params_1d, domain_1d, mesh_type="none")
+        thimbles = get_FLIC(phase_1d(params_1d), phase_drv_1d(params_1d), saddle_params_1d, domain_1d, mesh_type="none")
         @test thimbles !== nothing
         @test thimbles isa Tuple{Vector{<:FlowPoint},Vector{<:Simplex}}
     end
@@ -98,12 +98,12 @@ using PicardLefschetz.Saddle
             saddle = saddles[1]
             get_thimble!(phase_2d(params_2d), phase_drv_2d(params_2d), phase_hess_2d(params_2d), saddle, saddle_params_2d, mesh_type="quad")
             @test saddle.thimble !== nothing
-            @test saddle.thimble isa Vector{<:Simplex}
+            @test saddle.thimble isa Tuple{Vector{<:FlowPoint}, Vector{<:Simplex}}
         end
     end
 
-    @testset "2D get_thimbles (quad)" begin
-        thimbles = get_thimbles(phase_2d(params_2d), phase_drv_2d(params_2d), saddle_params_2d, domain_2d, mesh_type="quad")
+    @testset "2D get_FLIC (quad)" begin
+        thimbles = get_FLIC(phase_2d(params_2d), phase_drv_2d(params_2d), saddle_params_2d, domain_2d, mesh_type="quad")
         @test thimbles !== nothing
         @test thimbles isa Tuple{Vector{<:FlowPoint},Vector{<:Simplex}}
     end
@@ -122,12 +122,36 @@ using PicardLefschetz.Saddle
             saddle = saddles[1]
             get_thimble_boundary!(phase_2d(params_2d), phase_drv_2d(params_2d), phase_hess_2d(params_2d), saddle, saddle_params_2d, mesh_type="quad")
             @test saddle.thimble_boundary !== nothing
-            @test saddle.thimble_boundary isa Vector{<:Simplex}
+            @test saddle.thimble_boundary isa Tuple{Vector{<:FlowPoint}, Vector{<:Simplex}}
         end
     end
 
     @testset "2D get_thimble_boundaries (quad)" begin
         saddles_with_boundaries = get_thimble_boundaries(phase_2d(params_2d), phase_drv_2d(params_2d), phase_hess_2d(params_2d), complex_domain_2d, saddle_params_2d, false, mesh_type="quad")
         @test saddles_with_boundaries isa Vector
+    end
+
+    @testset "convert methods" begin
+        saddles = find_saddles(phase_drv_1d(params_1d), complex_domain_1d, saddle_params_1d)
+        if !isempty(saddles)
+            saddle = saddles[1]
+            get_thimble!(phase_1d(params_1d), phase_drv_1d(params_1d), phase_hess_1d(params_1d), saddle, saddle_params_1d, mesh_type="none")
+            converted_saddle = Types.convert(saddle)
+            @test converted_saddle isa Types.Saddle
+            if converted_saddle.thimble !== nothing
+                @test converted_saddle.thimble isa Vector{<:Simplex}
+            end
+        end
+
+        saddles_2d = find_saddles(phase_drv_2d(params_2d), complex_domain_2d, saddle_params_2d)
+        if !isempty(saddles_2d)
+            saddle2 = saddles_2d[1]
+            get_thimble!(phase_2d(params_2d), phase_drv_2d(params_2d), phase_hess_2d(params_2d), saddle2, saddle_params_2d, mesh_type="quad")
+            converted_saddle2 = Types.convert(saddle2)
+            @test converted_saddle2 isa Types.Saddle
+            if converted_saddle2.thimble !== nothing
+                @test converted_saddle2.thimble isa Vector{<:Simplex}
+            end
+        end
     end
 end

@@ -25,48 +25,52 @@ where S(z) is the action function which faster oscillation, and f(z) is the pref
 
 # Arguments
 - `S::Function`: The action function.
-- `boundary::Any`: The precomputed boundary over which to integrate. This can be a tuple for 1D or a vector of simplices (quadrilaterals or triangles) for 2D.
+- `thimble::Any`: The precomputed thimble over which to integrate. This can be a tuple for 1D or a vector of simplices (quadrilaterals or triangles) for 2D.
 - `prefactor::Function`: The prefactor function for the integrand, f(z).
 - `params::Dict`: Integration parameters
 
 # Returns
 - `Vector{ComplexF64}`: Result of the integration.
 """
-function integrate_thimble(S::Function, boundary::Any, prefactor::Function, params::Dict)::Vector{ComplexF64}
-    if typeof(boundary) <: Tuple && length(boundary) == 2
+function integrate_thimble(S::Function, thimble::Any, prefactor::Function, params::Dict)::Vector{ComplexF64}
+    if thimble isa Tuple{Vector{<:FlowPoint},Vector{<:Simplex{2,Int}}}
         # 1D case (Tuple)
-        result = Methods1D.Integration.integrate_thimble(S, boundary[1], boundary[2]) # Returns a ComplexF64
+        result = Methods1D.Integration.integrate_thimble(S, thimble[1], thimble[2]) # Returns a ComplexF64
         return result isa Number ? ComplexF64[result] : Vector{ComplexF64}[result]
-    elseif boundary isa Vector{Simplex{2,FlowPoint}}
+    elseif thimble isa Vector{Simplex{2,FlowPoint}}
         # 1D case (Vector of Simplex{2})
-        points = unique([v for s in boundary for v in s.vertices])
-        simplices = [Simplex{2,Int}([findfirst(==(s.vertices[1]), points), findfirst(==(s.vertices[2]), points)]) for s in boundary]
+        points = unique([v for s in thimble for v in s.vertices])
+        simplices = [Simplex{2,Int}([findfirst(==(s.vertices[1]), points), findfirst(==(s.vertices[2]), points)]) for s in thimble]
         result = Methods1D.Integration.integrate_thimble(S, points, simplices)
         return result isa Number ? ComplexF64[result] : Vector{ComplexF64}[result]
-    elseif boundary isa Vector{Simplex{4,FlowPoint}}
-        # 2D case
+    elseif thimble isa Tuple{Vector{<:FlowPoint},Vector{<:Simplex{4,Int}}} || thimble isa Vector{Simplex{4,FlowPoint}}
+        # 2D case quad
+        mesh = thimble isa Tuple ? Types.convert_to_mesh(thimble) : thimble
         output_dim = params["output_dim"]
         integral = zeros(ComplexF64, output_dim)
-        for quad in boundary
+        for quad in mesh
             integral .+= Methods2D.Quadrilateral.Integration.integrate_quadrilateral(S, quad, params["GL_order"], prefactor=prefactor)
         end
 
         return integral
-    elseif boundary isa Vector{Simplex{3,FlowPoint}}
+    elseif thimble isa Tuple{Vector{<:FlowPoint},Vector{<:Simplex{3,Int}}} || thimble isa Vector{Simplex{3,FlowPoint}}
+        # 2D case triangle
+        mesh = thimble isa Tuple ? Types.convert_to_mesh(thimble) : thimble
         output_dim = params["output_dim"]
         integral = zeros(ComplexF64, output_dim)
-        for triangle in boundary
-            integral .+= Methods2D.Triangle.Integration.integrate_triangle(S, triangle, prefactor=prefactor, order=params["simplex_order"], dim=params["output_dim"])
+        for triangle in mesh
+            integral .+= Methods2D.Triangle.Integration.integrate_triangle(S, triangle, prefactor=prefactor, order=params["simplex_order"], dim=output_dim)
         end
 
         return integral
     end
+    return ComplexF64[]
 end
 
 # Integrate without a given boundary around one thimble, essentially steepest descent until integral converges to the required precision, or the number of flow steps is exceeded.
-export integrate_thimble!
+export integrate_SPM_thimble!
 """
-    integrate_thimble!(S, S_grad, S_hessian, saddle_point, prefactor)
+    integrate_SPM_thimble!(S, S_grad, S_hessian, saddle_point, prefactor)
 
 Integrates the action function around a single saddle point by using steepest descent without a precomputed boundary, continuing until the integral converges to the required precision 
 or the number of flow steps is exceeded. This package is responsible for solving integrals of the form
@@ -84,7 +88,7 @@ I = \\int^a_b f(z)e^{iS(z)}dz
 # Returns
 - `Nothing` (the `integral` field of the `saddle_point` is modified in-place).
 """
-function integrate_thimble!(S::Function, S_grad::Function, S_hessian::Function, saddle_point::Types.Saddle, prefactor::Function)::Nothing
+function integrate_SPM_thimble!(S::Function, S_grad::Function, S_hessian::Function, saddle_point::Types.Saddle, prefactor::Function)::Nothing
     if length(saddle_point.saddle) == 1
         # 1D case
         integral = Methods1D.SaddlePoint.integrate_around_saddle_point(saddle_point, S, S_grad, S_hessian, prefactor=prefactor)
@@ -98,9 +102,9 @@ function integrate_thimble!(S::Function, S_grad::Function, S_hessian::Function, 
 end
 
 # Integrate without a given boundary around all contributing thimbles, essentially using steepest descent until integral converges to the required precision, or the number of flow steps is exceeded.
-export integrate_thimbles
+export integrate_FLIC
 """
-    integrate_thimbles(S, S_grad, domain, deformation_parameters, prefactor, params, mode)
+    integrate_FLIC(S, S_grad, domain, deformation_parameters, prefactor, params, mode)
 
 Integrates the action function over the specified domain by deforming the integration contour along the steepest descent paths (thimbles) until convergence to the required accuracy 
 or until the maximum number of flow steps is reached. This package is responsible for solving integrals of the form
@@ -134,23 +138,23 @@ The parameters are listed as such:
 # Returns
 - `Tuple{Vector{ComplexF64}, Int}`: A tuple of the integral value, and the number of simplices used to evaluate the integral.
 """
-function integrate_thimbles(
+function integrate_FLIC(
     S::Function, S_grad::Function,
     domain::Vector{RealDomain},
     deformation_parameters::Vector{<:Number},
     prefactor::Function, params::Dict,
     mode::String
 )::Tuple{Vector{ComplexF64},Int}
-    flow_steps = params["flow_steps"]
-    grid_spacing = params["grid_spacing"]
-    gradient_normalisation_threshold = params["gradient_normalisation_threshold"]
-    flow_step_factor = params["flow_step_factor"]
-    subdivision_threshold = params["subdivision_threshold"]
-    height_threshold = params["height_threshold"]
+    flow_steps = Float64(params["flow_steps"])
+    grid_spacing = Float64(params["grid_spacing"])
+    gradient_normalisation_threshold = Float64(params["gradient_normalisation_threshold"])
+    flow_step_factor = Float64(params["flow_step_factor"])
+    subdivision_threshold = Float64(params["subdivision_threshold"])
+    height_threshold = Float64(params["height_threshold"])
     max_grid_element_count = params["max_grid_element_count"]
     verbosity = params["verbose"]
-    integral_accuracy = params["integral_accuracy"]
-    integral_relative_error = params["integral_relative_error"]
+    integral_accuracy = Float64(params["integral_accuracy"])
+    integral_relative_error = Float64(params["integral_relative_error"])
     if length(domain) == 2
         # 2D case
         if mode == "fixed"

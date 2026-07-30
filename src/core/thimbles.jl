@@ -20,12 +20,12 @@ The parameters for this function are listed in the table:
 
 | Parameter             | Required | Type | Description                                                                                                                                   |
 | --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `flow_step_factor`    | Yes      | `Float64` | The step size of the gradient descent solver.                                                                                                  |
+| `flow_step_factor`    | Yes      | `Real` | The step size of the gradient descent solver.                                                                                                  |
 | `max_iterations`      | Yes      | `Int` | The maximum number of iterations to perform using the solver.                                                                                 |
-| `height_threshold`    | Yes      | `Float64` | The maximal magnitude of the imaginary component during gradient descent.        |
-| `gradient_normalisation_threshold` | Yes | `Float64` | The threshold for normalising the gradient in the flow. |
-| `init_perturbation_radius` | Yes  | `Float64` | The initial radius for the Lefschetz thimble contour. This is the contour evolved to give the thimble. |
-| `subdivision_threshold` | Yes     | `Float64` | The threshold for subdivding the segments between the points of the Lefschetz thimble. |
+| `height_threshold`    | Yes      | `Real` | The maximal magnitude of the imaginary component during gradient descent.        |
+| `gradient_normalisation_threshold` | Yes | `Real` | The threshold for normalising the gradient in the flow. |
+| `init_perturbation_radius` | Yes  | `Real` | The initial radius for the Lefschetz thimble contour. This is the contour evolved to give the thimble. |
+| `subdivision_threshold` | Yes     | `Real` | The threshold for subdivding the segments between the points of the Lefschetz thimble. |
 | `initial_point_count` | No       | `Int` | The initial number of points for the Lefschetz thimble contour. (This parameter is only required when the dimension of the saddle is 2.) |
 | `accuracy` | No | `Int` | The precision used during the thimble finding process. (This parameter is required when `mesh_type` is "quad"). |
 
@@ -45,12 +45,13 @@ function get_thimble!(
     saddle_point::Types.Saddle, params::Dict;
     mesh_type::String
 )::Nothing
+    init_perturbation_radius = Float64(params["init_perturbation_radius"])
+    max_iterations = params["max_iterations"]
+    flow_step_factor = Float64(params["flow_step_factor"])
+    subdivision_threshold = Float64(params["subdivision_threshold"])
+
     thimble = if length(saddle_point.saddle) == 2
         initial_point_count = params["initial_point_count"]
-        max_iterations = params["max_iterations"]
-        init_perturbation_radius = params["init_perturbation_radius"]
-        flow_step_factor = params["flow_step_factor"]
-        subdivision_threshold = params["subdivision_threshold"]
         if mesh_type == "quad"
             accuracy = params["accuracy"]
             necklace, quads, points = Methods2D.Quadrilateral.Thimble.get_SD_thimble_quads(
@@ -63,10 +64,10 @@ function get_thimble!(
                 flowstepfactor=flow_step_factor,
                 subdividethreshold=subdivision_threshold
             )
-            quads
+            (points, quads)
         elseif mesh_type == "triangles"
-            gradient_normalisation_threshold = params["gradient_normalisation_threshold"]
-            height_threshold = params["height_threshold"]
+            gradient_normalisation_threshold = Float64(params["gradient_normalisation_threshold"])
+            height_threshold = Float64(params["height_threshold"])
             necklace, trianglesC, points_all, triangles = Methods2D.Triangle.Thimble.get_SD_thimble_triangles(
                 S, S_grad, S_hessian,
                 saddle_point,
@@ -78,17 +79,13 @@ function get_thimble!(
                 gradn_threshold=gradient_normalisation_threshold,
                 h_threshold=height_threshold
             )
-            trianglesC
+            (points_all, triangles)
         else
             throw(error("Mesh type not supported."))
         end
     elseif length(saddle_point.saddle) == 1
-        init_perturbation_radius = params["init_perturbation_radius"]
-        max_iterations = params["max_iterations"]
-        flow_step_factor = params["flow_step_factor"]
-        subdivision_threshold = params["subdivision_threshold"]
-        gradient_normalisation_threshold = params["gradient_normalisation_threshold"]
-        height_threshold = params["height_threshold"]
+        gradient_normalisation_threshold = Float64(params["gradient_normalisation_threshold"])
+        height_threshold = Float64(params["height_threshold"])
         points, simplices = Methods1D.PathFlow.get_thimble(
             S, S_grad, S_hessian, saddle_point,
             init_perturbation_radius=init_perturbation_radius,
@@ -99,7 +96,7 @@ function get_thimble!(
             height_threshold=height_threshold
         )
 
-        [Simplex{2,FlowPoint}(points[simplex.vertices]) for simplex in simplices]
+        (points, simplices)
     end
 
     saddle_point.thimble = thimble
@@ -107,9 +104,9 @@ function get_thimble!(
 end
 
 # Gets the thimbles for all saddle points.
-export get_thimbles
+export get_FLIC
 """
-    get_thimbles(S, S_grad, params, domain; mesh_type)
+    get_FLIC(S, S_grad, params, domain; mesh_type)
 
 Calculates the Lefschetz thimbles for a given domain, using gradient descent on an initial grid of points over the domain. 
 Gradient descent is done by solving the ODE along a time parameter \$ \\tau \$ to find the thimble. The ODE is as such
@@ -122,14 +119,12 @@ The parameters for this function are listed in the table:
 
 | Parameter             | Required | Type | Description                                                                                                                                   |
 | --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `flow_step_factor`    | Yes      | `Float64` | The step size of the gradient descent solver.                                                                                                  |
-| `height_threshold`    | Yes      | `Float64` | The maximal magnitude of the imaginary component during gradient descent.        |
-| `gradient_normalisation_threshold` | Yes | `Float64` | The threshold for normalising the gradient in the flow. |
-| `subdivision_threshold` | Yes     | `Float64` | The threshold for subdivding the segments between the points of the Lefschetz thimble. |
-| `iterations` | No | `Int` | The maximum number of iterations to perform using the solver in 1D. |
-| `init_subdivision` | No | `Float64` | The initial subdivision of the line segment in 1D. |
-| `flow_steps` | No | `Int` | The maximum number of iterations to perform using the solver in 2D. |
-| `grid_resolution` | No | `Float64` | The resolution of the initial grid in 2D. |
+| `flow_step_factor`    | Yes      | `Real` | The step size of the gradient descent solver.                                                                                                  |
+| `height_threshold`    | Yes      | `Real` | The maximal magnitude of the imaginary component during gradient descent.        |
+| `gradient_normalisation_threshold` | Yes | `Real` | The threshold for normalising the gradient in the flow. |
+| `subdivision_threshold` | Yes     | `Real` | The threshold for subdivding the segments between the points of the Lefschetz thimble. |
+| `max_iterations` | Yes | `Int` | The maximum number of iterations to perform using the solver. |
+| `grid_resolution` | No | `Real` | The resolution of the initial grid in 2D. |
 | `max_simplices` | No | `Int` | The maximum number of simplices (quads or triangles) to allow during the flow in 2D. |
 | `simplex_tolerance` | No | `Int` | The tolerance for the number of simplices during the flow in 2D. |
 
@@ -143,38 +138,32 @@ The parameters for this function are listed in the table:
 # Returns
 - `Tuple{Vector{<:FlowPoint}, Vector{<:Simplex}}`: The result of the flow (a set of segments in 1D, or a list of quadrilaterals/triangles in 2D).
 """
-function get_thimbles(
+function get_FLIC(
     S::Function, S_grad::Function,
     params::Dict, domain::Vector{RealDomain}; mesh_type::String
 )
+    max_iterations = params["max_iterations"]
+    gradient_normalisation_threshold = Float64(params["gradient_normalisation_threshold"])
+    subdivision_threshold = Float64(params["subdivision_threshold"])
+    height_threshold = Float64(params["height_threshold"])
+    flow_step_factor = Float64(params["flow_step_factor"])
     if length(domain) == 1
-        iterations = params["iterations"]
-        init_subdivision = params["init_subdivision"]
-        flow_step_factor = params["flow_step_factor"]
-        height_threshold = params["height_threshold"]
-        gradient_normalisation_threshold = params["gradient_normalisation_threshold"]
-        subdivision_threshold = params["subdivision_threshold"]
         return Methods1D.PathFlow.get_thimble(S, S_grad, domain[1].min, domain[1].max,
-            Nflow=iterations, Δinit=init_subdivision,
+            Nflow=max_iterations, Δinit=subdivision_threshold,
             flowstepfactor=flow_step_factor, h_threshold=height_threshold,
             gradnthreshold=gradient_normalisation_threshold, subdividethreshold=subdivision_threshold
         )
     elseif length(domain) == 2
-        flow_steps = params["flow_steps"]
-        grid_resolution = params["grid_resolution"]
-        gradient_normalisation_threshold = params["gradient_normalisation_threshold"]
-        subdivision_threshold = params["subdivision_threshold"]
-        height_threshold = params["height_threshold"]
+        grid_resolution = Float64(params["grid_resolution"])
         max_simplices = params["max_simplices"]
         simplex_tolerance = params["simplex_tolerance"]
-        flow_step_factor = params["flow_step_factor"]
 
         init_points = Methods2D.Utils.make_init_points_rectangle(domain[1].min, domain[1].max, domain[2].min, domain[2].max)
 
         if mesh_type == "quad"
             quads, points, simplices = Methods2D.Quadrilateral.DownwardsFlow.get_flowed_quads(
                 S, S_grad, init_points,
-                Nflow=flow_steps,
+                Nflow=max_iterations,
                 Δinit=grid_resolution,
                 gradnthreshold=gradient_normalisation_threshold,
                 flowstepfactor=flow_step_factor,
@@ -222,12 +211,12 @@ The parameters for this function are listed in the table:
 
 | Parameter             | Required | Type | Description                                                                                                                                   |
 | --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `flow_step_factor`    | Yes      | `Float64` | The step size of the gradient descent solver.                                                                                                  |
+| `flow_step_factor`    | Yes      | `Real` | The step size of the gradient descent solver.                                                                                                  |
 | `max_iterations`      | Yes      | `Int` | The maximum number of iterations to perform using the solver.                                                                                 |
-| `height_threshold`    | Yes      | `Float64` | The maximal magnitude of the imaginary component during gradient descent. This is used when checking if the saddle point contributes.        |
-| `gradient_normalisation_threshold` | Yes | `Float64` | The threshold for normalising the gradient in the flow. |
-| `init_perturbation_radius` | Yes  | `Float64` | The initial radius for the Lefschetz thimble contour. This is the contour evolved to give the thimble. |
-| `subdivision_threshold` | Yes     | `Float64` | The threshold for subdivding the segments between the points of the Lefschetz thimble. |
+| `height_threshold`    | Yes      | `Real` | The maximal magnitude of the imaginary component during gradient descent. This is used when checking if the saddle point contributes.        |
+| `gradient_normalisation_threshold` | Yes | `Real` | The threshold for normalising the gradient in the flow. |
+| `init_perturbation_radius` | Yes  | `Real` | The initial radius for the Lefschetz thimble contour. This is the contour evolved to give the thimble. |
+| `subdivision_threshold` | Yes     | `Real` | The threshold for subdivding the segments between the points of the Lefschetz thimble. |
 | `initial_point_count` | No       | `Int` | The initial number of points for the Lefschetz thimble contour. (This parameter is only required when the dimension of the saddle is 2.) |
 | `accuracy` | No | `Int` | The precision used during the thimble finding process. (This parameter is required when `mesh_type` is "quad"). |
 
@@ -275,12 +264,12 @@ The parameters for this function are listed in the table:
 
 | Parameter             | Required | Type | Description                                                                                                                                   |
 | --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `flow_step_factor`    | Yes      | `Float64` | The step size of the gradient descent solver.                                                                                                  |
+| `flow_step_factor`    | Yes      | `Real` | The step size of the gradient descent solver.                                                                                                  |
 | `max_iterations`      | Yes      | `Int` | The maximum number of iterations to perform using the solver.                                                                                 |
-| `height_threshold`    | Yes      | `Float64` | The maximal magnitude of the imaginary component during gradient descent.        |
-| `gradient_normalisation_threshold` | Yes | `Float64` | The threshold for normalising the gradient in the flow. |
-| `init_perturbation_radius` | Yes  | `Float64` | The initial radius for the Lefschetz thimble contour. This is the contour evolved to give the thimble. |
-| `subdivision_threshold` | Yes     | `Float64` | The threshold for subdivding the segments between the points of the Lefschetz thimble. |
+| `height_threshold`    | Yes      | `Real` | The maximal magnitude of the imaginary component during gradient descent.        |
+| `gradient_normalisation_threshold` | Yes | `Real` | The threshold for normalising the gradient in the flow. |
+| `init_perturbation_radius` | Yes  | `Real` | The initial radius for the Lefschetz thimble contour. This is the contour evolved to give the thimble. |
+| `subdivision_threshold` | Yes     | `Real` | The threshold for subdivding the segments between the points of the Lefschetz thimble. |
 | `init_point_count` | No       | `Int` | The initial number of points for the Lefschetz thimble contour. (This parameter is only required when the dimension of the saddle is 2.) |
 | `accuracy` | No | `Int` | The precision used during the thimble finding process. (This parameter is required when `mesh_type` is "quad"). |
 
@@ -300,12 +289,12 @@ function get_thimble_boundary!(
     saddle_point::Types.Saddle, params::Dict;
     mesh_type::String
 )::Nothing
-    init_perturbation_radius = params["init_perturbation_radius"]
+    init_perturbation_radius = Float64(params["init_perturbation_radius"])
     max_iterations = params["max_iterations"]
-    flow_step_factor = params["flow_step_factor"]
-    subdivision_threshold = params["subdivision_threshold"]
-    gradient_normalisation_threshold = params["gradient_normalisation_threshold"]
-    height_threshold = params["height_threshold"]
+    flow_step_factor = Float64(params["flow_step_factor"])
+    subdivision_threshold = Float64(params["subdivision_threshold"])
+    gradient_normalisation_threshold = Float64(params["gradient_normalisation_threshold"])
+    height_threshold = Float64(params["height_threshold"])
 
     boundary = if length(saddle_point.saddle) == 1
         points, simplices = Methods1D.PathFlow.get_thimble(S, S_grad, S_hessian,
@@ -325,14 +314,14 @@ function get_thimble_boundary!(
             end
         end
         boundary_indices = [index for (index, count) in counts if count == 1]
-        [points[index].coords for index in boundary_indices]
+        T = typeof(points[1].coords)
+        T[points[index].coords for index in boundary_indices]
     elseif length(saddle_point.saddle) == 2
         init_point_count = params["init_point_count"]
         accuracy = params["accuracy"]
-        init_perturbation_radius = params["init_perturbation_radius"]
 
         if mesh_type == "quad"
-            necklace, quads = Methods2D.Quadrilateral.Thimble.get_SD_thimble_quads(
+            necklace, quads, points = Methods2D.Quadrilateral.Thimble.get_SD_thimble_quads(
                 S, S_grad, S_hessian,
                 saddle_point,
                 Ninit=init_point_count,
@@ -342,7 +331,7 @@ function get_thimble_boundary!(
                 flowstepfactor=flow_step_factor,
                 subdividethreshold=subdivision_threshold
             )
-            necklace
+            (points, necklace)
         elseif mesh_type == "triangle"
             necklace, trianglesC, points_all, triangles = Methods2D.Triangle.Thimble.get_SD_thimble_triangles(
                 S, S_grad, S_hessian,
@@ -355,7 +344,7 @@ function get_thimble_boundary!(
                 gradn_threshold=gradient_normalisation_threshold,
                 h_threshold=height_threshold
             )
-            necklace
+            (points_all, necklace)
         end
     end
 
@@ -378,12 +367,12 @@ The parameters for this function are listed in the table:
 
 | Parameter             | Required | Type | Description                                                                                                                                   |
 | --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `flow_step_factor`    | Yes      | `Float64` | The step size of the gradient descent solver.                                                                                                  |
+| `flow_step_factor`    | Yes      | `Real` | The step size of the gradient descent solver.                                                                                                  |
 | `max_iterations`      | Yes      | `Int` | The maximum number of iterations to perform using the solver.                                                                                 |
-| `height_threshold`    | Yes      | `Float64` | The maximal magnitude of the imaginary component during gradient descent.        |
-| `gradient_normalisation_threshold` | Yes | `Float64` | The threshold for normalising the gradient in the flow. |
-| `init_perturbation_radius` | Yes  | `Float64` | The initial radius for the Lefschetz thimble contour. This is the contour evolved to give the thimble. |
-| `subdivision_threshold` | Yes     | `Float64` | The threshold for subdivding the segments between the points of the Lefschetz thimble. |
+| `height_threshold`    | Yes      | `Real` | The maximal magnitude of the imaginary component during gradient descent.        |
+| `gradient_normalisation_threshold` | Yes | `Real` | The threshold for normalising the gradient in the flow. |
+| `init_perturbation_radius` | Yes  | `Real` | The initial radius for the Lefschetz thimble contour. This is the contour evolved to give the thimble. |
+| `subdivision_threshold` | Yes     | `Real` | The threshold for subdivding the segments between the points of the Lefschetz thimble. |
 | `init_point_count` | No       | `Int` | The initial number of points for the Lefschetz thimble contour. (This parameter is only required when the dimension of the saddle is 2.) |
 | `accuracy` | No | `Int` | The precision used during the thimble finding process. (This parameter is required when `mesh_type` is "quad"). |
 

@@ -141,6 +141,7 @@ function get_hessian_eigenvectors!(directions::Vector{ComplexF64}, saddle_point:
     end
 end
 
+export find_intersection_point
 function find_intersection_point(thimble::Vector{FlowPoint})::FlowPoint
     prev_coord = thimble[end-1].coords[1]
     last_coord = thimble[end].coords[1]
@@ -152,12 +153,13 @@ end
 
 export flow_up
 function flow_up(S::Function, S_prime::Function, saddle_point::FlowPoint, δ::Float64, h_threshold::Float64, flow_steps::Int)::Tuple{Vector{FlowPoint},Bool}
-    contributing = true
+    contributing = false
     max_height = abs(h_threshold)
     directions = Vector{ComplexF64}()
     get_hessian_eigenvectors!(directions, saddle_point, S, :ascent)
+    should_stop_infinity(vertices) = -imag(S(vertices)) >= max_height
 
-    on_real_line = floor(imag(saddle_point.coords[1])) == 0
+    on_real_line = isapprox(imag(saddle_point.coords[1]), 0.0, atol=1e-10)
 
     if on_real_line
         # Both directions move away from the real line.
@@ -172,11 +174,10 @@ function flow_up(S::Function, S_prime::Function, saddle_point::FlowPoint, δ::Fl
         pass_down = saddle_point.coords[1] + δ * dir_down
 
         # Flow up to infinity (where -Im(S) exceeds max_height)
-        should_stop_infinity(vertices) = -imag(S(vertices)) >= max_height
         points_up = flow_line(S, S_prime, pass_up, δ, 1.0, should_stop_infinity, flow_steps)
         points_down = flow_line(S, S_prime, pass_down, δ, 1.0, should_stop_infinity, flow_steps)
 
-        thimble = vcat(reverse(points_down), [saddle_point], points_up)
+        dual_thimble = vcat(reverse(points_down), [saddle_point], points_up)
         contributing = true
     else
         # Determine forward (towards real line) and backward (away from real line) passes
@@ -200,13 +201,12 @@ function flow_up(S::Function, S_prime::Function, saddle_point::FlowPoint, δ::Fl
         contributing = imag(last_coord) * imag(saddle_point.coords[1]) <= 0
 
         # Flow backward pass to infinity
-        should_stop_infinity_backwards(vertices) = -imag(S(vertices)) >= max_height
-        points_backward = flow_line(S, S_prime, backward_pass, δ, 1.0, should_stop_infinity_backwards, flow_steps)
+        points_backward = flow_line(S, S_prime, backward_pass, δ, 1.0, should_stop_infinity, flow_steps)
 
-        thimble = vcat(reverse(points_backward), [saddle_point], points_forward)
+        dual_thimble = vcat(reverse(points_backward), [saddle_point], points_forward)
     end
 
-    return thimble, contributing
+    return dual_thimble, contributing
 end
 
 

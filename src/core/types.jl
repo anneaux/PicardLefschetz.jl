@@ -84,4 +84,31 @@ Base.length(p::FlowPoint{N}) where {N} = N
 Base.length(s::Saddle) = length(s.saddle)
 Base.getindex(s::Saddle, i::Int) = s.saddle.coords[i]
 
+function convert(saddle::Saddle)
+    thimble_mesh = convert_to_mesh(saddle.thimble)
+    thimble_boundary_mesh = convert_to_mesh(saddle.thimble_boundary)
+    dual_thimble_mesh = convert_to_mesh(saddle.dual_thimble)
+    dual_thimble_boundary_mesh = convert_to_mesh(saddle.dual_thimble_boundary)
+
+    return Saddle(
+        saddle=saddle.saddle,
+        contributing=saddle.contributing,
+        intersection_number=saddle.intersection_number,
+        thimble=thimble_mesh,
+        thimble_boundary=thimble_boundary_mesh,
+        dual_thimble=dual_thimble_mesh,
+        dual_thimble_boundary=dual_thimble_boundary_mesh,
+        integral=saddle.integral
+    )
+end
+
+function convert_to_mesh(point_cloud::Tuple{Vector{<:FlowPoint},Vector{Simplex{A,Int}}}) where A
+    points, simplices = point_cloud
+    return [Simplex{A,FlowPoint}(points[simplex.vertices]) for simplex in simplices]
+end
+
+convert_to_mesh(::Nothing) = nothing
+convert_to_mesh(point_cloud::Vector{<:FlowPoint}) = point_cloud
+convert_to_mesh(point_cloud::Vector{<:AbstractVector}) = point_cloud
+
 end

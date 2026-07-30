@@ -76,14 +76,14 @@ using PicardLefschetz.Integration
             saddle = saddles[1]
             get_thimble!(z, S_expr, saddle, params_1d, mesh_type="none")
             @test saddle.thimble !== nothing
-            @test saddle.thimble isa Vector{<:Simplex}
+            @test saddle.thimble isa Tuple{Vector{<:FlowPoint}, Vector{<:Simplex}}
 
             get_thimble_boundary!(z, S_expr, saddle, params_1d, mesh_type="none")
             @test saddle.thimble_boundary !== nothing
             @test saddle.thimble_boundary isa Vector{<:AbstractVector}
         end
 
-        thimbles = get_thimbles(z, S_expr, params_1d, domain_1d_real, mesh_type="none")
+        thimbles = get_FLIC(z, S_expr, params_1d, domain_1d_real, mesh_type="none")
         @test thimbles !== nothing
 
         thimbles_complex = get_thimbles(z, S_expr, params_1d, domain_1d_complex, false, mesh_type="none")
@@ -121,8 +121,8 @@ using PicardLefschetz.Integration
         if !isempty(saddles)
             saddle = saddles[1]
 
-            # test integrate_thimble!
-            integrate_thimble!(z, S_expr, saddle, prefactor_expr)
+            # test integrate_SPM_thimble!
+            integrate_SPM_thimble!(z, S_expr, saddle, prefactor_expr)
             @test saddle.integral !== nothing
             @test saddle.integral isa ComplexF64
 
@@ -134,8 +134,8 @@ using PicardLefschetz.Integration
             end
         end
 
-        # test integrate_thimbles (real domains) 
-        integral_real = integrate_thimbles(z, S_expr, domain_1d_real, [0.0], prefactor_expr, params_1d, "unfixed")
+        # test integrate_FLIC (real domains) 
+        integral_real = integrate_FLIC(z, S_expr, domain_1d_real, [0.0], prefactor_expr, params_1d, "unfixed")
         @test integral_real !== nothing
         @test integral_real isa Tuple
         @test integral_real[1] isa AbstractVector
@@ -283,14 +283,14 @@ end
 
             get_thimble!(z, S_expr, saddle, params_2d, mesh_type="quad")
             @test saddle.thimble !== nothing
-            @test saddle.thimble isa Vector{<:Simplex}
+            @test saddle.thimble isa Tuple{Vector{<:FlowPoint}, Vector{<:Simplex}}
 
             get_thimble_boundary!(z, S_expr, saddle, params_2d, mesh_type="quad")
             @test saddle.thimble_boundary !== nothing
-            @test saddle.thimble_boundary isa Vector{<:Simplex}
+            @test saddle.thimble_boundary isa Tuple{Vector{<:FlowPoint}, Vector{<:Simplex}}
         end
 
-        thimbles = get_thimbles(z, S_expr, params_2d, domain_2d_real, mesh_type="quad")
+        thimbles = get_FLIC(z, S_expr, params_2d, domain_2d_real, mesh_type="quad")
         @test thimbles !== nothing
 
         thimbles_complex = get_thimbles(z, S_expr, params_2d, domain_2d_complex, false, mesh_type="quad")
@@ -309,11 +309,11 @@ end
             saddle = saddles[1]
             get_dual_thimble!(z, S_expr, saddle, params_2d)
             @test saddle.dual_thimble !== nothing
-            @test saddle.dual_thimble isa Vector{<:Simplex}
+            @test saddle.dual_thimble isa Tuple{Vector{<:FlowPoint}, Vector{<:Simplex}}
 
             get_dual_thimble_boundary!(z, S_expr, saddle, params_2d)
             @test saddle.dual_thimble_boundary !== nothing
-            @test saddle.dual_thimble_boundary isa Vector{<:Simplex}
+            @test saddle.dual_thimble_boundary isa Tuple{Vector{<:FlowPoint}, Vector{<:Simplex}}
         end
 
         dual_thimbles = get_dual_thimbles(z, S_expr, params_2d, domain_2d_complex, false)
@@ -328,8 +328,8 @@ end
         if !isempty(saddles)
             saddle = saddles[1]
 
-            # test integrate_thimble!
-            integrate_thimble!(z, S_expr, saddle, prefactor_expr)
+            # test integrate_SPM_thimble!
+            integrate_SPM_thimble!(z, S_expr, saddle, prefactor_expr)
             @test saddle.integral !== nothing
             @test saddle.integral isa ComplexF64
 
@@ -341,9 +341,9 @@ end
             end
         end
 
-        # test integrate_thimbles (real domains) 
+        # test integrate_FLIC (real domains) 
         # this core method is broken due to missing initialise_grid_parallelogram
-        @test_throws UndefVarError integrate_thimbles(z, S_expr, domain_2d_real, [0.0, 0.0], prefactor_expr, params_2d, "unfixed")
+        @test_throws UndefVarError integrate_FLIC(z, S_expr, domain_2d_real, [0.0, 0.0], prefactor_expr, params_2d, "unfixed")
 
         # test integrate_thimbles (complex domains) 
         integral_complex = integrate_thimbles(z, S_expr, domain_2d_complex, params_2d, prefactor_expr)
