@@ -99,7 +99,7 @@ The parameters for this function are listed below:
 - `S_grad::Function`: The first derivative (gradient) of the action function.
 - `S_hessian::Function`: The second derivative (Hessian) of the action function.
 - `saddle_point::Types.Saddle`: The saddle point struct to check.
-- `domain::ComplexDomain`: The integration domain.
+- `check::Function`: A function used to check if the saddle point is within the domain. Should accept the coordinates in a vector of complex numbers.
 - `params::Dict`: Parameters for checking contribution.
 - `log_errors::Bool`: Whether to log errors during the check (default `false`).
 
@@ -111,7 +111,7 @@ function check_contribution!(
     S_grad::Function,
     S_hessian::Function,
     saddle_point::Types.Saddle,
-    domain::Union{ComplexDomain,Vector{ComplexDomain}},
+    check::Function,
     params::Dict;
     log_errors::Bool=false
 )::Nothing
@@ -125,14 +125,23 @@ function check_contribution!(
         subdivision_threshold = Float64(params["subdivision_threshold"])
 
         Methods2D.SaddlePoint.check_contribution(
-            S, S_grad, S_hessian, saddle_point,
+            S, S_grad, S_hessian, saddle_point, check,
             Ntimes=grid_resolution, logerrors=log_errors,
             flowstepfactor=flow_step_factor, initial_necklace_size=initial_necklace_size,
             max_iterations=max_iterations, init_perturbation_radius=init_perturbation_radius,
             subdivision_threshold=subdivision_threshold
         )
     elseif length(saddle_point.saddle) == 1
-        Methods1D.SaddlePoint.is_contributing(saddle_point, S, domain.min, domain.max, Ntimes=grid_resolution)
+        height_threshold = Float64(params["height_threshold"])
+        dual_thimble, contributing = Methods1D.PathFlow.flow_up(S, S_grad, saddle_point, flow_step_factor, height_threshold, max_iterations)
+        if abs(imag(saddle_point.coords[1])) > 1e-10
+            return true
+        end
+        intersection_point = Methods1D.PathFlow.find_intersection_point(dual_thimble)
+        if contributing && check([intersection_point.coords[1]])
+            return true
+        end
+        false
     end
 
     saddle_point.contributing = contributing

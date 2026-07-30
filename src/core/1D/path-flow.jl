@@ -141,6 +141,7 @@ function get_hessian_eigenvectors!(directions::Vector{ComplexF64}, saddle_point:
     end
 end
 
+export find_intersection_point
 function find_intersection_point(thimble::Vector{FlowPoint})::FlowPoint
     prev_coord = thimble[end-1].coords[1]
     last_coord = thimble[end].coords[1]

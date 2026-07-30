@@ -99,11 +99,8 @@ end
 ### checking if conditions are fulfilled
 function check_contribution(necklace::Vector{Simplex{2,FlowPoint}},
     f::Function,
-    saddle_point::Saddle
+    saddle_point::Saddle, check::Function
     ; Ntimes=100, kwargs...)
-
-    ti = saddle_point[1]
-    tr = saddle_point[2]
 
     flowstepfactor = try
         kwargs[:flowstepfactor]
@@ -111,49 +108,40 @@ function check_contribution(necklace::Vector{Simplex{2,FlowPoint}},
         0.8
     end
 
+    intersection_point = find_intersection_for_contribution(necklace, saddle_point; Ntimes=Ntimes, flowstepfactor=flowstepfactor)
+
+    H_at_hp = imag(f([necklace[idx].vertices[1].coords[1], necklace[idx].vertices[1].coords[2]]))
+    H_at_sp = imag(f([ti, tr]))
+    if abs(H_at_hp - H_at_sp) < 1. && (check([complex(intersection_point.vertices[1].coords[1]), complex(intersection_point.vertices[1].coords[2])]))
+        return true
+    end
+end
+
+function find_intersection_for_contribution(necklace::Vector{Simplex{2,FlowPoint}}, saddle_point::Saddle; Ntimes=100, flowstepfactor::Real)
+    ti = saddle_point[1]
+    tr = saddle_point[2]
+
     ### check if necklace hits real plane
     p = FlowPoint(0.0im, 0.0im)
     idx = find_crossing(imag.(necklace), p, threshold=2 * flowstepfactor) # can add loginfo here
 
-    if isnothing(idx)
-        @debug "it doesn't contribute! (1)"
-        active = false
-    else
-        ### get the point where it hits & check if it's in the integration domain
-        hitting_point = real(necklace[idx].vertices[1].coords[2]) > real(necklace[idx].vertices[1].coords[1]) ?
-                        get_point(real(necklace[idx])) : nothing
-        # mustn't use the starting point here, could use the centre point!
-
-        if isnothing(hitting_point)
-            println("it doesn't contribute! (2)") # because this shouldn't happen!
-            active = false
-        else
-            H_at_hp = imag(f([necklace[idx].vertices[1].coords[1], necklace[idx].vertices[1].coords[2]]))
-            H_at_sp = imag(f([ti, tr]))
-            if abs(H_at_hp - H_at_sp) < 1.
-                active = true
-            else
-                println("it doesn't contribute! (4)")
-                active = false
-            end
-        end
-    end
-
-    return active
-end;
+    return necklace[idx]
+end
 
 function check_contribution(necklace::Nothing,
     f::Function,
     f_grad::Function,
     f_hessian::Function,
-    saddle_point::Saddle
+    saddle_point::Saddle,
+    check::Function
     ; Ntimes=100, kwargs...)
     return false
 end
 
 function check_contribution(necklace::Nothing,
     f::Function,
-    saddle_point::Saddle
+    saddle_point::Saddle,
+    check::Function
     ; Ntimes=100, kwargs...)
     return false
 end
@@ -163,7 +151,8 @@ function check_contribution(
     f::Function,
     f_grad::Function,
     f_hessian::Function,
-    saddle_point::Saddle
+    saddle_point::Saddle,
+    check::Function,
     ; Ntimes::Int64=100, logerrors::Bool=false, kwargs...)
     # Ncounter = 600, logerrors::Bool=false)
 
@@ -173,7 +162,7 @@ function check_contribution(
     if real(f([ti, tr])) < 0
         necklace, _, points = get_necklace(f, f_grad, f_hessian, saddle_point; logerrors=logerrors, kwargs...)
         mesh = necklace === nothing ? nothing : convert_to_mesh((points, necklace))
-        check_contribution(mesh, f, saddle_point, Ntimes=Ntimes)
+        check_contribution(mesh, f, saddle_point, check, Ntimes=Ntimes)
     else
         @debug "it doesn't contribute! (0)"
         return false
