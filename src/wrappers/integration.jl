@@ -3,7 +3,7 @@ using Base.Threads
 
 export integrate_thimble
 """
-    integrate_thimble(z, S, boundary, prefactor, params)
+    integrate_thimble(z, S, thimble, prefactor, params)
 
 Integrates a Lefschetz thimble along its boundary using symbolic expressions. This 
 is a wrapper function for compatibility with the Symbolics.jl package. For complete 
@@ -12,7 +12,7 @@ documentation, see `integrate_thimble`.
 # Arguments
 - `z::Union{Num, AbstractVector{Num}}`: The symbolic variable.
 - `S::Num`: The symbolic action function.
-- `boundary::Any`: The boundary of the thimble to integrate along. (A set of flow points in 1D, or a mesh in 2D)
+- `thimble::Any`: The thimble to integrate along. (A set of flow points in 1D, or a mesh in 2D)
 - `prefactor::Union{Num, AbstractVector{Num}}`: The symbolic prefactor of the integrand.
 - `params::Dict`: The parameters for the integration.
 
@@ -20,24 +20,24 @@ documentation, see `integrate_thimble`.
 - `ComplexF64`: The integrated value.
 """
 function integrate_thimble(
-    z::Union{Num, AbstractVector{Num}}, S::Num,
-    boundary::Any,
-    prefactor::Union{Num, AbstractVector{Num}},
+    z::Union{Num,AbstractVector{Num}}, S::Num,
+    thimble::Any,
+    prefactor::Union{Num,AbstractVector{Num}},
     params::Dict
-)::Union{ComplexF64, AbstractVector}
+)::Union{ComplexF64,AbstractVector}
     native_S = build_function(S, z, expression=Val{false})
     native_prefactor = prefactor isa AbstractArray ? build_function(prefactor, z, expression=Val{false})[1] : build_function(prefactor, z, expression=Val{false})
 
-    return integrate_thimble(native_S, boundary, native_prefactor, params)
+    return integrate_thimble(native_S, thimble, native_prefactor, params)
 end
 
-export integrate_thimble!
+export integrate_SPM_thimble!
 """
-    integrate_thimble!(z, S, saddle_point, prefactor, params)
+    integrate_SPM_thimble!(z, S, saddle_point, prefactor, params)
 
 Integrates a Lefschetz thimble for a given saddle point using symbolic expressions. This 
 is a wrapper function for compatibility with the Symbolics.jl package. For complete 
-documentation, see `integrate_thimble!`.
+documentation, see `integrate_SPM_thimble!`.
 
 # Arguments
 - `z::Union{Num, AbstractVector{Num}}`: The symbolic variable.
@@ -49,10 +49,10 @@ documentation, see `integrate_thimble!`.
 # Returns
 - `Nothing`
 """
-function integrate_thimble!(
-    z::Union{Num, AbstractVector{Num}}, S::Num,
+function integrate_SPM_thimble!(
+    z::Union{Num,AbstractVector{Num}}, S::Num,
     saddle_point::Types.Saddle,
-    prefactor::Union{Num, AbstractVector{Num}}
+    prefactor::Union{Num,AbstractVector{Num}}
 )::Nothing
     S_grad = z isa AbstractVector ? Symbolics.gradient(S, z) : Symbolics.gradient(S, [z])[1]
     S_hessian = z isa AbstractVector ? Symbolics.hessian(S, z) : Symbolics.hessian(S, [z])[1, 1]
@@ -61,16 +61,16 @@ function integrate_thimble!(
     native_hessian = S_hessian isa AbstractArray ? build_function(S_hessian, z, expression=Val{false})[1] : build_function(S_hessian, z, expression=Val{false})
     native_prefactor = prefactor isa AbstractArray ? build_function(prefactor, z, expression=Val{false})[1] : build_function(prefactor, z, expression=Val{false})
 
-    return integrate_thimble!(native_S, native_grad, native_hessian, saddle_point, native_prefactor)
+    return integrate_SPM_thimble!(native_S, native_grad, native_hessian, saddle_point, native_prefactor)
 end
 
-export integrate_thimbles
+export integrate_FLIC
 """
-    integrate_thimbles(z, S, domain, deformation_parameters, prefactor, params, mode)
+    integrate_FLIC(z, S, domain, deformation_parameters, prefactor, params, mode)
 
 Integrates the Lefschetz thimbles for a given domain using symbolic expressions. This 
 is a wrapper function for compatibility with the Symbolics.jl package. For complete 
-documentation, see `integrate_thimbles`.
+documentation, see `integrate_FLIC`.
 
 # Arguments
 - `z::Union{Num, AbstractVector{Num}}`: The symbolic variable.
@@ -84,19 +84,19 @@ documentation, see `integrate_thimbles`.
 # Returns
 - `Tuple{Vector{ComplexF64},Int}`: A tuple containing the integrated values and the number of points evaluated.
 """
-function integrate_thimbles(
-    z::Union{Num, AbstractVector{Num}}, S::Num,
+function integrate_FLIC(
+    z::Union{Num,AbstractVector{Num}}, S::Num,
     domain::Vector{RealDomain},
     deformation_parameters::Vector{<:Number},
-    prefactor::Union{Num, AbstractVector{Num}},
+    prefactor::Union{Num,AbstractVector{Num}},
     params::Dict, mode::String
-)::Union{Tuple{Vector{ComplexF64},Int}, Tuple{AbstractVector,Int}}
+)::Union{Tuple{Vector{ComplexF64},Int},Tuple{AbstractVector,Int}}
     S_grad = z isa AbstractVector ? Symbolics.gradient(S, z) : Symbolics.gradient(S, [z])[1]
     native_S = build_function(S, z, expression=Val{false})
     native_grad = S_grad isa AbstractArray ? build_function(S_grad, z, expression=Val{false})[1] : build_function(S_grad, z, expression=Val{false})
     native_prefactor = prefactor isa AbstractArray ? build_function(prefactor, z, expression=Val{false})[1] : build_function(prefactor, z, expression=Val{false})
 
-    return integrate_thimbles(native_S, native_grad, domain, deformation_parameters, native_prefactor, params, mode)
+    return integrate_FLIC(native_S, native_grad, domain, deformation_parameters, native_prefactor, params, mode)
 end
 
 export integrate_thimbles
@@ -119,9 +119,9 @@ documentation, see `integrate_thimbles`.
 - `Vector{Types.Saddle}`: A vector of the saddle points, with their integrals populated.
 """
 function integrate_thimbles(
-    z::Union{Num, AbstractVector{Num}}, S::Num,
+    z::Union{Num,AbstractVector{Num}}, S::Num,
     domain::Vector{ComplexDomain},
-    params::Dict, prefactor::Union{Num, AbstractVector{Num}};
+    params::Dict, prefactor::Union{Num,AbstractVector{Num}};
     check::Function=(t_1, t_2) -> !isequal(t_1, t_2)
 )::Vector{Types.Saddle}
     S_grad = z isa AbstractVector ? Symbolics.gradient(S, z) : Symbolics.gradient(S, [z])[1]
