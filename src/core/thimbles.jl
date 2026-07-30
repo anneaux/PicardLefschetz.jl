@@ -107,9 +107,9 @@ function get_thimble!(
 end
 
 # Gets the thimbles for all saddle points.
-export get_thimbles
+export get_FLIC
 """
-    get_thimbles(S, S_grad, params, domain; mesh_type)
+    get_FLIC(S, S_grad, params, domain; mesh_type)
 
 Calculates the Lefschetz thimbles for a given domain, using gradient descent on an initial grid of points over the domain. 
 Gradient descent is done by solving the ODE along a time parameter \$ \\tau \$ to find the thimble. The ODE is as such
@@ -143,7 +143,7 @@ The parameters for this function are listed in the table:
 # Returns
 - `Tuple{Vector{<:FlowPoint}, Vector{<:Simplex}}`: The result of the flow (a set of segments in 1D, or a list of quadrilaterals/triangles in 2D).
 """
-function get_thimbles(
+function get_FLIC(
     S::Function, S_grad::Function,
     params::Dict, domain::Vector{RealDomain}; mesh_type::String
 )
