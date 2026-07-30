@@ -4,11 +4,11 @@ using ..Methods1D
 using ..Methods2D
 using ..Types
 
-export find_analytic_saddles
+export solve_first_derivative
 """
-    find_analytic_saddles(derivative, initial_point, accuracy)
+    solve_first_derivative(derivative, initial_point, accuracy)
 
-Finds the saddle points analytically using the provided initial points. This function solves for the zeros of the first derivative in the analytic continuation.
+Finds the saddle points analytically using the provided initial points. This function solves for the zeros of the first derivative in the analytic continuation, by using the Newton-Raphson method.
 
 # Arguments
 - `derivative::Function`: The first derivative of the action function.
@@ -16,12 +16,17 @@ Finds the saddle points analytically using the provided initial points. This fun
 - `accuracy::Int64`: The accuracy (number of digits) to which the saddle points should be found.
 
 # Returns
-- A tuple or vector containing the found saddle points.
+- `Vector{Saddle}`: A vector of Saddle structs containing the found saddle points.
 """
-function find_analytic_saddles(derivative::Function, initial_point::Vector{ComplexF64}, accuracy::Int64)
+function solve_first_derivative(derivative::Function, initial_point::Vector{ComplexF64}, accuracy::Int64)::Vector{Types.Saddle}
     if length(initial_point) == 2
         # 2D case
-        return Methods2D.SaddlePoint.solve_first_drv(derivative, initial_point, digits=accuracy)
+        t_1, t_2 = Methods2D.SaddlePoint.solve_first_drv(derivative, initial_point, digits=accuracy)
+        if !isnothing(t_1) && !isnothing(t_2)
+            return Types.Saddle[Types.Saddle(saddle=Types.FlowPoint(t_1, t_2))]
+        end
+
+        return Types.Saddle[]
     elseif length(initial_point) == 1
         # 1D case
         tmp = [real(initial_point[1]), imag(initial_point[1])]
@@ -31,11 +36,11 @@ function find_analytic_saddles(derivative::Function, initial_point::Vector{Compl
     end
 end
 
-export find_numerical_saddles
+export find_saddles
 """
-    find_numerical_saddles(derivative, domain, params; check)
+    find_saddles(derivative, domain, params; check)
 
-Finds the saddle points numerically over a given domain using a Sobol sequence for initial points. The
+Finds the saddle points numerically over a given domain using a Sobol sequence for initial points, and flowing them using gradient descent. The
 parameters for this function are listed below:
 
 | Parameter | Required | Type | Description |
@@ -52,12 +57,12 @@ parameters for this function are listed below:
 # Returns
 - A vector of `Saddle` structs containing the found saddle points.
 """
-function find_numerical_saddles(
+function find_saddles(
     derivative::Function,
     domain::Vector{ComplexDomain},
     params::Dict;
     check::Function=(t_1, t_2) -> !isequal(t_1, t_2)
-)
+)::Vector{Types.Saddle}
 
     point_count = params["point_count"]
     accuracy = params["accuracy"]
@@ -109,7 +114,7 @@ function check_contribution!(
     domain::ComplexDomain,
     params::Dict;
     log_errors::Bool=false
-)
+)::Nothing
     grid_resolution = params["grid_resolution"]
 
     contributing = if length(saddle_point.saddle) == 2
@@ -131,7 +136,42 @@ function check_contribution!(
     end
 
     saddle_point.contributing = contributing
+    return nothing
+end
 
+export get_intersection_number!
+"""
+    get_intersection_number(S, S_grad, S_hessian, saddle, params)
+
+Calculates the intersection number of the dual Lefschetz thimble with the real integral domain. 
+The parameters for this function are listed below:
+
+| Parameter | Required | Type | Description |
+| --------- | -------- | ---- | ----------- |
+| `grid_resolution` | Yes | `Int` | The number of points to use for discretizing the thimble paths. |
+| `flow_step_factor` | Yes | `Float64` | The step size factor for the flow equation. |
+| `max_iterations` | Yes | `Int` | The maximum number of iterations for the flow equation. |
+| `init_pertubation_radius` | Yes | `Float64` | The initial radius of the perturbation used to generate the necklace. |
+| `subdivision_threshold` | Yes | `Float64` | The threshold for subdividing the necklace to improve accuracy. |
+| `height_threshold` | Yes | `Float64` | The threshold for the cutoff of the thimble/dual thimble, in the imaginary magnitude of the action. |
+| `gradient_normalisation_threshold` | Yes | `Float64` | The threshold for normalising the gradient during gradient flow. |
+
+# Arguments
+- `S::Function`: The action function.
+- `S_grad::Function`: The first derivative (gradient) of the action function.
+- `S_hessian::Function`: The second derivative (Hessian) of the action function.
+- `saddle_point::Types.Saddle`: The saddle point struct to check.
+- `params::Dict`: Parameters for checking contribution.
+
+# Returns
+- `Nothing` (the `intersection_number` field of the `saddle` is modified in-place).
+"""
+function get_intersection_number!(S::Function, S_grad::Function, S_hessian::Function, saddle::Types.Saddle, params::Dict)
+    if length(saddle.saddle) == 1
+        return Methods1D.SaddlePoint.get_intersection_number!(S, S_grad, S_hessian, saddle, params)
+    end
+
+    return nothing
 end
 
 include("../wrappers/saddles.jl")

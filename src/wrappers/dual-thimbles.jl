@@ -21,7 +21,7 @@ function get_dual_thimble!(
     z::Num, S::Num,
     saddle_point::Saddle,
     params::Dict
-)
+)::Nothing
     S_grad = Symbolics.gradient(S, [z])[1]
     S_hessian = Symbolics.hessian(S, [z])[1, 1]
     native_S = build_function(S, z, expression=Val{false})
@@ -53,7 +53,7 @@ function get_dual_thimbles(
     z::Num, S::Num, params::Dict,
     domain::Vector{ComplexDomain},
     contributing::Bool
-)
+)::Vector{Saddle}
     S_grad = Symbolics.gradient(S, [z])[1]
     S_hessian = Symbolics.hessian(S, [z])[1, 1]
     native_S = build_function(S, z, expression=Val{false})
@@ -84,7 +84,7 @@ function get_dual_thimble_boundary!(
     z::Num, S::Num,
     saddle_point::Saddle,
     params::Dict
-)
+)::Nothing
     S_grad = Symbolics.gradient(S, [z])[1]
     S_hessian = Symbolics.hessian(S, [z])[1, 1]
     native_S = build_function(S, z, expression=Val{false})
@@ -117,7 +117,7 @@ function get_dual_thimble_boundaries(
     params::Dict,
     domain::Vector{ComplexDomain},
     contributing::Bool
-)
+)::Vector{Saddle}
     S_grad = Symbolics.gradient(S, [z])[1]
     S_hessian = Symbolics.hessian(S, [z])[1, 1]
     native_S = build_function(S, z, expression=Val{false})

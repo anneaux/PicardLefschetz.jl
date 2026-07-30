@@ -30,24 +30,25 @@ where S(z) is the action function which faster oscillation, and f(z) is the pref
 - `params::Dict`: Integration parameters
 
 # Returns
-- `Any`: Result of the integration.
+- `Vector{ComplexF64}`: Result of the integration.
 """
-function integrate_thimble(S::Function, boundary::Any, prefactor::Function, params::Dict)
+function integrate_thimble(S::Function, boundary::Any, prefactor::Function, params::Dict)::Vector{ComplexF64}
     if typeof(boundary) <: Tuple && length(boundary) == 2
         # 1D case
-        return Methods1D.Integration.integrate_thimble(S, boundary[1], boundary[2])
+        result = Methods1D.Integration.integrate_thimble(S, boundary[1], boundary[2]) # Returns a ComplexF64
+        return result isa Number ? ComplexF64[result] : Vector{ComplexF64}[result]
     elseif boundary isa Vector{Simplex{4,FlowPoint}}
         # 2D case
-        integral = 0
+        integral = zeros(ComplexF64, output_dim)
         for quad in boundary
-            integral += Methods2D.Quadrilateral.Integration.integrate_quadrilateral(S, quad, params["GL_order"], prefactor=prefactor)
+            integral .+= Methods2D.Quadrilateral.Integration.integrate_quadrilateral(S, quad, params["GL_order"], prefactor=prefactor)
         end
 
         return integral
     elseif boundary isa Vector{Simplex{3,FlowPoint}}
-        integral = 0
+        integral = zeros(ComplexF64, output_dim)
         for triangle in boundary
-            integral += Methods2D.Triangle.Integration.integrate_triangle(S, triangle, prefactor=prefactor, order=params["simplex_order"], dim=params["output_dim"])
+            integral .+= Methods2D.Triangle.Integration.integrate_triangle(S, triangle, prefactor=prefactor, order=params["simplex_order"], dim=params["output_dim"])
         end
 
         return integral
@@ -75,7 +76,7 @@ I = \\int^a_b f(z)e^{iS(z)}dz
 # Returns
 - `Nothing` (the `integral` field of the `saddle_point` is modified in-place).
 """
-function integrate_thimble!(S::Function, S_grad::Function, S_hessian::Function, saddle_point::Types.Saddle, prefactor::Function)
+function integrate_thimble!(S::Function, S_grad::Function, S_hessian::Function, saddle_point::Types.Saddle, prefactor::Function)::Nothing
     if length(saddle_point.saddle) == 1
         # 1D case
         integral = Methods1D.SaddlePoint.integrate_around_saddle_point(saddle_point, S, S_grad, S_hessian, prefactor=prefactor)
@@ -123,9 +124,15 @@ The parameters are listed as such:
 - `mode::String`: The integration mode, i.e. "fixed" or "adaptive".
 
 # Returns
-- The result of the total integration over the flowed contours.
+- `Tuple{Vector{ComplexF64}, Int}`: A tuple of the integral value, and the number of simplices used to evaluate the integral.
 """
-function integrate_thimbles(S::Function, S_grad::Function, domain::Vector{RealDomain}, deformation_parameters::Vector{<:Number}, prefactor::Function, params::Dict, mode::String)
+function integrate_thimbles(
+    S::Function, S_grad::Function,
+    domain::Vector{RealDomain},
+    deformation_parameters::Vector{<:Number},
+    prefactor::Function, params::Dict,
+    mode::String
+)::Tuple{Vector{ComplexF64},Int}
     flow_steps = params["flow_steps"]
     grid_spacing = params["grid_spacing"]
     gradient_normalisation_threshold = params["gradient_normalisation_threshold"]
@@ -140,7 +147,7 @@ function integrate_thimbles(S::Function, S_grad::Function, domain::Vector{RealDo
         # 2D case
         if mode == "fixed"
             init_points = Methods2D.Utils.make_init_points_rectangle(domain[1].min, domain[1].max, domain[2].min, domain[2].max)
-            return Methods2D.Quadrilateral.DownwardsFlow.integrate_flowed_quads_fixed_Nflow(S, S_grad,
+            integral, simplices = Methods2D.Quadrilateral.DownwardsFlow.integrate_flowed_quads_fixed_Nflow(S, S_grad,
                 init_points, prefactor=prefactor,
                 Nflow=flow_steps, Δinit=grid_spacing,
                 gradnthreshold=gradient_normalisation_threshold,
@@ -150,8 +157,9 @@ function integrate_thimbles(S::Function, S_grad::Function, domain::Vector{RealDo
                 maxNsimplices=max_grid_element_count,
                 print_message=verbosity
             )
+            return [ComplexF64(integral)], simplices
         else
-            return Methods2D.Quadrilateral.DownwardsFlow.integrate_flowed_quads(S, S_grad,
+            integral, simplices = Methods2D.Quadrilateral.DownwardsFlow.integrate_flowed_quads(S, S_grad,
                 domain[1].min, domain[1].max,
                 deformation_parameters[1],
                 deformation_parameters[2],
@@ -167,12 +175,14 @@ function integrate_thimbles(S::Function, S_grad::Function, domain::Vector{RealDo
                 integral_rel_error=integral_relative_error,
                 print_message=verbosity
             )
+
+            return [ComplexF64(integral)], simplices
         end
     elseif length(domain) == 1
         # 1D case
-        return Methods1D.Integration.integrate_thimble(S, S_grad,
+        integral, points, simplices = Methods1D.Integration.integrate_thimble(S, S_grad,
             domain[1].min, domain[1].max,
-            prefactor=prefactor, Δinit=grid_scaping,
+            prefactor=prefactor, Δinit=grid_spacing,
             flowstepfactor=flow_step_factor,
             gradnthreshold=gradient_normalisation_threshold,
             subdividethreshold=subdivision_threshold,
@@ -182,6 +192,9 @@ function integrate_thimbles(S::Function, S_grad::Function, domain::Vector{RealDo
             integral_rel_error=integral_relative_error,
             print_message=verbosity
         )
+
+        integral_vector = integral isa Number ? ComplexF64[integral] : Vector{ComplexF64}(integral)
+        return integral_vector, length(simplices)
     end
 end
 
@@ -190,12 +203,13 @@ export integrate_thimbles
 """
     integrate_thimbles(S, S_grad, S_hessian, domain, params, prefactor; check)
 
-Integrates around all contributing thimbles using the saddle point approximation method. The contributions from the individual contributing saddle points are summed up to give the total integral.
+Integrates around all contributing thimbles using the saddle point approximation method. The contributions from the individual contributing saddle points are returned individually.
 The parameters for algorithm are listed as below:
 
 | Parameter | Required | Type | Description |
 | --------- | -------- | ---- | ----------- |
-| `output_dim` | Yes | `Int` | The dimension of the integral. |
+| `point_count` | Yes | `Int` | The initial number of points in the Sobol sequence. |
+| `accuracy` | Yes | `Int` | The accuracy (number of digits) to which the saddle points should be found. |
 
 # Arguments
 - `S::Function`: The action function.
@@ -207,7 +221,7 @@ The parameters for algorithm are listed as below:
 - `check::Function`: A function used to check if two found saddle points are identical (default `!isequal`).
 
 # Returns
-- The total integral approximated using the saddle point method.
+- `Vector{Saddle}`: The saddle points, with their computed Saddle Point Method approximation integrals.
 """
 function integrate_thimbles(
     S::Function, S_grad::Function,
@@ -215,10 +229,18 @@ function integrate_thimbles(
     domain::Vector{ComplexDomain},
     params::Dict, prefactor::Function;
     check::Function=(t_1, t_2) -> !isequal(t_1, t_2)
-)
+)::Vector{Types.Saddle}
+
     if length(domain) == 1
         # 1D case
-        return Methods1D.SaddlePoint.integrate_SPM(S, S_grad, S_hessian, domain[1].min, domain[1].max, prefactor=prefactor)
+        saddles = Methods1D.SaddlePoint.integrate_SPM(S, S_grad, S_hessian, domain[1].min, domain[1].max, prefactor=prefactor)
+        for saddle in saddles
+            if !(saddle.integral isa Vector)
+                saddle.integral = saddle.integral isa Number ? ComplexF64[saddle.integral] : Vector{ComplexF64}(saddle.integral)
+            end
+        end
+
+        return saddles
     elseif length(domain) == 2
         return _integrate_SPM(S, S_grad, S_hessian, domain, params, prefactor, check=check)
     end
@@ -231,18 +253,16 @@ function _integrate_SPM(
     params::Dict, prefactor::Function;
     check::Function=(t_1, t_2) -> !isequal(t_1, t_2)
 )
-
-    output_dim = params["output_dim"]
-
-    saddles = find_numerical_saddles(S_grad, domain, params)
-    total_integral = zeros(ComplexF64, output_dim)
+    saddles = find_saddles(S_grad, domain, params)
+    contributing_saddles = Types.Saddle[]
     for saddle in saddles
         if check_contribution!(S, S_grad, S_hessian, saddle, domain[1], params)
-            total_integral += Methods2D.SaddlePoint.saddles_gaussian_contribution(S, S_hessian, saddle, prefactor=prefactor)
+            saddle.integral = Methods2D.SaddlePoint.saddles_gaussian_contribution(S, S_hessian, saddle, prefactor=prefactor)
+            push!(contributing_saddles, saddle)
         end
     end
 
-    return total_integral
+    return contributing_saddles
 end
 
 include("../wrappers/integration.jl")

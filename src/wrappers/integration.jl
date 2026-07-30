@@ -16,14 +16,14 @@ documentation, see `integrate_thimble`.
 - `params::Dict`: Integration parameters.
 
 # Returns
-- The result of the integration.
+- `Vector{ComplexF64}`: The result of the integration.
 """
 function integrate_thimble(
     z::Num, S::Num,
     boundary::Any,
     prefactor::Num,
     params::Dict
-)
+)::Vector{ComplexF64}
     native_S = build_function(S, z, expression=Val{false})
     native_prefactor = build_function(prefactor, z, expression=Val{false})
 
@@ -51,7 +51,7 @@ function integrate_thimble!(
     z::Num, S::Num,
     saddle_point::Types.Saddle,
     prefactor::Num
-)
+)::Nothing
     S_grad = Symbolics.gradient(S, [z])[1]
     S_hessian = Symbolics.hessian(S, [z])[1, 1]
     native_S = build_function(S, z, expression=Val{false})
@@ -80,7 +80,7 @@ This is a wrapper function for compatibility with the Symbolics.jl package. For 
 - `mode::String`: The integration mode.
 
 # Returns
-- The result of the total integration over the flowed contours.
+- `Tuple{Vector{ComplexF64}, Int}`: A tuple of the integral value, and the number of simplices used to evaluate the integral.
 """
 function integrate_thimbles(
     z::Num, S::Num,
@@ -88,7 +88,7 @@ function integrate_thimbles(
     deformation_parameters::Vector{<:Number},
     prefactor::Num,
     params::Dict, mode::String
-)
+)::Tuple{Vector{ComplexF64},Int}
     S_grad = Symbolics.gradient(S, [z])[1]
     native_S = build_function(S, z, expression=Val{false})
     native_grad = build_function(S_grad, z, expression=Val{false})
@@ -114,14 +114,14 @@ is a wrapper function for compatibility with the Symbolics.jl package. For compl
 - `check::Function`: A function used to check if two found saddle points are identical.
 
 # Returns
-- The total integral approximated using the saddle point method.
+- `Vector{Types.Saddle}`: The saddle points, with their computed Saddle Point Method approximation integrals.
 """
 function integrate_thimbles(
     z::Num, S::Num,
     domain::Vector{ComplexDomain},
     params::Dict, prefactor::Num;
     check::Function=(t_1, t_2) -> !isequal(t_1, t_2)
-)
+)::Vector{Types.Saddle}
     S_grad = Symbolics.gradient(S, [z])[1]
     S_hessian = Symbolics.hessian(S, [z])[1, 1]
     native_S = build_function(S, z, expression=Val{false})

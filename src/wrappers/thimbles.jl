@@ -23,7 +23,7 @@ function get_thimble!(
     saddle_point::Types.Saddle,
     params::Dict;
     mesh_type::String
-)
+)::Nothing
     S_grad = Symbolics.gradient(S, [z])[1]
     S_hessian = Symbolics.hessian(S, [z])[1, 1]
     native_S = build_function(S, z, expression=Val{false})
@@ -31,6 +31,37 @@ function get_thimble!(
     native_hessian = build_function(S_hessian, z, expression=Val{false})
 
     return get_thimble!(native_S, native_grad, native_hessian, saddle_point, params, mesh_type=mesh_type)
+end
+
+export get_thimbles
+"""
+    get_thimbles(z, S, params, domain; mesh_type)
+
+Calculates the Lefschetz thimbles for a given domain using symbolic expressions. This 
+is a wrapper function for compatibility with the Symbolics.jl package. For complete 
+documentation, see `get_thimbles`.
+
+# Arguments
+- `z::Num`: The symbolic variable.
+- `S::Num`: The symbolic action function.
+- `params::Dict`: The parameters for the thimble calculation.
+- `domain::Vector{RealDomain}`: The domain over which to calculate the thimbles.
+- `mesh_type::String`: The type of mesh to generate in 2D.
+
+# Returns
+- `Tuple{Vector{<:FlowPoint},Vector{<:Simplex}}`:The result of the flow (a set of segments in 1D, or a list of quadrilaterals/triangles in 2D).
+"""
+function get_thimbles(
+    z::Num, S::Num,
+    params::Dict,
+    domain::Vector{RealDomain};
+    mesh_type::String
+)::Tuple{Vector{<:FlowPoint},Vector{<:Simplex}}
+    S_grad = Symbolics.gradient(S, [z])[1]
+    native_S = build_function(S, z, expression=Val{false})
+    native_grad = build_function(S_grad, z, expression=Val{false})
+
+    return get_thimbles(native_S, native_grad, params, domain, mesh_type=mesh_type)
 end
 
 export get_thimbles
@@ -50,20 +81,21 @@ documentation, see `get_thimbles`.
 - `mesh_type::String`: The type of mesh to generate in 2D.
 
 # Returns
-- The result of the flow (a set of segments in 1D, or a list of quadrilaterals/triangles in 2D).
+- `Vector{Saddle}`: A vector of the saddle points, with their thimbles populated.
 """
-function get_thimbles(
-    z::Num, S::Num,
-    params::Dict,
-    domain::Vector{RealDomain},
-    contributing::Bool;
-    mesh_type::String
-)
+function get_thimbles(z::Num, S::Num,
+    params::Dict, domain::Vector{ComplexDomain},
+    contributing::Bool; mesh_type::String
+)::Vector{Saddle}
+
     S_grad = Symbolics.gradient(S, [z])[1]
+    S_hessian = Symbolics.hessian(S, [z])[1]
+
     native_S = build_function(S, z, expression=Val{false})
     native_grad = build_function(S_grad, z, expression=Val{false})
+    native_hessian = build_function(S_hessian, z, expression=Val{false})
 
-    return get_thimbles(native_S, native_grad, params, domain, contributing, mesh_type=mesh_type)
+    return get_thimbles(native_S, native_grad, native_hessian, params, domain, contributing, mesh_type=mesh_type)
 end
 
 export get_thimble_boundary!
@@ -89,7 +121,7 @@ function get_thimble_boundary!(
     saddle_point::Types.Saddle,
     params::Dict;
     mesh_type::String
-)
+)::Nothing
     S_grad = Symbolics.gradient(S, [z])[1]
     S_hessian = Symbolics.hessian(S, [z])[1, 1]
     native_S = build_function(S, z, expression=Val{false})
@@ -125,7 +157,7 @@ function get_thimble_boundaries(
     params::Dict, contributing::Bool;
     mesh_type::String,
     check::Function=(t_1, t_2) -> !isequal(t_1, t_2)
-)
+)::Vector{Saddle}
     S_grad = Symbolics.gradient(S, [z])[1]
     S_hessian = Symbolics.hessian(S, [z])[1, 1]
     native_S = build_function(S, z, expression=Val{false})

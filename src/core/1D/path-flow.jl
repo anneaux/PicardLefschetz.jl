@@ -144,16 +144,15 @@ end
 function find_intersection_point(thimble::Vector{FlowPoint})::FlowPoint
     prev_coord = thimble[end-1].coords[1]
     last_coord = thimble[end].coords[1]
-    m = (imag(last_coord.coords[1]) - imag(prev_coord.coords[1])) / (real(last_coord.coords[1]) - real(prev_coord.coords[1]))
-    c = imag(last_coord.coords[1]) - m * real(last_coord.coords[1])
+    m = (imag(last_coord) - imag(prev_coord)) / (real(last_coord) - real(prev_coord))
+    c = imag(last_coord) - m * real(last_coord)
 
     return FlowPoint(complex(-c / m, 0.0))
 end
 
 export flow_up
-function flow_up(S::Function, S_prime::Function, saddle_point::FlowPoint, δ::Float64, h_threshold::Float64, flow_steps::Int)::Tuple{Vector{Vector{FlowPoint}},Bool}
+function flow_up(S::Function, S_prime::Function, saddle_point::FlowPoint, δ::Float64, h_threshold::Float64, flow_steps::Int)::Tuple{Vector{FlowPoint},Bool}
     contributing = true
-    thimbles = Vector{Vector{FlowPoint}}()
     max_height = abs(h_threshold)
     directions = Vector{ComplexF64}()
     get_hessian_eigenvectors!(directions, saddle_point, S, :ascent)
@@ -177,8 +176,7 @@ function flow_up(S::Function, S_prime::Function, saddle_point::FlowPoint, δ::Fl
         points_up = flow_line(S, S_prime, pass_up, δ, 1.0, should_stop_infinity, flow_steps)
         points_down = flow_line(S, S_prime, pass_down, δ, 1.0, should_stop_infinity, flow_steps)
 
-        push!(thimbles, points_up)
-        push!(thimbles, points_down)
+        thimble = vcat(reverse(points_down), [saddle_point], points_up)
         contributing = true
     else
         # Determine forward (towards real line) and backward (away from real line) passes
@@ -205,17 +203,10 @@ function flow_up(S::Function, S_prime::Function, saddle_point::FlowPoint, δ::Fl
         should_stop_infinity_backwards(vertices) = -imag(S(vertices)) >= max_height
         points_backward = flow_line(S, S_prime, backward_pass, δ, 1.0, should_stop_infinity_backwards, flow_steps)
 
-        push!(thimbles, points_forward)
-        push!(thimbles, points_backward)
+        thimble = vcat(reverse(points_backward), [saddle_point], points_forward)
     end
 
-    if contributing && !on_real_line
-        for i in length(thimbles[1]):1
-            return thimbles, contributing, find_intersection_point(thimbles[1])
-        end
-    end
-
-    return thimbles, contributing
+    return thimble, contributing
 end
 
 
