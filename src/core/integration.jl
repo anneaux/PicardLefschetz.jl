@@ -145,16 +145,16 @@ function integrate_thimbles(
     prefactor::Function, params::Dict,
     mode::String
 )::Tuple{Vector{ComplexF64},Int}
-    flow_steps = params["flow_steps"]
-    grid_spacing = params["grid_spacing"]
-    gradient_normalisation_threshold = params["gradient_normalisation_threshold"]
-    flow_step_factor = params["flow_step_factor"]
-    subdivision_threshold = params["subdivision_threshold"]
-    height_threshold = params["height_threshold"]
+    flow_steps = Float64(params["flow_steps"])
+    grid_spacing = Float64(params["grid_spacing"])
+    gradient_normalisation_threshold = Float64(params["gradient_normalisation_threshold"])
+    flow_step_factor = Float64(params["flow_step_factor"])
+    subdivision_threshold = Float64(params["subdivision_threshold"])
+    height_threshold = Float64(params["height_threshold"])
     max_grid_element_count = params["max_grid_element_count"]
     verbosity = params["verbose"]
-    integral_accuracy = params["integral_accuracy"]
-    integral_relative_error = params["integral_relative_error"]
+    integral_accuracy = Float64(params["integral_accuracy"])
+    integral_relative_error = Float64(params["integral_relative_error"])
     if length(domain) == 2
         # 2D case
         if mode == "fixed"

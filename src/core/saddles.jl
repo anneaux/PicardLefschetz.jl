@@ -115,14 +115,14 @@ function check_contribution!(
     params::Dict;
     log_errors::Bool=false
 )::Nothing
-    grid_resolution = params["grid_resolution"]
+    grid_resolution = Float64(params["grid_resolution"])
 
     contributing = if length(saddle_point.saddle) == 2
-        flow_step_factor = params["flow_step_factor"]
+        flow_step_factor = Float64(params["flow_step_factor"])
         initial_necklace_size = params["initial_necklace_size"]
         max_iterations = params["max_iterations"]
-        init_perturbation_radius = params["init_perturbation_radius"]
-        subdivision_threshold = params["subdivision_threshold"]
+        init_perturbation_radius = Float64(params["init_perturbation_radius"])
+        subdivision_threshold = Float64(params["subdivision_threshold"])
 
         Methods2D.SaddlePoint.check_contribution(
             S, S_grad, S_hessian, saddle_point,

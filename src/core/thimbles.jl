@@ -45,10 +45,10 @@ function get_thimble!(
     saddle_point::Types.Saddle, params::Dict;
     mesh_type::String
 )::Nothing
-    init_perturbation_radius = params["init_perturbation_radius"]
+    init_perturbation_radius = Float64(params["init_perturbation_radius"])
     max_iterations = params["max_iterations"]
-    flow_step_factor = params["flow_step_factor"]
-    subdivision_threshold = params["subdivision_threshold"]
+    flow_step_factor = Float64(params["flow_step_factor"])
+    subdivision_threshold = Float64(params["subdivision_threshold"])
 
     thimble = if length(saddle_point.saddle) == 2
         initial_point_count = params["initial_point_count"]
@@ -66,8 +66,8 @@ function get_thimble!(
             )
             (points, quads)
         elseif mesh_type == "triangles"
-            gradient_normalisation_threshold = params["gradient_normalisation_threshold"]
-            height_threshold = params["height_threshold"]
+            gradient_normalisation_threshold = Float64(params["gradient_normalisation_threshold"])
+            height_threshold = Float64(params["height_threshold"])
             necklace, trianglesC, points_all, triangles = Methods2D.Triangle.Thimble.get_SD_thimble_triangles(
                 S, S_grad, S_hessian,
                 saddle_point,
@@ -84,8 +84,8 @@ function get_thimble!(
             throw(error("Mesh type not supported."))
         end
     elseif length(saddle_point.saddle) == 1
-        gradient_normalisation_threshold = params["gradient_normalisation_threshold"]
-        height_threshold = params["height_threshold"]
+        gradient_normalisation_threshold = Float64(params["gradient_normalisation_threshold"])
+        height_threshold = Float64(params["height_threshold"])
         points, simplices = Methods1D.PathFlow.get_thimble(
             S, S_grad, S_hessian, saddle_point,
             init_perturbation_radius=init_perturbation_radius,
@@ -143,10 +143,10 @@ function get_FLIC(
     params::Dict, domain::Vector{RealDomain}; mesh_type::String
 )
     max_iterations = params["max_iterations"]
-    gradient_normalisation_threshold = params["gradient_normalisation_threshold"]
-    subdivision_threshold = params["subdivision_threshold"]
-    height_threshold = params["height_threshold"]
-    flow_step_factor = params["flow_step_factor"]
+    gradient_normalisation_threshold = Float64(params["gradient_normalisation_threshold"])
+    subdivision_threshold = Float64(params["subdivision_threshold"])
+    height_threshold = Float64(params["height_threshold"])
+    flow_step_factor = Float64(params["flow_step_factor"])
     if length(domain) == 1
         return Methods1D.PathFlow.get_thimble(S, S_grad, domain[1].min, domain[1].max,
             Nflow=max_iterations, Δinit=subdivision_threshold,
@@ -154,7 +154,7 @@ function get_FLIC(
             gradnthreshold=gradient_normalisation_threshold, subdividethreshold=subdivision_threshold
         )
     elseif length(domain) == 2
-        grid_resolution = params["grid_resolution"]
+        grid_resolution = Float64(params["grid_resolution"])
         max_simplices = params["max_simplices"]
         simplex_tolerance = params["simplex_tolerance"]
 
@@ -289,12 +289,12 @@ function get_thimble_boundary!(
     saddle_point::Types.Saddle, params::Dict;
     mesh_type::String
 )::Nothing
-    init_perturbation_radius = params["init_perturbation_radius"]
+    init_perturbation_radius = Float64(params["init_perturbation_radius"])
     max_iterations = params["max_iterations"]
-    flow_step_factor = params["flow_step_factor"]
-    subdivision_threshold = params["subdivision_threshold"]
-    gradient_normalisation_threshold = params["gradient_normalisation_threshold"]
-    height_threshold = params["height_threshold"]
+    flow_step_factor = Float64(params["flow_step_factor"])
+    subdivision_threshold = Float64(params["subdivision_threshold"])
+    gradient_normalisation_threshold = Float64(params["gradient_normalisation_threshold"])
+    height_threshold = Float64(params["height_threshold"])
 
     boundary = if length(saddle_point.saddle) == 1
         points, simplices = Methods1D.PathFlow.get_thimble(S, S_grad, S_hessian,

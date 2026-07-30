@@ -39,16 +39,16 @@ The parameters for this function are listed in the table:
 - `Nothing`
 """
 function get_dual_thimble!(S::Function, S_grad::Function, S_hessian::Function, saddle_point::Saddle, params::Dict)::Nothing
-    flow_step_factor = params["flow_step_factor"]
+    flow_step_factor = Float64(params["flow_step_factor"])
     max_iterations = params["max_iterations"]
-    height_threshold = params["height_threshold"]
+    height_threshold = Float64(params["height_threshold"])
     if length(saddle_point) == 1
         thimbles, contributing = Methods1D.PathFlow.flow_up(S, S_grad, saddle_point.saddle, flow_step_factor, height_threshold, max_iterations)
         saddle_point.dual_thimble = thimbles
     elseif length(saddle_point) == 2
         init_point_count = params["init_point_count"]
-        init_perturbation_radius = params["init_perturbation_radius"]
-        subdivision_threshold = params["subdivision_threshold"]
+        init_perturbation_radius = Float64(params["init_perturbation_radius"])
+        subdivision_threshold = Float64(params["subdivision_threshold"])
 
         necklace, quadrangles, points = Methods2D.DualThimble.get_necklace(
             S, S_grad, S_hessian,
@@ -149,19 +149,17 @@ The parameters for this function are listed in the table:
 - `Nothing`
 """
 function get_dual_thimble_boundary!(S::Function, S_grad::Function, S_hessian::Function, saddle_point::Types.Saddle, params::Dict)::Nothing
+    flow_step_factor = Float64(params["flow_step_factor"])
+    max_iterations = params["max_iterations"]
     if length(saddle_point) == 1
         saddle = saddle_point.saddle
-        flow_step_factor = params["flow_step_factor"]
-        max_iterations = params["max_iterations"]
-        height_threshold = params["height_threshold"]
+        height_threshold = Float64(params["height_threshold"])
         thimbles, contributing = Methods1D.PathFlow.flow_up(S, S_grad, saddle, flow_step_factor, height_threshold, max_iterations)
         saddle_point.dual_thimble_boundary = thimbles
     elseif length(saddle_point) == 2
-        flow_step_factor = params["flow_step_factor"]
-        max_iterations = params["max_iterations"]
         init_point_count = params["init_point_count"]
-        init_perturbation_radius = params["init_perturbation_radius"]
-        subdivision_threshold = params["subdivision_threshold"]
+        init_perturbation_radius = Float64(params["init_perturbation_radius"])
+        subdivision_threshold = Float64(params["subdivision_threshold"])
         necklace, quadrangles, points = Methods2D.DualThimble.get_necklace_solver(
             S, S_grad, S_hessian,
             saddle_point[1], saddle_point[2],
