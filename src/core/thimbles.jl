@@ -53,7 +53,7 @@ function get_thimble!(
         subdivision_threshold = params["subdivision_threshold"]
         if mesh_type == "quad"
             accuracy = params["accuracy"]
-            necklace, quads = Methods2D.Quadrilateral.Thimble.get_SD_thimble_quads(
+            necklace, quads, points = Methods2D.Quadrilateral.Thimble.get_SD_thimble_quads(
                 S, S_grad, S_hessian,
                 saddle_point,
                 Ninit=initial_point_count,
@@ -67,7 +67,7 @@ function get_thimble!(
         elseif mesh_type == "triangles"
             gradient_normalisation_threshold = params["gradient_normalisation_threshold"]
             height_threshold = params["height_threshold"]
-            Methods2D.Triangle.Thimble.get_SD_thimble_triangles(
+            necklace, trianglesC, points_all, triangles = Methods2D.Triangle.Thimble.get_SD_thimble_triangles(
                 S, S_grad, S_hessian,
                 saddle_point,
                 Ninit=initial_point_count,
@@ -78,6 +78,7 @@ function get_thimble!(
                 gradn_threshold=gradient_normalisation_threshold,
                 h_threshold=height_threshold
             )
+            trianglesC
         else
             throw(error("Mesh type not supported."))
         end
@@ -88,7 +89,7 @@ function get_thimble!(
         subdivision_threshold = params["subdivision_threshold"]
         gradient_normalisation_threshold = params["gradient_normalisation_threshold"]
         height_threshold = params["height_threshold"]
-        Methods1D.PathFlow.get_thimble(
+        points, simplices = Methods1D.PathFlow.get_thimble(
             S, S_grad, S_hessian, saddle_point,
             init_perturbation_radius=init_perturbation_radius,
             max_iterations=max_iterations,
@@ -97,6 +98,8 @@ function get_thimble!(
             gradient_normalisation_threshold=gradient_normalisation_threshold,
             height_threshold=height_threshold
         )
+
+        [Simplex{2,FlowPoint}(points[simplex.vertices]) for simplex in simplices]
     end
 
     saddle_point.thimble = thimble
@@ -169,7 +172,7 @@ function get_thimbles(
         init_points = Methods2D.Utils.make_init_points_rectangle(domain[1].min, domain[1].max, domain[2].min, domain[2].max)
 
         if mesh_type == "quad"
-            return Methods2D.Quadrilateral.DownwardsFlow.get_flowed_quads(
+            quads, points, simplices = Methods2D.Quadrilateral.DownwardsFlow.get_flowed_quads(
                 S, S_grad, init_points,
                 Nflow=flow_steps,
                 Δinit=grid_resolution,
@@ -180,8 +183,10 @@ function get_thimbles(
                 maxNsimplices=max_simplices,
                 tolNsimplices=simplex_tolerance
             )
+
+            return points, simplices
         elseif mesh_type == "triangles"
-            return Methods2D.Triangles.DownwardsFlow.get_flowed_triangles(
+            triangles, points, simplices = Methods2D.Triangles.DownwardsFlow.get_flowed_triangles(
                 S, S_grad, init_points,
                 Nflow=flow_steps,
                 Δinit=grid_resolution,
@@ -192,6 +197,8 @@ function get_thimbles(
                 maxNsimplices=max_simplices,
                 tolNsimplices=simplex_tolerance
             )
+
+            return points, simplices
         else
             throw(error("Mesh type not supported."))
         end

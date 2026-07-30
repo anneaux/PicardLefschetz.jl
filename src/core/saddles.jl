@@ -111,7 +111,7 @@ function check_contribution!(
     S_grad::Function,
     S_hessian::Function,
     saddle_point::Types.Saddle,
-    domain::ComplexDomain,
+    domain::Union{ComplexDomain,Vector{ComplexDomain}},
     params::Dict;
     log_errors::Bool=false
 )::Nothing
@@ -121,14 +121,14 @@ function check_contribution!(
         flow_step_factor = params["flow_step_factor"]
         initial_necklace_size = params["initial_necklace_size"]
         max_iterations = params["max_iterations"]
-        init_pertubation_radius = params["init_pertubation_radius"]
+        init_perturbation_radius = params["init_perturbation_radius"]
         subdivision_threshold = params["subdividethreshold"]
 
         Methods2D.SaddlePoint.check_contribution(
             S, S_grad, S_hessian, saddle_point,
             Ntimes=grid_resolution, logerrors=log_errors,
             flowstepfactor=flow_step_factor, initial_necklace_size=initial_necklace_size,
-            max_iterations=max_iterations, init_pertubation_radius=init_pertubation_radius,
+            max_iterations=max_iterations, init_perturbation_radius=init_perturbation_radius,
             subdivision_threshold=subdivision_threshold
         )
     elseif length(saddle_point.saddle) == 1
@@ -151,7 +151,7 @@ The parameters for this function are listed below:
 | `grid_resolution` | Yes | `Int` | The number of points to use for discretizing the thimble paths. |
 | `flow_step_factor` | Yes | `Float64` | The step size factor for the flow equation. |
 | `max_iterations` | Yes | `Int` | The maximum number of iterations for the flow equation. |
-| `init_pertubation_radius` | Yes | `Float64` | The initial radius of the perturbation used to generate the necklace. |
+| `init_perturbation_radius` | Yes | `Float64` | The initial radius of the perturbation used to generate the necklace. |
 | `subdivision_threshold` | Yes | `Float64` | The threshold for subdividing the necklace to improve accuracy. |
 | `height_threshold` | Yes | `Float64` | The threshold for the cutoff of the thimble/dual thimble, in the imaginary magnitude of the action. |
 | `gradient_normalisation_threshold` | Yes | `Float64` | The threshold for normalising the gradient during gradient flow. |

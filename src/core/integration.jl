@@ -21,7 +21,7 @@ where S(z) is the action function which faster oscillation, and f(z) is the pref
 | --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GL_order`    | No      | `Int` | The order of the Gauss-Legendre quadrature. (This parameter is only required if the dimension is 2, and the simplex is a quadrangle). |
 | `simplex_order`      | No      | `Int` | The order of the simplex. (This parameter is only required if the dimension is 2, and the simplex is a triangle). |
-| `output_dim`    | No      | `Int` | The output dimension of the integral. (This parameter is only required if the dimension is 2, and the simplex is a triangle). |
+| `output_dim`    | No      | `Int` | The output dimension of the integral. (This parameter is only required if the dimension is 2). |
 
 # Arguments
 - `S::Function`: The action function.
@@ -34,11 +34,18 @@ where S(z) is the action function which faster oscillation, and f(z) is the pref
 """
 function integrate_thimble(S::Function, boundary::Any, prefactor::Function, params::Dict)::Vector{ComplexF64}
     if typeof(boundary) <: Tuple && length(boundary) == 2
-        # 1D case
+        # 1D case (Tuple)
         result = Methods1D.Integration.integrate_thimble(S, boundary[1], boundary[2]) # Returns a ComplexF64
+        return result isa Number ? ComplexF64[result] : Vector{ComplexF64}[result]
+    elseif boundary isa Vector{Simplex{2,FlowPoint}}
+        # 1D case (Vector of Simplex{2})
+        points = unique([v for s in boundary for v in s.vertices])
+        simplices = [Simplex{2,Int}([findfirst(==(s.vertices[1]), points), findfirst(==(s.vertices[2]), points)]) for s in boundary]
+        result = Methods1D.Integration.integrate_thimble(S, points, simplices)
         return result isa Number ? ComplexF64[result] : Vector{ComplexF64}[result]
     elseif boundary isa Vector{Simplex{4,FlowPoint}}
         # 2D case
+        output_dim = params["output_dim"]
         integral = zeros(ComplexF64, output_dim)
         for quad in boundary
             integral .+= Methods2D.Quadrilateral.Integration.integrate_quadrilateral(S, quad, params["GL_order"], prefactor=prefactor)
@@ -46,6 +53,7 @@ function integrate_thimble(S::Function, boundary::Any, prefactor::Function, para
 
         return integral
     elseif boundary isa Vector{Simplex{3,FlowPoint}}
+        output_dim = params["output_dim"]
         integral = zeros(ComplexF64, output_dim)
         for triangle in boundary
             integral .+= Methods2D.Triangle.Integration.integrate_triangle(S, triangle, prefactor=prefactor, order=params["simplex_order"], dim=params["output_dim"])
@@ -256,8 +264,12 @@ function _integrate_SPM(
     saddles = find_saddles(S_grad, domain, params)
     contributing_saddles = Types.Saddle[]
     for saddle in saddles
-        if check_contribution!(S, S_grad, S_hessian, saddle, domain[1], params)
+        check_contribution!(S, S_grad, S_hessian, saddle, domain[1], params)
+        if saddle.contributing
             saddle.integral = Methods2D.SaddlePoint.saddles_gaussian_contribution(S, S_hessian, saddle, prefactor=prefactor)
+            if !(saddle.integral isa Vector)
+                saddle.integral = saddle.integral isa Number ? ComplexF64[saddle.integral] : Vector{ComplexF64}(saddle.integral)
+            end
             push!(contributing_saddles, saddle)
         end
     end

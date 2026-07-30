@@ -7,6 +7,10 @@ include("saddles-contributing.jl")
 include("saddles-generic.jl")
 
 function hessian_root(h::AbstractArray)
+    if size(h) == (2, 2)
+        determinant = h[1, 1] * h[2, 2] - h[1, 2] * h[2, 1]
+        return im * 2 * π / sqrt(determinant)
+    end
     ### I should definitely work this out properly and also make sure this actually gets rid of the branch cuts...
 
     #     h = f_hessian(ti, tr)
