@@ -62,9 +62,9 @@ using PicardLefschetz.Saddle
         end
     end
 
-    @testset "1D get_thimbles" begin
+    @testset "1D get_FLIC" begin
         # Passing real domains for 1D as per Thimbles method signature
-        thimbles = get_thimbles(phase_1d(params_1d), phase_drv_1d(params_1d), saddle_params_1d, domain_1d, mesh_type="none")
+        thimbles = get_FLIC(phase_1d(params_1d), phase_drv_1d(params_1d), saddle_params_1d, domain_1d, mesh_type="none")
         @test thimbles !== nothing
         @test thimbles isa Tuple{Vector{<:FlowPoint},Vector{<:Simplex}}
     end
@@ -102,8 +102,8 @@ using PicardLefschetz.Saddle
         end
     end
 
-    @testset "2D get_thimbles (quad)" begin
-        thimbles = get_thimbles(phase_2d(params_2d), phase_drv_2d(params_2d), saddle_params_2d, domain_2d, mesh_type="quad")
+    @testset "2D get_FLIC (quad)" begin
+        thimbles = get_FLIC(phase_2d(params_2d), phase_drv_2d(params_2d), saddle_params_2d, domain_2d, mesh_type="quad")
         @test thimbles !== nothing
         @test thimbles isa Tuple{Vector{<:FlowPoint},Vector{<:Simplex}}
     end
