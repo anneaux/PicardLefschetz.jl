@@ -38,6 +38,38 @@ function unpack_params(p::AbstractVector{<:Real})
     return α_init, α_subdiv, α_grad_scale, α_grad, Int(round(Nflow)), h_threshold
 end
 
+# Resolve parameters from a preset symbol, parameter vector, or existing params struct/NamedTuple.
+function resolve_heuristics(preset_or_params=PRESET_ACCURATE; kwargs...)
+    base_params = if preset_or_params isa Symbol
+        p_vec = get_preset(preset_or_params)
+        α_init, α_subdiv, α_grad_scale, α_grad, Nflow, h_threshold = unpack_params(p_vec)
+        (
+            α_init=α_init,
+            α_subdiv=α_subdiv,
+            α_grad_scale=α_grad_scale,
+            α_grad=α_grad,
+            Nflow=Nflow,
+            h_threshold=h_threshold
+        )
+    elseif preset_or_params isa AbstractVector{<:Real}
+        α_init, α_subdiv, α_grad_scale, α_grad, Nflow, h_threshold = unpack_params(preset_or_params)
+        (
+            α_init=α_init,
+            α_subdiv=α_subdiv,
+            α_grad_scale=α_grad_scale,
+            α_grad=α_grad,
+            Nflow=Nflow,
+            h_threshold=h_threshold
+        )
+    elseif preset_or_params isa NamedTuple
+        preset_or_params
+    else
+        throw(ArgumentError("Unsupported preset or params type: $(typeof(preset_or_params))"))
+    end
+
+    return isempty(kwargs) ? base_params : merge(base_params, NamedTuple(kwargs))
+end
+
 # Evaluate S on scalar or vector arguments.
 _eval_S(S::Function, p::Number) = S(p)
 _eval_S(S::Function, p::AbstractVector) = S(p...)
@@ -148,11 +180,16 @@ function get_pl_heuristics_1d(
     tmin::Real=-10.0,
     tmax::Real=10.0,
     Cball=2π,
-    r_max=10.0
+    r_max=10.0,
+    kwargs...
 )
-    p_vec = p isa Symbol ? get_preset(p) : p
-    α_init, α_subdiv, α_grad_scale, α_grad, Nflow, h_threshold =
-        unpack_params(p_vec)
+    resolved = resolve_heuristics(p; kwargs...)
+    α_init = resolved.α_init
+    α_subdiv = resolved.α_subdiv
+    α_grad_scale = resolved.α_grad_scale
+    α_grad = resolved.α_grad
+    Nflow = resolved.Nflow
+    h_threshold = resolved.h_threshold
 
     ξ_eff = if ξ !== nothing
         ξ
@@ -175,7 +212,7 @@ function get_pl_heuristics_1d(
         for (direction, _) in directional_radii
     )
 
-    return (
+    computed = (
         Δinit=Δinit,
         subdividethreshold=subdividethreshold,
         grad_scale_radius=grad_scale_radius,
@@ -186,6 +223,7 @@ function get_pl_heuristics_1d(
         Nflow=Nflow,
         flowstepfactor=0.015
     )
+    return isempty(kwargs) ? computed : merge(computed, NamedTuple(kwargs))
 end
 
 # Scale heuristics from the oscillation radius.
@@ -197,11 +235,16 @@ function get_pl_heuristics_2d(
     ω::Float64,
     p=PRESET_ACCURATE;
     Cball=2π,
-    r_max=50.0
+    r_max=50.0,
+    kwargs...
 )
-    p_vec = p isa Symbol ? get_preset(p) : p
-    α_init, α_subdiv, α_grad_scale, α_grad, Nflow, h_threshold =
-        unpack_params(p_vec)
+    resolved = resolve_heuristics(p; kwargs...)
+    α_init = resolved.α_init
+    α_subdiv = resolved.α_subdiv
+    α_grad_scale = resolved.α_grad_scale
+    α_grad = resolved.α_grad
+    Nflow = resolved.Nflow
+    h_threshold = resolved.h_threshold
 
     directional_radii =
         get_directional_r_osc(
@@ -226,7 +269,7 @@ function get_pl_heuristics_2d(
 
     Ninit = max(4, Int(round(2π * eigvecfactorinit / flowstepfactor)))
 
-    return (
+    computed = (
         eigvecfactorinit=eigvecfactorinit,
         subdividethreshold=subdividethreshold,
         flowstepfactor=flowstepfactor,
@@ -237,4 +280,5 @@ function get_pl_heuristics_2d(
         Nflow=Nflow,
         Ninit=Ninit
     )
+    return isempty(kwargs) ? computed : merge(computed, NamedTuple(kwargs))
 end

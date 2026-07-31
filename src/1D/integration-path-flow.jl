@@ -135,20 +135,24 @@ Core numerical solver deforming the integration path under downward flow from [t
 """
 function get_thimble(S::Function, drv::Function, tmin::Real, tmax::Real;
     preset::Symbol=:accurate,
+    params=nothing,
     omega::Float64=1.0,
     xi::Union{ComplexF64,Nothing}=nothing,
     keep_connected::Bool=false,
     promote_bridges::Bool=false,
     kwargs...
 )
-    defaults = get_pl_heuristics_1d(S, drv, xi, omega, preset; tmin=tmin, tmax=tmax)
-    merged = merge(defaults, kwargs)
-    Nflow = merged.Nflow
-    Δinit = merged.Δinit
-    flowstepfactor = merged.flowstepfactor
-    h_threshold = merged.h_threshold
-    gradnthreshold = merged.gradnthreshold
-    subdividethreshold = merged.subdividethreshold
+    resolved_params = if params !== nothing
+        resolve_heuristics(params; kwargs...)
+    else
+        get_pl_heuristics_1d(S, drv, xi, omega, preset; tmin=tmin, tmax=tmax, kwargs...)
+    end
+    Nflow = resolved_params.Nflow
+    Δinit = resolved_params.Δinit
+    flowstepfactor = resolved_params.flowstepfactor
+    h_threshold = resolved_params.h_threshold
+    gradnthreshold = resolved_params.gradnthreshold
+    subdividethreshold = resolved_params.subdividethreshold
 
     (points, simplices) = initialise(Float64(tmin), Float64(tmax), Δinit)
 

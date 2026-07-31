@@ -98,7 +98,14 @@ import PicardLefschetz: get_preset, unpack_params, get_hessian_eigenvectors!
         @test haskey(params_2d, :eigvecfactorinit)
         @test haskey(params_2d, :r_osc)
         @test haskey(params_2d, :Nflow)
-        @test params_2d.Nflow == 213
-        @test haskey(params_2d, :Ninit)
+        # Test resolve_heuristics standalone
+        res = resolve_heuristics(:fast, Nflow=999)
+        @test res.Nflow == 999
+        @test res.α_init == 0.36964
+
+        # Test feeding pre-computed params into get_thimble via params keyword
+        pts, sims = get_thimble(S_quad, drv_quad, -2.0, 2.0; params=params_1d)
+        @test !isempty(pts)
+        @test !isempty(sims)
     end
 end

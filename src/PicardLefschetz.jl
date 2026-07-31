@@ -27,7 +27,7 @@ include("1D/line-intersection.jl")
 include("1D/saddle-point-method.jl")
 include("1D/visualization.jl")
 
-export square, dissect_inactive_segments, has_adjacent_inactive_segments, get_pl_heuristics_1d, get_pl_heuristics_2d, run_and_plot, record_thimble_flow_animation, plot_thimble_3d, get_thimble, integrate_thimble, get_directional_r_osc, ballradius
+export square, dissect_inactive_segments, has_adjacent_inactive_segments, get_pl_heuristics_1d, get_pl_heuristics_2d, resolve_heuristics, run_and_plot, record_thimble_flow_animation, plot_thimble_3d, get_thimble, integrate_thimble, get_directional_r_osc, ballradius
 
 # Write your package code here.
 function hello() 
