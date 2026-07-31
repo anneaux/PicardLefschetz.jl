@@ -1,5 +1,6 @@
 using PicardLefschetz
 using Documenter
+using GLMakie
 
 DocMeta.setdocmeta!(PicardLefschetz, :DocTestSetup, :(using PicardLefschetz); recursive=true)
 
