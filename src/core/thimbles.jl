@@ -18,7 +18,7 @@ Gradient descent is done by solving the ODE along a time parameter \$ \\tau \$ t
 
 The parameters for this function are listed in the table:
 
-| Parameter             | Required | Type | Description                                                                                                                                   |
+| Parameter             | Always Required | Type | Description                                                                                                                                   |
 | --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `flow_step_factor`    | Yes      | `Real` | The step size of the gradient descent solver.                                                                                                  |
 | `max_iterations`      | Yes      | `Int` | The maximum number of iterations to perform using the solver.                                                                                 |
@@ -117,7 +117,7 @@ The total contour returned is the flowed integration domain forming the thimbles
 
 The parameters for this function are listed in the table:
 
-| Parameter             | Required | Type | Description                                                                                                                                   |
+| Parameter             | Always Required | Type | Description                                                                                                                                   |
 | --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `flow_step_factor`    | Yes      | `Real` | The step size of the gradient descent solver.                                                                                                  |
 | `height_threshold`    | Yes      | `Real` | The maximal magnitude of the imaginary component during gradient descent.        |
@@ -127,6 +127,8 @@ The parameters for this function are listed in the table:
 | `grid_resolution` | No | `Real` | The resolution of the initial grid in 2D. |
 | `max_simplices` | No | `Int` | The maximum number of simplices (quads or triangles) to allow during the flow in 2D. |
 | `simplex_tolerance` | No | `Int` | The tolerance for the number of simplices during the flow in 2D. |
+| `promote_bridges` | No | `Bool` | Whether to promote the bridges between thimbles to active thimbles. (This parmaeter |
+| `keep_connected` | No | `Bool` | Whether to keep the thimbles connected. |
 
 # Arguments
 - `S::Function`: The action function. 
@@ -148,10 +150,13 @@ function get_FLIC(
     height_threshold = Float64(params["height_threshold"])
     flow_step_factor = Float64(params["flow_step_factor"])
     if length(domain) == 1
+        keep_connected = params["keep_connected"]
+        promote_bridges = params["promote_bridges"]
         return Methods1D.PathFlow.get_thimble(S, S_grad, domain[1].min, domain[1].max,
             Nflow=max_iterations, Δinit=subdivision_threshold,
             flowstepfactor=flow_step_factor, h_threshold=height_threshold,
-            gradnthreshold=gradient_normalisation_threshold, subdividethreshold=subdivision_threshold
+            gradnthreshold=gradient_normalisation_threshold, subdividethreshold=subdivision_threshold,
+            promote_bridges=promote_bridges, keep_connected=keep_connected
         )
     elseif length(domain) == 2
         grid_resolution = Float64(params["grid_resolution"])
@@ -209,7 +214,7 @@ Gradient descent is done by solving the ODE along a time parameter \$ \\tau \$ t
 
 The parameters for this function are listed in the table:
 
-| Parameter             | Required | Type | Description                                                                                                                                   |
+| Parameter             | Always Required | Type | Description                                                                                                                                   |
 | --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `flow_step_factor`    | Yes      | `Real` | The step size of the gradient descent solver.                                                                                                  |
 | `max_iterations`      | Yes      | `Int` | The maximum number of iterations to perform using the solver.                                                                                 |
@@ -262,7 +267,7 @@ Gradient descent is done by solving the ODE along a time parameter \$ \\tau \$ t
 
 The parameters for this function are listed in the table:
 
-| Parameter             | Required | Type | Description                                                                                                                                   |
+| Parameter             | AlwaysRequired | Type | Description                                                                                                                                   |
 | --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `flow_step_factor`    | Yes      | `Real` | The step size of the gradient descent solver.                                                                                                  |
 | `max_iterations`      | Yes      | `Int` | The maximum number of iterations to perform using the solver.                                                                                 |
@@ -365,7 +370,7 @@ Gradient descent is done by solving the ODE along a time parameter \$ \\tau \$ t
 
 The parameters for this function are listed in the table:
 
-| Parameter             | Required | Type | Description                                                                                                                                   |
+| Parameter             | Always Required | Type | Description                                                                                                                                   |
 | --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `flow_step_factor`    | Yes      | `Real` | The step size of the gradient descent solver.                                                                                                  |
 | `max_iterations`      | Yes      | `Int` | The maximum number of iterations to perform using the solver.                                                                                 |

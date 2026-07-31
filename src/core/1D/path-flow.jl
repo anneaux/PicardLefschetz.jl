@@ -241,29 +241,135 @@ function get_thimble(S::Function, drv::Function, tmin::Float64, tmax::Float64;
     flowstepfactor::Real=2.,
     h_threshold::Real=-300.,
     gradnthreshold::Real=1.,
-    subdividethreshold::Real=4.
+    subdividethreshold::Real=4.,
+    promote_bridges::Bool=false,
+    keep_connected::Bool=false
 )
 
-    (points, simplices) = initialise(real(tmin), real(tmax), Δinit)
+    (points, simplices) = initialise(Float64(tmin), Float64(tmax), Δinit)
 
     for i_flow in 1:Nflow
         flow_down!((S, drv), points, simplices,
             threshold=gradnthreshold, δ=flowstepfactor, h_threshold=h_threshold)
-        subdivide_rep(points, simplices, subdividethreshold)
+        if keep_connected
+            n_old = length(simplices)
+            subdivide_keep(points, simplices, subdividethreshold)
+            while length(simplices) != n_old
+                n_old = length(simplices)
+                subdivide_keep(points, simplices, subdividethreshold)
+            end
+        else
+            subdivide_rep(points, simplices, subdividethreshold)
+        end
     end
 
-    filter!(sim -> sim.active, simplices)
+    if keep_connected
+        simplify_inactive_segments!(points, simplices; promote_bridges=promote_bridges)
+    else
+        filter!(sim -> sim.active, simplices)
+    end
 
     return points, simplices
 end
 
-# dissect_inactive_segments
-# has_adjacent_inactive_segments
-# simplify_inactive_segments
+function dissect_inactive_segments(points, simplices)
+    inactive_linesegs = filter(sim -> !sim.active, simplices)
+
+    inactive_groups = Vector()
+    visited = falses(length(inactive_linesegs))
+
+    function dfs!(inactive_linesegs, visited, i_start)
+        stack = [i_start]
+        trace = Int[]
+        while !isempty(stack)
+            v = pop!(stack)
+
+            if !visited[v]
+                visited[v] = true
+                push!(trace, v)
+
+                # Check for adjacent segments sharing either vertex in any orientation
+                v1, v2 = inactive_linesegs[v].coord[1], inactive_linesegs[v].coord[2]
+                next_adj = findall(ls -> ls.coord[1] == v2 || ls.coord[2] == v2 || ls.coord[1] == v1 || ls.coord[2] == v1, inactive_linesegs)
+                append!(stack, next_adj)
+            end
+        end
+        return trace
+    end
+
+    for i in 1:length(inactive_linesegs)
+        if !visited[i]
+            trace = dfs!(inactive_linesegs, visited, i)
+            push!(inactive_groups, inactive_linesegs[trace])
+        end
+    end
+
+    return inactive_groups
+end
+
+function has_adjacent_inactive_segments(points, simplices)
+    inactive_components = dissect_inactive_segments(points, simplices)
+    return !isempty(inactive_components)
+end
+
+function simplify_inactive_segments!(points, simplices; promote_bridges::Bool=false)
+    # 1. Use dissect_thimbles to identify active thimble components
+    active_components = dissect_thimbles(points, simplices)
+
+    # 2. Build a map of vertex index -> active component ID
+    point_to_comp = Dict{Int,Int}()
+    for (comp_idx, comp_segs) in enumerate(active_components)
+        for seg in comp_segs
+            for v in seg.coord
+                point_to_comp[v] = comp_idx
+            end
+        end
+    end
+
+    # 3. Find connected components of inactive segments
+    inactive_components = dissect_inactive_segments(points, simplices)
+
+    # 4. Remove all inactive segments from the simplices vector completely
+    filter!(s -> s.active, simplices)
+
+    # 5. Only add/keep the single simplified bridge for components that connect two different active thimbles
+    for comp in inactive_components
+        # Count the frequency of each vertex in the component
+        vertex_counts = Dict{Int,Int}()
+        for sim in comp
+            for v in sim.coord
+                vertex_counts[v] = get(vertex_counts, v, 0) + 1
+            end
+        end
+
+        # Endpoints of the chain will appear exactly once
+        endpoints = [v for (v, count) in vertex_counts if count == 1]
+
+        if length(endpoints) == 2
+            ep1, ep2 = endpoints[1], endpoints[2]
+
+            # Look up which active thimbles these endpoints connect to
+            c1 = get(point_to_comp, ep1, 0)
+            c2 = get(point_to_comp, ep2, 0)
+
+            # Only insert the single bridge if they connect two DIFFERENT active components
+            if c1 != 0 && c2 != 0 && c1 != c2
+                new_sim = Index([ep1, ep2])
+                if promote_bridges
+                    new_sim.active = true
+                    points[ep1].active = true
+                    points[ep2].active = true
+                else
+                    new_sim.active = false
+                end
+                push!(simplices, new_sim)
+            end
+        end
+    end
+    return simplices
+end
 
 
-
-# This should not be touched.
 export get_thimble
 function get_thimble(S::Function, S_grad::Function, S_hessian::Function,
     saddle_point::Saddle; init_perturbation_radius::Float64,
