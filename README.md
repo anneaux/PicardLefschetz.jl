@@ -17,10 +17,10 @@ So far, the methods are implemented for one ($n=1$) and two-dimensional ($n=2$) 
 Please find a detailed explanation of the underlying theory as well as their implementation and a set of examples in the documentation. 
 In short, the two main approaches are: 
 ### Approach 1: The downward flow
-Flowing the integration domain into the complex domain, towards a steepest-descent manifold. This manifold is saved as a set of simplices (line segments for !D, surface elements in 2D), on which the integral can be evaluated using a quadrature of choice. 
+Flowing the integration domain into the complex domain, towards a steepest-descent manifold. This manifold is saved as a set of simplices (line segments for 1D, surface elements in 2D), on which the integral can be evaluated using a quadrature of choice. 
 
 ### Approach 2: Saddle-point based methods
-Finding points of the exponentiated phase function where the first derivative vanishes, i.e., $ \nabla \phi(\mathbf{x}) = 0$, and summing over relevant saddle points' contribution. 
+Finding points of the exponentiated phase function where the first derivative vanishes, i.e., $\nabla \phi(\mathbf{x}) = 0$, and summing over relevant saddle points' contribution. 
 To decide whether a saddle point is relevant we have to determine whether it's dual thimble intersects the original integration domain (the real domain).
 A relevant saddles' contribution can then be calculated exactly as a quadrature along its thimble, or approximated by a Gaussian integral. The latter is known as the standard "saddle-point approximation".
 
