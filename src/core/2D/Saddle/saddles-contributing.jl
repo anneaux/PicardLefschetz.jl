@@ -100,7 +100,7 @@ end
 function check_contribution(necklace::Vector{Simplex{2,FlowPoint}},
     f::Function,
     saddle_point::Saddle, check::Function
-    ; Ntimes=100, kwargs...)
+    ; kwargs...)
 
     flowstepfactor = try
         kwargs[:flowstepfactor]
@@ -108,7 +108,7 @@ function check_contribution(necklace::Vector{Simplex{2,FlowPoint}},
         0.8
     end
 
-    intersection_point = find_intersection_for_contribution(necklace, saddle_point; Ntimes=Ntimes, flowstepfactor=flowstepfactor)
+    intersection_point = find_intersection_for_contribution(necklace, saddle_point; flowstepfactor=flowstepfactor)
 
     H_at_hp = imag(f([necklace[idx].vertices[1].coords[1], necklace[idx].vertices[1].coords[2]]))
     H_at_sp = imag(f([ti, tr]))
@@ -117,7 +117,7 @@ function check_contribution(necklace::Vector{Simplex{2,FlowPoint}},
     end
 end
 
-function find_intersection_for_contribution(necklace::Vector{Simplex{2,FlowPoint}}, saddle_point::Saddle; Ntimes=100, flowstepfactor::Real)
+function find_intersection_for_contribution(necklace::Vector{Simplex{2,FlowPoint}}, saddle_point::Saddle; flowstepfactor::Real)
     ti = saddle_point[1]
     tr = saddle_point[2]
 
@@ -134,7 +134,7 @@ function check_contribution(necklace::Nothing,
     f_hessian::Function,
     saddle_point::Saddle,
     check::Function
-    ; Ntimes=100, kwargs...)
+    ; kwargs...)
     return false
 end
 
@@ -142,7 +142,7 @@ function check_contribution(necklace::Nothing,
     f::Function,
     saddle_point::Saddle,
     check::Function
-    ; Ntimes=100, kwargs...)
+    ; kwargs...)
     return false
 end
 
@@ -153,7 +153,7 @@ function check_contribution(
     f_hessian::Function,
     saddle_point::Saddle,
     check::Function,
-    ; Ntimes::Int64=100, logerrors::Bool=false, kwargs...)
+    ; logerrors::Bool=false, kwargs...)
     # Ncounter = 600, logerrors::Bool=false)
 
     ti = saddle_point[1]
@@ -162,7 +162,7 @@ function check_contribution(
     if real(f([ti, tr])) < 0
         necklace, _, points = get_necklace(f, f_grad, f_hessian, saddle_point; logerrors=logerrors, kwargs...)
         mesh = necklace === nothing ? nothing : convert_to_mesh((points, necklace))
-        check_contribution(mesh, f, saddle_point, check, Ntimes=Ntimes)
+        check_contribution(mesh, f, saddle_point, check)
     else
         @debug "it doesn't contribute! (0)"
         return false

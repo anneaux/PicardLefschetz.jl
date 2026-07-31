@@ -6,7 +6,7 @@ DocMeta.setdocmeta!(PicardLefschetz, :DocTestSetup, :(using PicardLefschetz); re
 
 makedocs(;
     modules=[PicardLefschetz],
-    authors="Anne Weber <anne.weber@mailbox.org> and contributors",
+    authors="Anne Weber <anne.weber@mailbox.org>, Luvai Cutlerywala, Najma Abdullahi, and contributors",
     sitename="PicardLefschetz.jl",
     format=Documenter.HTML(;
         canonical="https://anneaux.github.io/PicardLefschetz.jl",
@@ -15,11 +15,15 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "Examples" =>"examples.md"
+        "Examples" => "examples.md",
+        "Picard Lefschetz Theory" => "theory.md",
+        "Saddle-Point Based Approach" => "saddle-point-approach.md",
+        "Downward Flow" => "downward-flow.md"
     ],
+    warnonly=[:missing_docs]
 )
 
 deploydocs(;
     repo="github.com/anneaux/PicardLefschetz.jl",
-    devbranch="main",
+    devbranch="master",
 )
