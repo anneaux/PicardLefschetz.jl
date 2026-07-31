@@ -72,8 +72,8 @@ export integrate_SPM_thimble!
 """
     integrate_SPM_thimble!(S, S_grad, S_hessian, saddle_point, prefactor)
 
-Integrates the action function around a single saddle point by using steepest descent without a precomputed boundary, continuing until the integral converges to the required precision 
-or the number of flow steps is exceeded. This package is responsible for solving integrals of the form
+Integrates the action function around a single saddle point by using the SPM approximation to the thimble at the saddle point.
+This package is responsible for solving integrals of the form
 \$\$
 I = \\int^a_b f(z)e^{iS(z)}dz
 \$\$
