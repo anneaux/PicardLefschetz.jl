@@ -18,7 +18,7 @@ by solving the ODE along a time parameter \$ \\tau \$ to find the dual thimble. 
 
 The parameters for this function are listed in the table:
 
-| Parameter             | Required | Type | Description                                                                                                                                   |
+| Parameter             | Always Required | Type | Description                                                                                                                                   |
 | --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `flow_step_factor`    | Yes      | `Real` | The step size of the gradient ascent solver.                                                                                                  |
 | `max_iterations`      | Yes      | `Int` | The maximum number of iterations to perform using the solver.                                                                                 |
@@ -78,7 +78,7 @@ by solving the ODE along a time parameter \$ \\tau \$ to find the dual thimble. 
 
 The parameters for this function are listed in the table:
 
-| Parameter             | Required | Type | Description                                                                                                                                   |
+| Parameter             | Always Required | Type | Description                                                                                                                                   |
 | --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `flow_step_factor`    | Yes      | `Real` | The step size of the gradient ascent solver.                                                                                                  |
 | `max_iterations`      | Yes      | `Int` | The maximum number of iterations to perform using the solver.                                                                                 |
@@ -128,7 +128,7 @@ by solving the ODE along a time parameter \$ \\tau \$ to find the dual thimble b
 
 The parameters for this function are listed in the table:
 
-| Parameter             | Required | Type | Description                                                                                                                                   |
+| Parameter             | Always Required | Type | Description                                                                                                                                   |
 | --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `flow_step_factor`    | Yes      | `Real` | The step size of the gradient ascent solver.                                                                                                  |
 | `max_iterations`      | Yes      | `Int` | The maximum number of iterations to perform using the solver.                                                                                 |
@@ -189,7 +189,7 @@ by solving the ODE along a time parameter \$ \\tau \$ to find the dual thimble b
 
 The parameters for this function are listed in the table:
 
-| Parameter             | Required | Type | Description                                                                                                                                   |
+| Parameter             | Always Required | Type | Description                                                                                                                                   |
 | --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `flow_step_factor`    | Yes      | `Real` | The step size of the gradient ascent solver.                                                                                                  |
 | `max_iterations`      | Yes      | `Int` | The maximum number of iterations to perform using the solver.                                                                                 |

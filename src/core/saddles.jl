@@ -151,7 +151,7 @@ export get_intersection_number!
 Calculates the intersection number of the dual Lefschetz thimble with the real integral domain. 
 The parameters for this function are listed below:
 
-| Parameter | Required | Type | Description |
+| Parameter | Always Required | Type | Description |
 | --------- | -------- | ---- | ----------- |
 | `grid_resolution` | Yes | `Int` | The number of points to use for discretizing the thimble paths. |
 | `flow_step_factor` | Yes | `Real` | The step size factor for the flow equation. |

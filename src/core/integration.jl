@@ -17,7 +17,7 @@ I = \\int^a_b f(z)e^{iS(z)}dz
 \$\$
 
 where S(z) is the action function which faster oscillation, and f(z) is the prefactor function with small oscillation. The parameters for this function are listed as such:
-| Parameter             | Required | Type | Description                                                                                                                                   |
+| Parameter             | Always Required | Type | Description                                                                                                                                   |
 | --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GL_order`    | No      | `Int` | The order of the Gauss-Legendre quadrature. (This parameter is only required if the dimension is 2, and the simplex is a quadrangle). |
 | `simplex_order`      | No      | `Int` | The order of the simplex. (This parameter is only required if the dimension is 2, and the simplex is a triangle). |
@@ -113,7 +113,7 @@ I = \\int^a_b f(z)e^{iS(z)}dz
 \$\$
 The parameters are listed as such:
 
-| Parameter | Required | Type | Description |
+| Parameter | Always Required | Type | Description |
 | --------- | -------- | -------- | ----------- |
 | `flow_steps` | Yes | `Int` | Maximum number of flow steps to perform. |
 | `grid_spacing` | Yes | `Real` | Initial grad spacing parameters for the initial Lefschetz thimble contour. |
@@ -218,7 +218,7 @@ export integrate_thimbles
 Integrates around all contributing thimbles using the saddle point approximation method. The contributions from the individual contributing saddle points are returned individually.
 The parameters for algorithm are listed as below:
 
-| Parameter | Required | Type | Description |
+| Parameter | Always Required | Type | Description |
 | --------- | -------- | ---- | ----------- |
 | `point_count` | Yes | `Int` | The initial number of points in the Sobol sequence. |
 | `accuracy` | Yes | `Int` | The accuracy (number of digits) to which the saddle points should be found. |
