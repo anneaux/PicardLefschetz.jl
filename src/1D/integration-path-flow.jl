@@ -128,9 +128,14 @@ function flow_down!(fun::Tuple,
     end
 end
 
+"""
+    get_thimble(S::Function, drv::Function, tmin::Real, tmax::Real; ...)
+
+Core numerical solver deforming the integration path under downward flow from [tmin, tmax].
+"""
 function get_thimble(S::Function, drv::Function, tmin::Real, tmax::Real;
     preset::Symbol=:accurate,
-    params::Union{Nothing,Dict}=nothing,
+    params=nothing,
     omega::Float64=1.0,
     xi::Union{ComplexF64,Nothing}=nothing,
     keep_connected::Bool=false,

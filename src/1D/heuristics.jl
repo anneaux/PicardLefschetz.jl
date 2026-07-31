@@ -261,7 +261,6 @@ function get_pl_heuristics_2d(
     eigvecfactorinit = α_grad_scale * r_osc
     subdividethreshold = α_subdiv * r_osc
     flowstepfactor = α_init * r_osc
-    Δinit = α_init * r_osc
 
     gradnthreshold = α_grad * maximum(
         norm(f_grad((ξ .+ eigvecfactorinit .* direction)...))
@@ -279,8 +278,7 @@ function get_pl_heuristics_2d(
         r_osc=r_osc,
         directional_radii=directional_radii,
         Nflow=Nflow,
-        Ninit=Ninit,
-        Δinit=Δinit
+        Ninit=Ninit
     )
     return isempty(kwargs) ? computed : merge(computed, NamedTuple(kwargs))
 end
