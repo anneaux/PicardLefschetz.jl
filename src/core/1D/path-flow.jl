@@ -26,6 +26,30 @@ function subdivide(points::Vector{<:FlowPoint},
     end
 end
 
+function subdivide_keep(points::Vector{<:FlowPoint}, simplices::Vector{Simplex{2,Int}}, Δ::Float64)
+    i = 1
+    while i <= length(simplices)
+        sim = simplices[i]
+        if sim.active # only subdivide active ones
+            l = sim.vertices[1]
+            r = sim.vertices[2]
+            L = points[l].coords[1]
+            R = points[r].coords[1]
+            if abs(R - L) > Δ
+                push!(points, FlowPoint((L + R) / 2.))
+                new_idx = length(points)
+                # Replace the parent simplex at index i with the first child
+                simplices[i] = Simplex{2,Int}([l, new_idx])
+                # Push the second child
+                push!(simplices, Simplex{2,Int}([new_idx, r]))
+                # Do not increment i, so we check the new first child again!
+                continue
+            end
+        end
+        i += 1
+    end
+end
+
 
 function subdivide_rep(points::Vector{<:FlowPoint},
     simplices::Vector{Simplex{2,Int}},
@@ -209,7 +233,7 @@ function flow_up(S::Function, S_prime::Function, saddle_point::FlowPoint, δ::Fl
     return dual_thimble, contributing
 end
 
-
+# get_thimble (FLIC)
 export get_thimble
 function get_thimble(S::Function, drv::Function, tmin::Float64, tmax::Float64;
     Nflow::Int64=60,
@@ -233,6 +257,13 @@ function get_thimble(S::Function, drv::Function, tmin::Float64, tmax::Float64;
     return points, simplices
 end
 
+# dissect_inactive_segments
+# has_adjacent_inactive_segments
+# simplify_inactive_segments
+
+
+
+# This should not be touched.
 export get_thimble
 function get_thimble(S::Function, S_grad::Function, S_hessian::Function,
     saddle_point::Saddle; init_perturbation_radius::Float64,
