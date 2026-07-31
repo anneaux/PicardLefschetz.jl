@@ -39,10 +39,10 @@ export find_saddles
 Finds the saddle points numerically over a given domain using a Sobol sequence for initial points, and flowing them using gradient descent. The
 parameters for this function are listed below:
 
-| Parameter | Required | Type | Description |
-| --------- | -------- | ---- | ----------- |
-| `point_count` | Yes | `Int` | The initial number of points in the Sobol sequence. |
-| `accuracy` | Yes | `Int` | The accuracy (number of digits) to which the saddle points should be found. |
+| Parameter | Always Required | Type | Description | Heuristic |
+| --------- | -------- | ---- | ----------- | ------ |
+| `point_count` | Yes | `Int` | The initial number of points in the Sobol sequence. | No |
+| `accuracy` | Yes | `Int` | The accuracy (number of digits) to which the saddle points should be found. | No |
 
 # Arguments
 - `derivative::Function`: The first derivative of the action function.
@@ -81,14 +81,13 @@ export check_contribution!
 Checks whether a given saddle point contributes to the integral, using gradient ascent to check whether the thimble contributes. 
 The parameters for this function are listed below:
 
-| Parameter | Required | Type | Description |
-| --------- | -------- | ---- | ----------- |
-| `grid_resolution` | Yes | `Int` | The number of points to use for discretizing the thimble paths. |
-| `flow_step_factor` | No | `Real` | The step size factor for the flow equation. (This parameter is only required in 2D.)|
-| `initial_necklace_size` | No | `Int` | The initial number of points in the dual Lefschetz thimble contour. (This parameter is only required in 2D.)|
-| `max_iterations` | No | `Int` | The maximum number of iterations for the flow equation. (This parameter is only required in 2D.)|
-| `init_perturbation_radius` | No | `Real` | The initial radius of the perturbation used to generate the necklace. (This parameter is only required in 2D.)|
-| `subdivision_threshold` | No | `Real` | The threshold for subdividing the necklace to improve accuracy. (This parameter is only required in 2D.)|
+| Parameter | Always Required | Type | Description | Heuristic |
+| --------- | -------- | ---- | ----------- | ------ |
+| `flow_step_factor` | No | `Real` | The step size factor for the flow equation. (This parameter is only required in 2D.)| Yes |
+| `init_point_count` | No | `Int` | The initial number of points in the dual Lefschetz thimble contour. (This parameter is only required in 2D.)| Yes |
+| `max_iterations` | No | `Int` | The maximum number of iterations for the flow equation. (This parameter is only required in 2D.)| Yes |
+| `init_perturbation_radius` | No | `Real` | The initial radius of the perturbation used to generate the necklace. (This parameter is only required in 2D.)| Yes |
+| `subdivision_threshold` | No | `Real` | The threshold for subdividing the necklace to improve accuracy. (This parameter is only required in 2D.)| Yes |
 
 # Arguments
 - `S::Function`: The action function.
@@ -111,20 +110,18 @@ function check_contribution!(
     params::Dict;
     log_errors::Bool=false
 )::Nothing
-    grid_resolution = Float64(params["grid_resolution"])
-
     contributing = if length(saddle_point.saddle) == 2
         flow_step_factor = Float64(params["flow_step_factor"])
-        initial_necklace_size = params["initial_necklace_size"]
+        initial_necklace_size = params["init_point_count"]
         max_iterations = params["max_iterations"]
         init_perturbation_radius = Float64(params["init_perturbation_radius"])
         subdivision_threshold = Float64(params["subdivision_threshold"])
 
         Methods2D.SaddlePoint.check_contribution(
             S, S_grad, S_hessian, saddle_point, check,
-            Ntimes=grid_resolution, logerrors=log_errors,
-            flowstepfactor=flow_step_factor, initial_necklace_size=initial_necklace_size,
-            max_iterations=max_iterations, init_perturbation_radius=init_perturbation_radius,
+            logerrors=log_errors, flowstepfactor=flow_step_factor,
+            initial_necklace_size=initial_necklace_size, max_iterations=max_iterations,
+            init_perturbation_radius=init_perturbation_radius,
             subdivision_threshold=subdivision_threshold
         )
     elseif length(saddle_point.saddle) == 1
@@ -151,15 +148,14 @@ export get_intersection_number!
 Calculates the intersection number of the dual Lefschetz thimble with the real integral domain. 
 The parameters for this function are listed below:
 
-| Parameter | Always Required | Type | Description |
-| --------- | -------- | ---- | ----------- |
-| `grid_resolution` | Yes | `Int` | The number of points to use for discretizing the thimble paths. |
-| `flow_step_factor` | Yes | `Real` | The step size factor for the flow equation. |
-| `max_iterations` | Yes | `Int` | The maximum number of iterations for the flow equation. |
-| `init_perturbation_radius` | Yes | `Real` | The initial radius of the perturbation used to generate the necklace. |
-| `subdivision_threshold` | Yes | `Real` | The threshold for subdividing the necklace to improve accuracy. |
-| `height_threshold` | Yes | `Real` | The threshold for the cutoff of the thimble/dual thimble, in the imaginary magnitude of the action. |
-| `gradient_normalisation_threshold` | Yes | `Real` | The threshold for normalising the gradient during gradient flow. |
+| Parameter | Always Required | Type | Description | Heuristic |
+| --------- | -------- | ---- | ----------- | ------ |
+| `flow_step_factor` | Yes | `Real` | The step size factor for the flow equation. | Yes |
+| `max_iterations` | Yes | `Int` | The maximum number of iterations for the flow equation. | Yes |
+| `init_perturbation_radius` | Yes | `Real` | The initial radius of the perturbation used to generate the necklace. | Yes |
+| `subdivision_threshold` | Yes | `Real` | The threshold for subdividing the necklace to improve accuracy. | Yes |
+| `height_threshold` | Yes | `Real` | The threshold for the cutoff of the thimble/dual thimble, in the imaginary magnitude of the action. | Yes |
+| `gradient_normalisation_threshold` | Yes | `Real` | The threshold for normalising the gradient during gradient flow. | Yes |
 
 # Arguments
 - `S::Function`: The action function.

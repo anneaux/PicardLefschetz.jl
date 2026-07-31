@@ -17,11 +17,11 @@ I = \\int^a_b f(z)e^{iS(z)}dz
 \$\$
 
 where S(z) is the action function which faster oscillation, and f(z) is the prefactor function with small oscillation. The parameters for this function are listed as such:
-| Parameter             | Always Required | Type | Description                                                                                                                                   |
-| --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GL_order`    | No      | `Int` | The order of the Gauss-Legendre quadrature. (This parameter is only required if the dimension is 2, and the simplex is a quadrangle). |
-| `simplex_order`      | No      | `Int` | The order of the simplex. (This parameter is only required if the dimension is 2, and the simplex is a triangle). |
-| `output_dim`    | No      | `Int` | The output dimension of the integral. (This parameter is only required if the dimension is 2). |
+| Parameter             | Always Required | Type | Description                                                                                                                                   | Heuristic | 
+| --------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- | -----
+| `GL_order`    | No      | `Int` | The order of the Gauss-Legendre quadrature. (This parameter is only required if the dimension is 2, and the simplex is a quadrangle). | No | 
+| `simplex_order`      | No      | `Int` | The order of the simplex. (This parameter is only required if the dimension is 2, and the simplex is a triangle). | No | 
+| `output_dim`    | No      | `Int` | The output dimension of the integral. (This parameter is only required if the dimension is 2). | No | 
 
 # Arguments
 - `S::Function`: The action function.
@@ -113,18 +113,18 @@ I = \\int^a_b f(z)e^{iS(z)}dz
 \$\$
 The parameters are listed as such:
 
-| Parameter | Always Required | Type | Description |
-| --------- | -------- | -------- | ----------- |
-| `flow_steps` | Yes | `Int` | Maximum number of flow steps to perform. |
-| `grid_spacing` | Yes | `Real` | Initial grad spacing parameters for the initial Lefschetz thimble contour. |
-| `gradient_normalisation_factor` | Yes | `Real` | The normalisation threshold for the gradient during gradient descent. Used to prevent the gradient descent from diverging. |
-| `flow_step_factor` | Yes | `Real` | The factor for determining how quickly the gradient descent moves. |
-| `subdivision_threshold` | Yes | `Real` | The threshold value above which segments in the Lefschetz thimble contour are subdivided. |
-| `height_threshold` | Yes | `Real` | The maximum magnitude of the imaginary component of the action to evolve the contour to. |
-| `max_grid_element_count` | Yes | `Int` | The maximum number of simplices that can be used in the calculation of the Lefschetz thimble. |
-| `verbose` | Yes | `Bool` | Whether or not to print the error message about when the simplices are maxed out. |
-| `integral_accuracy` | Yes | `Real` | The required accuracy for the integral. |
-| `integral_relative_error` | Yes | `Real` | The relative error threshold for the integral. |
+| Parameter | Always Required | Type | Description | Heuristic |
+| --------- | -------- | -------- | ----------- | ----- |
+| `flow_steps` | Yes | `Int` | Maximum number of flow steps to perform. | Yes |
+| `grid_spacing` | Yes | `Real` | Initial grid spacing parameters for the initial Lefschetz thimble contour. | No |
+| `gradient_normalisation_factor` | Yes | `Real` | The normalisation threshold for the gradient during gradient descent. Used to prevent the gradient descent from diverging. | Yes |
+| `flow_step_factor` | Yes | `Real` | The factor for determining how quickly the gradient descent moves. | Yes |
+| `subdivision_threshold` | Yes | `Real` | The threshold value above which segments in the Lefschetz thimble contour are subdivided. | Yes |
+| `height_threshold` | Yes | `Real` | The maximum magnitude of the imaginary component of the action to evolve the contour to. | Yes |
+| `max_grid_element_count` | Yes | `Int` | The maximum number of simplices that can be used in the calculation of the Lefschetz thimble. | No |
+| `verbose` | Yes | `Bool` | Whether or not to print the error message about when the simplices are maxed out. | No |
+| `integral_accuracy` | Yes | `Real` | The required accuracy for the integral. | No |
+| `integral_relative_error` | Yes | `Real` | The relative error threshold for the integral. | No |
 
 # Arguments
 - `S::Function`: The action function.
@@ -218,10 +218,10 @@ export integrate_thimbles
 Integrates around all contributing thimbles using the saddle point approximation method. The contributions from the individual contributing saddle points are returned individually.
 The parameters for algorithm are listed as below:
 
-| Parameter | Always Required | Type | Description |
-| --------- | -------- | ---- | ----------- |
-| `point_count` | Yes | `Int` | The initial number of points in the Sobol sequence. |
-| `accuracy` | Yes | `Int` | The accuracy (number of digits) to which the saddle points should be found. |
+| Parameter | Always Required | Type | Description | Heuristic |
+| --------- | -------- | ---- | ----------- | ----- |
+| `point_count` | Yes | `Int` | The initial number of points in the Sobol sequence. | No |
+| `accuracy` | Yes | `Int` | The accuracy (number of digits) to which the saddle points should be found. | No |
 
 # Arguments
 - `S::Function`: The action function.
