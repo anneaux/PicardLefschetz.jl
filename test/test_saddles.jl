@@ -11,7 +11,7 @@ using PicardLefschetz.Saddle
     phase_hess_1d(x::Vector) = t -> 2 * x[2] + 6 * x[3] * t + 20 * t^3
     params_1d = [2., 3., 4.]
     domain_1d = [ComplexDomain(-5.0 - 5.0im, 5.0 + 5.0im)]
-    saddle_params_1d = Dict{String, Any}(
+    saddle_params_1d = Dict{String,Any}(
         "point_count" => 100,
         "accuracy" => 5,
         "grid_resolution" => 10
@@ -93,7 +93,6 @@ using PicardLefschetz.Saddle
             get_intersection_number!(
                 phase_1d(params_1d),
                 phase_drv_1d(params_1d),
-                phase_hess_1d(params_1d),
                 saddle,
                 flow_params_1d
             )
@@ -107,5 +106,34 @@ using PicardLefschetz.Saddle
         end
     end
 
+    @testset "2D Intersection Number" begin
+        saddles = find_saddles(phase_drv_2d(params_2d), domain_2d, saddle_params_2d)
+        if !isempty(saddles)
+            saddle = saddles[1]
+
+            # get_intersection_number! requires flow parameters to calculate the thimbles
+            flow_params_2d = copy(saddle_params_2d)
+            flow_params_2d["init_perturbation_radius"] = 0.01
+            flow_params_2d["max_iterations"] = 100
+            flow_params_2d["flow_step_factor"] = 0.1
+            flow_params_2d["subdivision_threshold"] = 0.1
+            flow_params_2d["height_threshold"] = -10.0
+            flow_params_2d["gradient_normalisation_threshold"] = 1.0
+
+            get_intersection_number!(
+                phase_2d(params_2d),
+                phase_drv_2d(params_2d),
+                saddle,
+                flow_params_2d
+            )
+
+            # Verify the intersection number is computed and is one of the valid topological intersection values
+            @test saddle.intersection_number !== nothing
+            @test saddle.intersection_number in [-1, 0, 1]
+
+            # In general, if the intersection number is non-zero, it must contribute
+            @test saddle.contributing == (saddle.intersection_number != 0)
+        end
+    end
 
 end

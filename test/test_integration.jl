@@ -63,18 +63,18 @@ using PicardLefschetz.Saddle
     integ_params_2d_multi = copy(integ_params_2d)
     integ_params_2d_multi["output_dim"] = 2
 
-    @testset "1D integrate_thimble!" begin
+    @testset "1D integrate_SPM_thimble!" begin
         saddles = find_saddles(phase_drv_1d(params_1d), complex_domain_1d, integ_params_1d)
         if !isempty(saddles)
             saddle = saddles[1]
-            integrate_thimble!(phase_1d(params_1d), phase_drv_1d(params_1d), phase_hess_1d(params_1d), saddle, prefactor_1d)
+            integrate_SPM_thimble!(phase_1d(params_1d), phase_drv_1d(params_1d), phase_hess_1d(params_1d), saddle, prefactor_1d)
             @test saddle.integral !== nothing
             @test saddle.integral isa ComplexF64
         end
     end
 
-    @testset "1D integrate_thimbles (flow)" begin
-        res = integrate_thimbles(phase_1d(params_1d), phase_drv_1d(params_1d), domain_1d, [0.0], prefactor_1d, integ_params_1d, "flow")
+    @testset "1D integrate_FLIC (flow)" begin
+        res = integrate_FLIC(phase_1d(params_1d), phase_drv_1d(params_1d), domain_1d, [0.0], prefactor_1d, integ_params_1d, "flow")
         # Just verifying it returns something
         @test res !== nothing
     end
@@ -85,23 +85,23 @@ using PicardLefschetz.Saddle
         @test res isa Vector{<:Types.Saddle}
     end
 
-    @testset "2D integrate_thimble!" begin
+    @testset "2D integrate_SPM_thimble!" begin
         saddles = find_saddles(phase_drv_2d(params_2d), complex_domain_2d, integ_params_2d)
         if !isempty(saddles)
             saddle = saddles[1]
-            integrate_thimble!(phase_2d(params_2d), phase_drv_2d(params_2d), phase_hess_2d(params_2d), saddle, prefactor_2d)
+            integrate_SPM_thimble!(phase_2d(params_2d), phase_drv_2d(params_2d), phase_hess_2d(params_2d), saddle, prefactor_2d)
             @test saddle.integral !== nothing
             @test saddle.integral isa ComplexF64
 
             saddle_multi = deepcopy(saddle)
-            integrate_thimble!(phase_2d(params_2d), phase_drv_2d(params_2d), phase_hess_2d(params_2d), saddle_multi, prefactor_2d_multi)
+            integrate_SPM_thimble!(phase_2d(params_2d), phase_drv_2d(params_2d), phase_hess_2d(params_2d), saddle_multi, prefactor_2d_multi)
             @test saddle_multi.integral !== nothing
             @test saddle_multi.integral isa AbstractVector{ComplexF64}
         end
     end
 
-    @testset "2D integrate_thimbles (fixed flow)" begin
-        res = integrate_thimbles(phase_2d(params_2d), phase_drv_2d(params_2d), domain_2d, [0.0, 0.0], prefactor_2d, integ_params_2d, "fixed")
+    @testset "2D integrate_FLIC (fixed flow)" begin
+        res = integrate_FLIC(phase_2d(params_2d), phase_drv_2d(params_2d), domain_2d, [0.0, 0.0], prefactor_2d, integ_params_2d, "fixed")
         @test res !== nothing
     end
 

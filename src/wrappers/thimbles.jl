@@ -34,13 +34,13 @@ function get_thimble!(
     return get_thimble!(native_S, native_grad, native_hessian, saddle_point, params, mesh_type=mesh_type)
 end
 
-export get_thimbles
+export get_FLIC
 """
-    get_thimbles(z, S, params, domain; mesh_type)
+    get_FLIC(z, S, params, domain; mesh_type)
 
 Calculates the Lefschetz thimbles for a given domain using symbolic expressions. This 
 is a wrapper function for compatibility with the Symbolics.jl package. For complete 
-documentation, see `get_thimbles`.
+documentation, see `get_FLIC`.
 
 # Arguments
 - `z::Union{Num, AbstractVector{Num}}`: The symbolic variable.
@@ -52,7 +52,7 @@ documentation, see `get_thimbles`.
 # Returns
 - `Tuple{Vector{<:FlowPoint},Vector{<:Simplex}}`:The result of the flow (a set of segments in 1D, or a list of quadrilaterals/triangles in 2D).
 """
-function get_thimbles(
+function get_FLIC(
     z::Union{Num,AbstractVector{Num}}, S::Num,
     params::Dict,
     domain::Vector{RealDomain};
@@ -62,7 +62,7 @@ function get_thimbles(
     native_S = build_function(S, z, expression=Val{false})
     native_grad = S_grad isa AbstractArray ? build_function(S_grad, z, expression=Val{false})[1] : build_function(S_grad, z, expression=Val{false})
 
-    return get_thimbles(native_S, native_grad, params, domain, mesh_type=mesh_type)
+    return get_FLIC(native_S, native_grad, params, domain, mesh_type=mesh_type)
 end
 
 export get_thimbles

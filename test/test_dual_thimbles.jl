@@ -90,7 +90,7 @@ using PicardLefschetz.Saddle
             saddle = saddles[1]
             get_dual_thimble!(phase_2d(params_2d), phase_drv_2d(params_2d), phase_hess_2d(params_2d), saddle, saddle_params_2d)
             @test saddle.dual_thimble !== nothing
-            @test saddle.dual_thimble isa Vector{<:Simplex}
+            @test saddle.dual_thimble isa Tuple{Vector{<:FlowPoint}, Vector{<:Simplex}}
         end
     end
 

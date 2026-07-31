@@ -88,18 +88,18 @@ The parameters for this function are listed below:
 | Parameter | Required | Type | Description |
 | --------- | -------- | ---- | ----------- |
 | `grid_resolution` | Yes | `Int` | The number of points to use for discretizing the thimble paths. |
-| `flow_step_factor` | No | `Float64` | The step size factor for the flow equation. (This parameter is only required in 2D.)|
+| `flow_step_factor` | No | `Real` | The step size factor for the flow equation. (This parameter is only required in 2D.)|
 | `initial_necklace_size` | No | `Int` | The initial number of points in the dual Lefschetz thimble contour. (This parameter is only required in 2D.)|
 | `max_iterations` | No | `Int` | The maximum number of iterations for the flow equation. (This parameter is only required in 2D.)|
-| `init_pertubation_radius` | No | `Float64` | The initial radius of the perturbation used to generate the necklace. (This parameter is only required in 2D.)|
-| `subdivision_threshold` | No | `Float64` | The threshold for subdividing the necklace to improve accuracy. (This parameter is only required in 2D.)|
+| `init_perturbation_radius` | No | `Real` | The initial radius of the perturbation used to generate the necklace. (This parameter is only required in 2D.)|
+| `subdivision_threshold` | No | `Real` | The threshold for subdividing the necklace to improve accuracy. (This parameter is only required in 2D.)|
 
 # Arguments
 - `S::Function`: The action function.
 - `S_grad::Function`: The first derivative (gradient) of the action function.
 - `S_hessian::Function`: The second derivative (Hessian) of the action function.
 - `saddle_point::Types.Saddle`: The saddle point struct to check.
-- `domain::ComplexDomain`: The integration domain.
+- `check::Function`: A function used to check if the saddle point is within the domain. Should accept the coordinates in a vector of complex numbers.
 - `params::Dict`: Parameters for checking contribution.
 - `log_errors::Bool`: Whether to log errors during the check (default `false`).
 
@@ -111,28 +111,37 @@ function check_contribution!(
     S_grad::Function,
     S_hessian::Function,
     saddle_point::Types.Saddle,
-    domain::Union{ComplexDomain,Vector{ComplexDomain}},
+    check::Function,
     params::Dict;
     log_errors::Bool=false
 )::Nothing
-    grid_resolution = params["grid_resolution"]
+    grid_resolution = Float64(params["grid_resolution"])
 
     contributing = if length(saddle_point.saddle) == 2
-        flow_step_factor = params["flow_step_factor"]
+        flow_step_factor = Float64(params["flow_step_factor"])
         initial_necklace_size = params["initial_necklace_size"]
         max_iterations = params["max_iterations"]
-        init_perturbation_radius = params["init_perturbation_radius"]
-        subdivision_threshold = params["subdividethreshold"]
+        init_perturbation_radius = Float64(params["init_perturbation_radius"])
+        subdivision_threshold = Float64(params["subdivision_threshold"])
 
         Methods2D.SaddlePoint.check_contribution(
-            S, S_grad, S_hessian, saddle_point,
+            S, S_grad, S_hessian, saddle_point, check,
             Ntimes=grid_resolution, logerrors=log_errors,
             flowstepfactor=flow_step_factor, initial_necklace_size=initial_necklace_size,
             max_iterations=max_iterations, init_perturbation_radius=init_perturbation_radius,
             subdivision_threshold=subdivision_threshold
         )
     elseif length(saddle_point.saddle) == 1
-        Methods1D.SaddlePoint.is_contributing(saddle_point, S, domain.min, domain.max, Ntimes=grid_resolution)
+        height_threshold = Float64(params["height_threshold"])
+        dual_thimble, contributing = Methods1D.PathFlow.flow_up(S, S_grad, saddle_point, flow_step_factor, height_threshold, max_iterations)
+        if abs(imag(saddle_point.coords[1])) > 1e-10
+            return true
+        end
+        intersection_point = Methods1D.PathFlow.find_intersection_point(dual_thimble)
+        if contributing && check([intersection_point.coords[1]])
+            return true
+        end
+        false
     end
 
     saddle_point.contributing = contributing
@@ -149,29 +158,28 @@ The parameters for this function are listed below:
 | Parameter | Required | Type | Description |
 | --------- | -------- | ---- | ----------- |
 | `grid_resolution` | Yes | `Int` | The number of points to use for discretizing the thimble paths. |
-| `flow_step_factor` | Yes | `Float64` | The step size factor for the flow equation. |
+| `flow_step_factor` | Yes | `Real` | The step size factor for the flow equation. |
 | `max_iterations` | Yes | `Int` | The maximum number of iterations for the flow equation. |
-| `init_perturbation_radius` | Yes | `Float64` | The initial radius of the perturbation used to generate the necklace. |
-| `subdivision_threshold` | Yes | `Float64` | The threshold for subdividing the necklace to improve accuracy. |
-| `height_threshold` | Yes | `Float64` | The threshold for the cutoff of the thimble/dual thimble, in the imaginary magnitude of the action. |
-| `gradient_normalisation_threshold` | Yes | `Float64` | The threshold for normalising the gradient during gradient flow. |
+| `init_perturbation_radius` | Yes | `Real` | The initial radius of the perturbation used to generate the necklace. |
+| `subdivision_threshold` | Yes | `Real` | The threshold for subdividing the necklace to improve accuracy. |
+| `height_threshold` | Yes | `Real` | The threshold for the cutoff of the thimble/dual thimble, in the imaginary magnitude of the action. |
+| `gradient_normalisation_threshold` | Yes | `Real` | The threshold for normalising the gradient during gradient flow. |
 
 # Arguments
 - `S::Function`: The action function.
 - `S_grad::Function`: The first derivative (gradient) of the action function.
-- `S_hessian::Function`: The second derivative (Hessian) of the action function.
 - `saddle_point::Types.Saddle`: The saddle point struct to check.
 - `params::Dict`: Parameters for checking contribution.
 
 # Returns
 - `Nothing` (the `intersection_number` field of the `saddle` is modified in-place).
 """
-function get_intersection_number!(S::Function, S_grad::Function, S_hessian::Function, saddle::Types.Saddle, params::Dict)
+function get_intersection_number!(S::Function, S_grad::Function, saddle::Types.Saddle, params::Dict)::Nothing
     if length(saddle.saddle) == 1
-        return Methods1D.SaddlePoint.get_intersection_number!(S, S_grad, S_hessian, saddle, params)
+        return Methods1D.SaddlePoint.get_intersection_number!(S, S_grad, saddle, params)
+    elseif length(saddle.saddle) == 2
+        return Methods2D.SaddlePoint.get_intersection_number!(S, saddle, params)
     end
-
-    return nothing
 end
 
 include("../wrappers/saddles.jl")
