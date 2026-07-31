@@ -1,4 +1,4 @@
-using GLMakie
+# using GLMakie ### do this, it just doesn't work on my PC rn
 using LinearAlgebra
 using GeometryBasics
 using LaTeXStrings

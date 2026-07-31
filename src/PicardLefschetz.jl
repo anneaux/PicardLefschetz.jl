@@ -11,6 +11,7 @@ using StaticArrays
 using GeometryBasics
 using FiniteDiff
 using FastGaussQuadrature
+using SimplexQuad
 
 # Types
 include("core/types.jl")

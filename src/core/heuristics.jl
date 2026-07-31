@@ -62,7 +62,7 @@ function resolve_heuristics(
     saddle_points::Union{ComplexF64,Nothing}=nothing,
     action_scaling_factor::Float64=1.0,
     preset=PRESET_ACCURATE;
-    integration_domain::RealDomain,
+    integration_domain::Types.RealDomain,
     kwargs...
 )
     computed = get_pl_heuristics_1d(S, S_grad, saddle_points, action_scaling_factor, preset; integration_domain=integration_domain)
@@ -170,7 +170,7 @@ function get_pl_heuristics_1d(
     saddle_points::Union{Nothing,<:AbstractVector{ComplexF64}}=nothing,
     action_scaling_factor::Float64=1.0,
     preset=PRESET_ACCURATE;
-    integration_domain::RealDomain,
+    integration_domain::Types.RealDomain,
     periodicity=2π,
     search_radius=10.0
 )

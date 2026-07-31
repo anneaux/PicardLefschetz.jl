@@ -1,4 +1,7 @@
-==A **FLowed Integration Contour (FLIC)** is the numerical object this package builds in place of an exact Lefschetz thimble: the original real domain, evolved for a finite time under the downward flow, so that it approximates $\mathcal{T}_\sigma$ closely enough to integrate directly. Building one is a short pipeline: define the domain, flow it, choose a resolution, integrate, and check that the result has converged. `PicardLefschetz.jl` exposes one function for each step.
+==A **FLowed Integration Contour (FLIC)** is the numerical object this package builds in place of an exact Lefschetz thimble: the original real domain, evolved for a finite time under the downward flow, so that it approximates $\mathcal{T}_\sigma$ closely enough to integrate directly. 
+For one-dimensional integrals the FLIC is a line, consisting of points connected to line segments.
+For two-dimensional integrals the FLIC is a surface, represented by points which are connected to simplices (either triangles or quadrilaterals).
+Building the FLIC is a short pipeline: define the original integration domain, flow it, choose a resolution, integrate, and check that the result has converged. `PicardLefschetz.jl` exposes one function for each step.
 
 ## (a) The Integration Domain
 
@@ -22,7 +25,7 @@ with `make_init_points_rectangle` available if you'd rather generate the boundar
 
 ## (b) Flowing the Domain
 
-`get_thimble` evolves that starting contour under the downward flow introduced above, tracking the deforming curve itself rather than any single endpoint, until it has converged onto (a numerical approximation of) the union of contributing thimbles. Points separate from one another as the flow stretches the contour, and the package subdivides dynamically to keep the resolution adequate as this happens.
+`get_thimble` evolves that initial contour under the downward flow introduced above, tracking the deforming curve itself rather than any single endpoint, until it has converged onto (a numerical approximation of) the union of contributing thimbles. Points separate from one another as the flow stretches the contour, and the package subdivides dynamically to keep the resolution adequate as this happens.
 
 _(animation showing this)
 
