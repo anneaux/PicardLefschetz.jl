@@ -8,9 +8,9 @@
 
 Based on Picard–Lefschetz theory, this package implements two approaches to evaluate integrals of the form
 ```math
-\int_{R^n} ~ \mathbf{p}(\mathbf{x}) ~ \mathrm{e}^{\mathrm{i} \phi(\mathbf{x})} d\mathbf{x}
+\int_{\mathbb{R}^n} ~ \mathbf{P}(\mathbf{x}) ~ \mathrm{e}^{\mathrm{i} S(\mathbf{x})} d\mathbf{x}
 ```
-where $\phi(\mathbf{x})$ is analytic almost everywhere, $\mathbf{p}(\mathbf{x})$ is a slowly-varying prefactor and the integral is originally taken over the real domain $R$.
+where $S(\mathbf{x})$ is analytic almost everywhere, $\mathbf{P}(\mathbf{x})$ is a slowly-varying prefactor and the integral is originally taken over the real domain $\mathbb{R}$.
 So far, the methods are implemented for one ($n=1$) and two-dimensional ($n=2$) integrals, but could be extended to higher dimensions as well.
 
 ## Numerical approaches
@@ -20,7 +20,7 @@ In short, the two main approaches are:
 Flowing the integration domain into the complex domain, towards a steepest-descent manifold. This manifold is saved as a set of simplices (line segments for 1D, surface elements in 2D), on which the integral can be evaluated using a quadrature of choice. 
 
 ### Approach 2: Saddle-point based methods
-Finding points of the exponentiated phase function where the first derivative vanishes, i.e., $\nabla \phi(\mathbf{x}) = 0$, and summing over relevant saddle points' contribution. 
+Finding points of the exponentiated phase function where the first derivative vanishes, i.e., $\nabla S(\mathbf{x}) = 0$, and summing over relevant saddle points' contribution. 
 To decide whether a saddle point is relevant we have to determine whether it's dual thimble intersects the original integration domain (the real domain).
 A relevant saddles' contribution can then be calculated exactly as a quadrature along its thimble, or approximated by a Gaussian integral. The latter is known as the standard "saddle-point approximation".
 
