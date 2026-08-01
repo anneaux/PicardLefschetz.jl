@@ -15,10 +15,10 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Picard–Lefschetz Theory" => "theory.md",
+        "The Downward Flow" => "downward-flow.md",
+        "Saddle-Point Based Approaches" => "saddle-point-approach.md",
         "Examples" => "examples.md",
-        "Picard Lefschetz Theory" => "theory.md",
-        "Saddle-Point Based Approach" => "saddle-point-approach.md",
-        "Downward Flow" => "downward-flow.md"
     ],
     warnonly=[:missing_docs]
 )

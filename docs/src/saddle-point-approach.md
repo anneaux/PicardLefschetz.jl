@@ -61,7 +61,7 @@ The dual thimble boundary is calculated using the same prescription as the dual 
 ```
 ---
 # S.3 Checking Saddle Contribution
-The package also implements methods to check the contribution for a given saddle point. In Picard-Lefschetz theory, a saddle point only contributes if the dual thimble (also referred to as the unstable thimble in the literature) intersects the original integration domain that original integral contour lies in. If the dual thimble intersects the original integration domain, then the intersection number of saddle point's thimble is non-zero. This follows from the theorem that states that the integration contour deformation into the Lefschetz thimbles takes the form
+The package also implements methods to check the contribution for a given saddle point. In Picard–Lefschetz theory, a saddle point only contributes if the dual thimble (also referred to as the unstable thimble in the literature) intersects the original integration domain that original integral contour lies in. If the dual thimble intersects the original integration domain, then the intersection number of saddle point's thimble is non-zero. This follows from the theorem that states that the integration contour deformation into the Lefschetz thimbles takes the form
 ```math
 \mathbb{R}^n \cong \sum_\sigma n_\sigma \mathcal{T}_\sigma
 ```
@@ -102,11 +102,11 @@ n_\sigma = \text{sgn}(\det{M})
 
 ---
 # S.4 Integrating using Saddle-Point Approaches
-The main goal of Picard-Lefschetz theory is to calculate the highly oscillatory integrals of the form:
+The main goal of Picard–Lefschetz theory is to calculate the highly oscillatory integrals of the form:
 ```math
 \int P(x)e^{iS(x)}\,dx
 ```
-For this, the package implements techniques that rely on the continuous deformation of the integration contour, or by using the Saddle Point Method approximation of the integral, where we assume that the contribution to integral by the saddle point is Gaussian, which is well suited to problems which involve the saddle points being very spread out. The approximation follows from the deformation that's prescribed by Picard Lefschetz theory
+For this, the package implements techniques that rely on the continuous deformation of the integration contour, or by using the Saddle Point Method approximation of the integral, where we assume that the contribution to integral by the saddle point is Gaussian, which is well suited to problems which involve the saddle points being very spread out. The approximation follows from the deformation that's prescribed by Picard–Lefschetz theory
 ```math
 \begin{aligned}
 \mathbb{R}^n \cong \sum_\sigma n_\sigma \mathcal{T}_\sigma \implies \int_{\mathbb{R}^n}P(x)e^{iS(x)}\,dx &= \sum_\sigma n_\sigma\int_{\mathcal{T}_\sigma}P(z)e^{iS(z)}\,dz \\
